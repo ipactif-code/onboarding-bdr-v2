@@ -244,6 +244,50 @@ export const getByClerkId = query({
 });
 
 /**
+ * Get the current authenticated user.
+ */
+export const me = query({
+  args: {},
+  returns: v.union(
+    v.object({
+      _id: v.id("users"),
+      clerkId: v.string(),
+      email: v.string(),
+      name: v.string(),
+      avatarUrl: v.optional(v.string()),
+      role: v.union(v.literal("user"), v.literal("admin")),
+      status: v.union(v.literal("online"), v.literal("offline"), v.literal("away")),
+    }),
+    v.null()
+  ),
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return null;
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!user) {
+      return null;
+    }
+
+    return {
+      _id: user._id,
+      clerkId: user.clerkId,
+      email: user.email,
+      name: user.name,
+      avatarUrl: user.avatarUrl,
+      role: user.role,
+      status: user.status,
+    };
+  },
+});
+
+/**
  * Search users for mentions and messaging.
  */
 export const search = query({

@@ -1,0 +1,175 @@
+"use client";
+
+import { ColumnDef } from "@tanstack/react-table";
+import { Id } from "../../../../convex/_generated/dataModel";
+import Link from "next/link";
+import { MoreHorizontal, Pencil, Trash2, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
+export interface TeamRow {
+  _id: Id<"teams">;
+  name: string;
+  description?: string;
+  leadId?: Id<"users">;
+  leadName?: string;
+  memberCount: number;
+}
+
+interface ColumnOptions {
+  onDelete: (id: Id<"teams">) => void;
+}
+
+export function getColumns(options: ColumnOptions): ColumnDef<TeamRow>[] {
+  return [
+    // Checkbox column
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected()}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+      size: 32,
+    },
+
+    // Team name column
+    {
+      accessorKey: "name",
+      header: "Team Name",
+      cell: ({ row }) => (
+        <Link
+          href={`/admin/teams/${row.original._id}`}
+          className="font-medium hover:underline"
+        >
+          {row.getValue("name")}
+        </Link>
+      ),
+    },
+
+    // Description column
+    {
+      accessorKey: "description",
+      header: "Description",
+      cell: ({ row }) => {
+        const description = row.getValue("description") as string | undefined;
+        return (
+          <span className="text-neutral-500 line-clamp-1 max-w-[300px]">
+            {description || "—"}
+          </span>
+        );
+      },
+    },
+
+    // Team lead column
+    {
+      accessorKey: "leadName",
+      header: "Team Lead",
+      cell: ({ row }) => {
+        const leadName = row.getValue("leadName") as string | undefined;
+        return <span className="text-neutral-700">{leadName || "—"}</span>;
+      },
+    },
+
+    // Members count column
+    {
+      accessorKey: "memberCount",
+      header: "Members",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-1">
+          <Users className="size-4 text-neutral-400" />
+          <span>{row.getValue("memberCount")}</span>
+        </div>
+      ),
+    },
+
+    // Actions column
+    {
+      id: "actions",
+      cell: ({ row }) => {
+        const team = row.original;
+
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="size-8">
+                <MoreHorizontal className="size-4" />
+                <span className="sr-only">Open menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link href={`/admin/teams/${team._id}`}>
+                  <Pencil className="size-4 mr-2" />
+                  Edit
+                </Link>
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator />
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <DropdownMenuItem
+                    onSelect={(e) => e.preventDefault()}
+                    className="text-red-600"
+                  >
+                    <Trash2 className="size-4 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete team?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete &quot;{team.name}&quot; and
+                      remove all member associations. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => options.onDelete(team._id)}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+      size: 64,
+    },
+  ];
+}

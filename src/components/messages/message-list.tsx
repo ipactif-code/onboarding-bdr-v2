@@ -1,22 +1,16 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
 import { Id } from "../../../convex/_generated/dataModel";
 import { MessageBubble } from "./message-bubble";
 
 interface Message {
   _id: Id<"messages">;
   content: string;
-  senderId: string;
+  senderId: Id<"users">;
   senderName: string;
   senderAvatar?: string;
   createdAt: number;
-  attachments?: {
-    id: string;
-    name: string;
-    url: string;
-    type: string;
-  }[];
+  isOwn: boolean;
 }
 
 interface MessageListProps {
@@ -24,9 +18,6 @@ interface MessageListProps {
 }
 
 export function MessageList({ messages }: MessageListProps) {
-  const { user } = useUser();
-  const currentUserId = user?.id;
-
   if (messages.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -41,7 +32,7 @@ export function MessageList({ messages }: MessageListProps) {
         <MessageBubble
           key={message._id}
           message={message}
-          isOwn={message.senderId === currentUserId}
+          isOwn={message.isOwn}
         />
       ))}
     </div>

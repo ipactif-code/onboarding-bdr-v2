@@ -16,21 +16,16 @@ interface ChatViewProps {
 export function ChatView({ conversationId }: ChatViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Fetch conversation details
-  const conversation = useQuery(api.messaging.getConversation, {
-    conversationId,
-  });
-
-  // Fetch messages
-  const messages = useQuery(api.messaging.listMessages, {
+  // Fetch conversation with messages from Convex
+  const data = useQuery(api.messages.getConversation, {
     conversationId,
   });
 
   // Mark as read mutation
-  const markAsRead = useMutation(api.messaging.markAsRead);
+  const markAsRead = useMutation(api.messages.markRead);
 
   // Send message mutation
-  const sendMessage = useMutation(api.messaging.sendMessage);
+  const sendMessage = useMutation(api.messages.send);
 
   // Mark conversation as read when opened
   useEffect(() => {
@@ -44,7 +39,7 @@ export function ChatView({ conversationId }: ChatViewProps) {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [data?.messages]);
 
   const handleSend = async (content: string) => {
     if (!content.trim()) return;
@@ -55,17 +50,36 @@ export function ChatView({ conversationId }: ChatViewProps) {
     });
   };
 
-  if (conversation === undefined || messages === undefined) {
+  if (data === undefined) {
     return <ChatViewSkeleton />;
   }
+
+  // Transform conversation data for ChatHeader
+  const participant = data.conversation?.participants[0];
+  const headerData = {
+    name: participant?.name ?? "Unknown",
+    avatar: participant?.avatarUrl,
+    isOnline: participant?.status === "online",
+  };
+
+  // Transform messages for MessageList
+  const messages = data.messages.map((msg) => ({
+    _id: msg._id,
+    content: msg.content,
+    senderId: msg.senderId,
+    senderName: msg.senderName,
+    senderAvatar: msg.senderAvatarUrl,
+    createdAt: msg.createdAt,
+    isOwn: msg.isOwn,
+  }));
 
   return (
     <div className="flex flex-col h-full bg-white">
       {/* Header */}
       <ChatHeader
-        name={conversation.participantName}
-        avatar={conversation.participantAvatar}
-        isOnline={conversation.isOnline}
+        name={headerData.name}
+        avatar={headerData.avatar}
+        isOnline={headerData.isOnline}
       />
 
       {/* Messages */}

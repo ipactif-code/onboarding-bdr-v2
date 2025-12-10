@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
@@ -14,17 +14,36 @@ export function MessagesView() {
   >(null);
   const [showUnreadsOnly, setShowUnreadsOnly] = useState(false);
 
-  // Fetch conversations
-  const conversations = useQuery(api.messaging.listConversations, {
-    unreadOnly: showUnreadsOnly,
+  // Fetch conversations from Convex
+  const rawConversations = useQuery(api.messages.listConversations);
+
+  // Transform data to match ConversationList expectations
+  const conversations = rawConversations?.map((conv) => {
+    const participant = conv.participants[0];
+    return {
+      _id: conv._id,
+      participantName: participant?.name ?? "Unknown",
+      participantAvatar: participant?.avatarUrl,
+      lastMessage: conv.lastMessage?.content,
+      lastMessageAt: conv.lastMessage?.createdAt,
+      unreadCount: conv.unreadCount,
+      isOnline: participant?.status === "online",
+    };
   });
 
-  // Select first conversation by default
-  if (conversations && conversations.length > 0 && !selectedConversationId) {
-    setSelectedConversationId(conversations[0]._id);
-  }
+  // Filter by unread if toggle is on (client-side filtering)
+  const filteredConversations = showUnreadsOnly
+    ? conversations?.filter((c) => c.unreadCount > 0)
+    : conversations;
 
-  if (conversations === undefined) {
+  // Select first conversation by default
+  useEffect(() => {
+    if (filteredConversations && filteredConversations.length > 0 && !selectedConversationId) {
+      setSelectedConversationId(filteredConversations[0]._id);
+    }
+  }, [filteredConversations, selectedConversationId]);
+
+  if (rawConversations === undefined) {
     return <MessagesViewSkeleton />;
   }
 
@@ -32,7 +51,7 @@ export function MessagesView() {
     <div className="grid grid-cols-[0.3fr_1fr] h-[calc(100vh-64px)]">
       {/* Left: Conversation List */}
       <ConversationList
-        conversations={conversations}
+        conversations={filteredConversations ?? []}
         selectedId={selectedConversationId}
         onSelect={setSelectedConversationId}
         showUnreadsOnly={showUnreadsOnly}

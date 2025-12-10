@@ -258,6 +258,13 @@ export const get = query({
           name: v.string(),
         })
       ),
+      assignedTeamIds: v.array(v.id("teams")),
+      assignedTeams: v.array(
+        v.object({
+          _id: v.id("teams"),
+          name: v.string(),
+        })
+      ),
       sections: v.array(
         v.object({
           _id: v.id("sections"),
@@ -321,6 +328,23 @@ export const get = query({
       })
     );
 
+    // Get assigned teams
+    const assignments = await ctx.db
+      .query("courseAssignments")
+      .withIndex("by_course", (q) => q.eq("courseId", course._id))
+      .collect();
+
+    const assignedTeamIds = assignments
+      .filter((a) => a.teamId)
+      .map((a) => a.teamId as Id<"teams">);
+
+    const assignedTeams = await Promise.all(
+      assignedTeamIds.map(async (teamId) => {
+        const team = await ctx.db.get(teamId);
+        return team ? { _id: team._id, name: team.name } : null;
+      })
+    );
+
     // Get sections with lessons
     const sections = await ctx.db
       .query("sections")
@@ -369,6 +393,8 @@ export const get = query({
       displayOrder: course.displayOrder,
       viewCount: course.viewCount,
       tags: tags.filter((t): t is { _id: Id<"tags">; name: string } => t !== null),
+      assignedTeamIds,
+      assignedTeams: assignedTeams.filter((t): t is { _id: Id<"teams">; name: string } => t !== null),
       sections: sectionsWithLessons,
       publishedAt: course.publishedAt,
       _creationTime: course._creationTime,

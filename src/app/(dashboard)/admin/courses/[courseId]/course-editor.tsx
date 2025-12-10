@@ -21,15 +21,17 @@ import {
   HelpCircle,
   FileIcon,
   MoreHorizontal,
+  MoreVertical,
+  ExternalLink,
   Pencil,
+  X,
+  Image as ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
+import { Card } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -87,7 +89,9 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { MainInfoModal } from "@/components/courses/main-info-modal";
+import { TagsModal } from "@/components/courses/tags-modal";
+import { VisibilityModal } from "@/components/courses/visibility-modal";
 
 interface Course {
   _id: Id<"courses">;
@@ -104,6 +108,8 @@ interface Course {
   displayOrder: number;
   viewCount: number;
   tags: Array<{ _id: Id<"tags">; name: string }>;
+  assignedTeamIds?: Id<"teams">[];
+  assignedTeams?: Array<{ _id: Id<"teams">; name: string }>;
   sections: Array<{
     _id: Id<"sections">;
     title: string;
@@ -142,11 +148,11 @@ const lessonTypeLabels = {
 export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
   const router = useRouter();
 
-  // Local state for form fields
-  const [title, setTitle] = useState(initialCourse.title);
-  const [description, setDescription] = useState(initialCourse.description ?? "");
-  const [visibility, setVisibility] = useState(initialCourse.visibility);
-  const [isSaving, setIsSaving] = useState(false);
+  // Modal states
+  const [mainInfoModalOpen, setMainInfoModalOpen] = useState(false);
+  const [tagsModalOpen, setTagsModalOpen] = useState(false);
+  const [visibilityModalOpen, setVisibilityModalOpen] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Section/Lesson dialogs
   const [newSectionOpen, setNewSectionOpen] = useState(false);
@@ -159,7 +165,6 @@ export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
   const course = useQuery(api.courses.get, { courseId: initialCourse._id }) ?? initialCourse;
 
   // Mutations
-  const updateCourse = useMutation(api.courses.update);
   const publishCourse = useMutation(api.courses.publish);
   const unpublishCourse = useMutation(api.courses.unpublish);
   const removeCourse = useMutation(api.courses.remove);
@@ -170,6 +175,7 @@ export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
   const createLesson = useMutation(api.lessons.create);
   const removeLesson = useMutation(api.lessons.remove);
   const reorderLessons = useMutation(api.lessons.reorder);
+  const removeTagMutation = useMutation(api.courses.removeTag);
 
   // DnD sensors
   const sensors = useSensors(
@@ -178,24 +184,6 @@ export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
-
-  // Save course details
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await updateCourse({
-        courseId: course._id,
-        title,
-        description: description || undefined,
-        visibility,
-      });
-      toast.success("Course saved");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to save course");
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   // Publish/Unpublish
   const handlePublish = async () => {
@@ -255,10 +243,20 @@ export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
       setNewLessonTitle("");
       setNewLessonSectionId(null);
       toast.success("Lesson created");
-      // Navigate to lesson editor
       router.push(`/admin/courses/${course._id}/lessons/${lessonId}`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to create lesson");
+    }
+  };
+
+  // Remove tag handler
+  const handleRemoveTag = async (tagId: Id<"tags">) => {
+    try {
+      await removeTagMutation({ courseId: course._id, tagId });
+      toast.success("Tag removed");
+    } catch (error) {
+      console.error("Error removing tag:", error);
+      toast.error("Failed to remove tag");
     }
   };
 
@@ -333,27 +331,42 @@ export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          {course.status === "published" ? (
-            <Button variant="outline" onClick={handleUnpublish}>
-              <GlobeLock className="size-4 mr-2" />
-              Unpublish
-            </Button>
-          ) : (
-            <Button variant="outline" onClick={handlePublish}>
-              <Globe className="size-4 mr-2" />
-              Publish
-            </Button>
-          )}
-          <Button onClick={handleSave} disabled={isSaving}>
-            <Save className="size-4 mr-2" />
-            {isSaving ? "Saving..." : "Save"}
-          </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="icon">
-                <Trash2 className="size-4" />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <MoreVertical className="size-4" />
               </Button>
-            </AlertDialogTrigger>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link href={`/courses/${course._id}`} target="_blank">
+                  <ExternalLink className="size-4 mr-2" />
+                  View live
+                </Link>
+              </DropdownMenuItem>
+              {course.status === "published" ? (
+                <DropdownMenuItem onClick={handleUnpublish}>
+                  <GlobeLock className="size-4 mr-2" />
+                  Unpublish
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={handlePublish}>
+                  <Globe className="size-4 mr-2" />
+                  Publish
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => setShowDeleteDialog(true)}
+                className="text-red-600 focus:text-red-600"
+              >
+                <Trash2 className="size-4 mr-2" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete course?</AlertDialogTitle>
@@ -376,43 +389,19 @@ export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
         </div>
       </div>
 
-      <Separator />
-
-      {/* Course Details Form */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          {/* Title & Description */}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Course title"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Course description"
-                rows={4}
-              />
-            </div>
-          </div>
-
-          {/* Sections */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Sections</h2>
+      {/* Main Grid Layout */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* ==================== LEFT PANEL: SECTIONS ==================== */}
+        <div className="lg:col-span-2">
+          <Card className="rounded-2xl border-gray-200 py-0 gap-0">
+            {/* Sections Header */}
+            <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-4 rounded-t-2xl">
+              <h2 className="text-lg font-semibold text-neutral-950">Sections</h2>
               <Dialog open={newSectionOpen} onOpenChange={setNewSectionOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
-                    <Plus className="size-4 mr-2" />
-                    Add Section
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add section
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
@@ -445,76 +434,208 @@ export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
               </Dialog>
             </div>
 
-            {/* Sortable Sections */}
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleSectionDragEnd}
-            >
-              <SortableContext
-                items={course.sections.map((s) => s._id)}
-                strategy={verticalListSortingStrategy}
+            {/* Sections Content */}
+            <div className="p-6">
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleSectionDragEnd}
               >
-                <div className="space-y-3">
-                  {course.sections
-                    .sort((a, b) => a.displayOrder - b.displayOrder)
-                    .map((section) => (
-                      <SortableSection
-                        key={section._id}
-                        section={section}
-                        courseId={course._id}
-                        sensors={sensors}
-                        onLessonDragEnd={handleLessonDragEnd}
-                        onAddLesson={() => setNewLessonSectionId(section._id)}
-                        onUpdateSection={updateSection}
-                        onDeleteSection={removeSection}
-                        onDeleteLesson={removeLesson}
-                      />
-                    ))}
-                </div>
-              </SortableContext>
-            </DndContext>
-
-            {course.sections.length === 0 && (
-              <div className="text-center py-8 border border-dashed rounded-lg">
-                <p className="text-neutral-500">No sections yet</p>
-                <Button
-                  variant="link"
-                  onClick={() => setNewSectionOpen(true)}
-                  className="mt-2"
+                <SortableContext
+                  items={course.sections.map((s) => s._id)}
+                  strategy={verticalListSortingStrategy}
                 >
-                  Create your first section
-                </Button>
-              </div>
-            )}
-          </div>
+                  <div className="space-y-3">
+                    {course.sections
+                      .sort((a, b) => a.displayOrder - b.displayOrder)
+                      .map((section) => (
+                        <SortableSection
+                          key={section._id}
+                          section={section}
+                          courseId={course._id}
+                          sensors={sensors}
+                          onLessonDragEnd={handleLessonDragEnd}
+                          onAddLesson={() => setNewLessonSectionId(section._id)}
+                          onUpdateSection={updateSection}
+                          onDeleteSection={removeSection}
+                          onDeleteLesson={removeLesson}
+                        />
+                      ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+
+              {course.sections.length === 0 && (
+                <div className="text-center py-8 border border-dashed rounded-lg">
+                  <p className="text-neutral-500">No sections yet</p>
+                  <Button
+                    variant="link"
+                    onClick={() => setNewSectionOpen(true)}
+                    className="mt-2"
+                  >
+                    Create your first section
+                  </Button>
+                </div>
+              )}
+            </div>
+          </Card>
         </div>
 
-        {/* Sidebar - Settings */}
-        <div className="space-y-6">
-          <div className="rounded-lg border p-4 space-y-4">
-            <h3 className="font-medium">Settings</h3>
-            <div className="space-y-2">
-              <Label>Visibility</Label>
-              <Select
-                value={visibility}
-                onValueChange={(v) =>
-                  setVisibility(v as "all_teams" | "specific_teams" | "specific_users")
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all_teams">All Teams</SelectItem>
-                  <SelectItem value="specific_teams">Specific Teams</SelectItem>
-                  <SelectItem value="specific_users">Specific Users</SelectItem>
-                </SelectContent>
-              </Select>
+        {/* ==================== RIGHT PANEL: SETTINGS ==================== */}
+        <div className="lg:col-span-1">
+          <Card className="rounded-2xl border-gray-200 py-0 gap-0">
+            {/* Settings Header */}
+            <div className="border-b border-gray-200 bg-gray-50 px-6 py-4 rounded-t-2xl">
+              <h2 className="text-lg font-semibold text-neutral-950">Settings</h2>
             </div>
-          </div>
+
+            {/* Settings Content */}
+            <div className="space-y-4 p-6">
+              {/* ===== Main Information Card ===== */}
+              <Card className="rounded-xl border-gray-200 py-0 gap-0">
+                <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+                  <h3 className="text-sm font-medium text-neutral-950">Main information</h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setMainInfoModalOpen(true)}
+                    className="text-gray-600"
+                  >
+                    <Pencil className="mr-1 h-3 w-3" />
+                    Change
+                  </Button>
+                </div>
+                <div className="space-y-3 p-4">
+                  {/* Title */}
+                  <div>
+                    <p className="text-xs text-gray-500">Title</p>
+                    <p className="text-sm font-medium text-neutral-950">
+                      {course.title || "No title"}
+                    </p>
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <p className="text-xs text-gray-500">Description</p>
+                    <p className="text-sm text-gray-700 line-clamp-3">
+                      {course.description || "No description"}
+                    </p>
+                  </div>
+
+                  {/* Thumbnail */}
+                  <div>
+                    <p className="text-xs text-gray-500">Thumbnail</p>
+                    {course.coverImageUrl ? (
+                      <img
+                        src={course.coverImageUrl}
+                        alt="Course thumbnail"
+                        className="mt-1 h-24 w-full rounded-lg border border-gray-200 object-cover"
+                      />
+                    ) : (
+                      <div className="mt-1 flex h-24 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50">
+                        <ImageIcon className="h-8 w-8 text-gray-300" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Card>
+
+              {/* ===== Tags Card ===== */}
+              <Card className="rounded-xl border-gray-200 py-0 gap-0">
+                <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+                  <h3 className="text-sm font-medium text-neutral-950">Tags</h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setTagsModalOpen(true)}
+                    className="text-gray-600"
+                  >
+                    <Plus className="mr-1 h-3 w-3" />
+                    Add
+                  </Button>
+                </div>
+                <div className="p-4">
+                  {course.tags && course.tags.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {course.tags.map((tag) => (
+                        <Badge
+                          key={tag._id}
+                          variant="secondary"
+                          className="flex items-center gap-1"
+                        >
+                          {tag.name}
+                          <button
+                            onClick={() => handleRemoveTag(tag._id)}
+                            className="ml-1 rounded-full hover:bg-gray-300"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">No tags</p>
+                  )}
+                </div>
+              </Card>
+
+              {/* ===== Visibility Card ===== */}
+              <Card className="rounded-xl border-gray-200 py-0 gap-0">
+                <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+                  <h3 className="text-sm font-medium text-neutral-950">Visibility</h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setVisibilityModalOpen(true)}
+                    className="text-gray-600"
+                  >
+                    <Pencil className="mr-1 h-3 w-3" />
+                    Change
+                  </Button>
+                </div>
+                <div className="p-4">
+                  {course.visibility === "all_teams" || !course.assignedTeams?.length ? (
+                    <Badge variant="outline">All Teams</Badge>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {course.assignedTeams.map((team) => (
+                        <Badge key={team._id} variant="secondary">
+                          {team.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </div>
+          </Card>
         </div>
       </div>
+
+      {/* ==================== MODALS ==================== */}
+      <MainInfoModal
+        open={mainInfoModalOpen}
+        onOpenChange={setMainInfoModalOpen}
+        courseId={course._id}
+        currentTitle={course.title}
+        currentDescription={course.description || ""}
+        currentThumbnailUrl={course.coverImageUrl}
+      />
+
+      <TagsModal
+        open={tagsModalOpen}
+        onOpenChange={setTagsModalOpen}
+        courseId={course._id}
+        currentTags={course.tags || []}
+      />
+
+      <VisibilityModal
+        open={visibilityModalOpen}
+        onOpenChange={setVisibilityModalOpen}
+        courseId={course._id}
+        currentVisibility={course.visibility || "all_teams"}
+        currentTeamIds={course.assignedTeamIds || []}
+      />
 
       {/* New Lesson Dialog */}
       <Dialog

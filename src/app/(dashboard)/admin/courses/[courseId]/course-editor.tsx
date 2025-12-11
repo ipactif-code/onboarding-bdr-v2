@@ -492,16 +492,15 @@ export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
             {/* Settings Content */}
             <div className="space-y-4 p-6">
               {/* ===== Main Information Card ===== */}
-              <Card className="rounded-xl border-gray-200 py-0 gap-0">
-                <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-                  <h3 className="text-sm font-medium text-neutral-950">Main information</h3>
+              <Card className="rounded-lg border-gray-200 py-0 gap-0 shadow-none">
+                <div className="flex items-center justify-between border-b px-4 py-3 bg-neutral-50 rounded-t-lg">
+                  <h3 className="font-medium text-neutral-950">Main information</h3>
                   <Button
-                    variant="ghost"
+                    variant="link"
                     size="sm"
                     onClick={() => setMainInfoModalOpen(true)}
                     className="text-gray-600"
                   >
-                    <Pencil className="mr-1 h-3 w-3" />
                     Change
                   </Button>
                 </div>
@@ -541,16 +540,15 @@ export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
               </Card>
 
               {/* ===== Tags Card ===== */}
-              <Card className="rounded-xl border-gray-200 py-0 gap-0">
-                <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-                  <h3 className="text-sm font-medium text-neutral-950">Tags</h3>
+              <Card className="rounded-lg border-gray-200 py-0 gap-0 shadow-none">
+                <div className="flex items-center justify-between border-b px-4 py-3 bg-neutral-50 rounded-t-lg">
+                  <h3 className="font-medium text-neutral-950">Tags</h3>
                   <Button
-                    variant="ghost"
+                    variant="link"
                     size="sm"
                     onClick={() => setTagsModalOpen(true)}
                     className="text-gray-600"
                   >
-                    <Plus className="mr-1 h-3 w-3" />
                     Add
                   </Button>
                 </div>
@@ -580,16 +578,15 @@ export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
               </Card>
 
               {/* ===== Visibility Card ===== */}
-              <Card className="rounded-xl border-gray-200 py-0 gap-0">
-                <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-                  <h3 className="text-sm font-medium text-neutral-950">Visibility</h3>
+              <Card className="rounded-lg border-gray-200 py-0 gap-0 shadow-none">
+                <div className="flex items-center justify-between border-b px-4 py-3 bg-neutral-50 rounded-t-lg">
+                  <h3 className="font-medium text-neutral-950">Visibility</h3>
                   <Button
-                    variant="ghost"
+                    variant="link"
                     size="sm"
                     onClick={() => setVisibilityModalOpen(true)}
                     className="text-gray-600"
                   >
-                    <Pencil className="mr-1 h-3 w-3" />
                     Change
                   </Button>
                 </div>

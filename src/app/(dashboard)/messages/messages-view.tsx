@@ -12,7 +12,6 @@ export function MessagesView() {
   const [selectedConversationId, setSelectedConversationId] = useState<
     Id<"conversations"> | null
   >(null);
-  const [showUnreadsOnly, setShowUnreadsOnly] = useState(false);
 
   // Fetch conversations from Convex
   const rawConversations = useQuery(api.messages.listConversations);
@@ -31,10 +30,8 @@ export function MessagesView() {
     };
   });
 
-  // Filter by unread if toggle is on (client-side filtering)
-  const filteredConversations = showUnreadsOnly
-    ? conversations?.filter((c) => c.unreadCount > 0)
-    : conversations;
+  // Use all conversations (filtering removed)
+  const filteredConversations = conversations;
 
   // Select first conversation by default
   useEffect(() => {
@@ -48,14 +45,12 @@ export function MessagesView() {
   }
 
   return (
-    <div className="grid grid-cols-[0.3fr_1fr] h-[calc(100vh-64px)]">
+    <div className="grid grid-cols-[0.3fr_1fr] h-screen">
       {/* Left: Conversation List */}
       <ConversationList
         conversations={filteredConversations ?? []}
         selectedId={selectedConversationId}
         onSelect={setSelectedConversationId}
-        showUnreadsOnly={showUnreadsOnly}
-        onToggleUnreads={setShowUnreadsOnly}
       />
 
       {/* Right: Chat View */}
@@ -70,7 +65,7 @@ export function MessagesView() {
 
 function MessagesViewSkeleton() {
   return (
-    <div className="grid grid-cols-[0.3fr_1fr] h-[calc(100vh-64px)]">
+    <div className="grid grid-cols-[0.3fr_1fr] h-screen">
       <div className="bg-neutral-50 border-r border-neutral-200 p-4 space-y-4">
         <Skeleton className="h-9 w-full" />
         <Skeleton className="h-16 w-full" />

@@ -271,7 +271,7 @@ export const getForCourse = query({
  */
 export const getContinueWatching = query({
   args: {},
-  returns: v.optional(
+  returns: v.union(
     v.object({
       course: v.object({
         _id: v.id("courses"),
@@ -289,7 +289,8 @@ export const getContinueWatching = query({
         percentage: v.number(),
       }),
       lastAccessedAt: v.number(),
-    })
+    }),
+    v.null()
   ),
   handler: async (ctx, _args) => {
     const user = await requireAuth(ctx);
@@ -301,7 +302,7 @@ export const getContinueWatching = query({
       .collect();
 
     if (allProgress.length === 0) {
-      return undefined;
+      return null;
     }
 
     // Find the most recently accessed in-progress lesson
@@ -316,30 +317,30 @@ export const getContinueWatching = query({
 
     const mostRecent = sorted[0];
     if (!mostRecent) {
-      return undefined;
+      return null;
     }
 
     // Get the lesson
     const lesson = await ctx.db.get(mostRecent.lessonId);
     if (!lesson) {
-      return undefined;
+      return null;
     }
 
     // Get the section
     const section = await ctx.db.get(lesson.sectionId);
     if (!section) {
-      return undefined;
+      return null;
     }
 
     // Get the course
     const course = await ctx.db.get(section.courseId);
     if (!course) {
-      return undefined;
+      return null;
     }
 
     // Only published courses
     if (course.status !== "published") {
-      return undefined;
+      return null;
     }
 
     // Get cover image URL

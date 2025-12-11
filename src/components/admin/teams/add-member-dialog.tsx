@@ -39,7 +39,7 @@ export function AddMemberDialog({ teamId, existingMemberIds }: AddMemberDialogPr
   const addMembers = useMutation(api.teams.addMembers);
 
   // Filter out existing members
-  const availableUsers = users?.filter(
+  const availableUsers = users?.data.filter(
     (user) => !existingMemberIds.includes(user._id)
   );
 

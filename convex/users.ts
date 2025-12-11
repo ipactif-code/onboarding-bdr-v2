@@ -21,6 +21,7 @@ export const list = query({
     data: v.array(
       v.object({
         _id: v.id("users"),
+        clerkId: v.string(),
         email: v.string(),
         name: v.string(),
         avatarUrl: v.optional(v.string()),
@@ -28,6 +29,7 @@ export const list = query({
         status: v.union(v.literal("online"), v.literal("offline"), v.literal("away")),
         lastActiveAt: v.optional(v.number()),
         teamCount: v.number(),
+        overallProgress: v.number(),
       })
     ),
     meta: v.object({
@@ -76,7 +78,7 @@ export const list = query({
     const startIndex = (page - 1) * pageSize;
     const paginatedUsers = users.slice(startIndex, startIndex + pageSize);
 
-    // Get team counts for each user
+    // Get team counts and progress for each user
     const data = await Promise.all(
       paginatedUsers.map(async (user) => {
         const teamMemberships = await ctx.db
@@ -84,8 +86,19 @@ export const list = query({
           .withIndex("by_user", (q) => q.eq("userId", user._id))
           .collect();
 
+        // Calculate overall progress from the progress table
+        const progress = await ctx.db
+          .query("progress")
+          .withIndex("by_user", (q) => q.eq("userId", user._id))
+          .collect();
+
+        const totalLessons = progress.length;
+        const completedLessons = progress.filter((p) => p.status === "completed").length;
+        const overallProgress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+
         return {
           _id: user._id,
+          clerkId: user.clerkId,
           email: user.email,
           name: user.name,
           avatarUrl: user.avatarUrl,
@@ -93,6 +106,7 @@ export const list = query({
           status: user.status,
           lastActiveAt: user.lastActiveAt,
           teamCount: teamMemberships.length,
+          overallProgress,
         };
       })
     );

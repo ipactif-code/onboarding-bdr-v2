@@ -13,17 +13,8 @@ import { BlockMenuKit } from './plugins/block-menu-kit';
 import { AutoformatKit } from './plugins/autoformat-kit';
 import { ExitBreakKit } from './plugins/exit-break-kit';
 import { DiscussionKit } from './plugins/discussion-kit';
-
-/**
- * T110a: Configure Plate.js base editor with editor-base-kit
- * T110b: Add basic-blocks-kit and basic-marks-kit plugins
- * T110c: Add table-kit plugin (included in BaseEditorKit)
- * T110d: Add media-kit plugin (included in BaseEditorKit)
- * T110e: Mention-kit is included in BaseEditorKit
- * T110f: Comment-kit is included in BaseEditorKit
- * T110g: AI features can be added later if needed
- * T110h: Fixed toolbar configured below
- */
+import { FixedToolbarKit } from './plugins/fixed-toolbar-kit';
+import { FloatingToolbarKit } from './plugins/floating-toolbar-kit';
 
 // Combine all plugins
 const plugins = [
@@ -35,6 +26,21 @@ const plugins = [
   ...AutoformatKit,
   ...ExitBreakKit,
   ...DiscussionKit,
+  ...FixedToolbarKit,
+  ...FloatingToolbarKit,
+];
+
+// Plugins without fixed toolbar (for embedded editors)
+const pluginsWithoutFixedToolbar = [
+  ...BaseEditorKit,
+  ...BasicMarksKit,
+  ...SlashKit,
+  ...DndKit,
+  ...BlockMenuKit,
+  ...AutoformatKit,
+  ...ExitBreakKit,
+  ...DiscussionKit,
+  ...FloatingToolbarKit,
 ];
 
 interface PlateEditorProps {
@@ -44,6 +50,7 @@ interface PlateEditorProps {
   readOnly?: boolean;
   className?: string;
   autoFocus?: boolean;
+  showFixedToolbar?: boolean;
 }
 
 /**
@@ -57,9 +64,10 @@ export function PlateEditor({
   readOnly = false,
   className,
   autoFocus = false,
+  showFixedToolbar = true,
 }: PlateEditorProps): React.ReactElement {
   const editor = usePlateEditor({
-    plugins,
+    plugins: showFixedToolbar ? plugins : pluginsWithoutFixedToolbar,
     value: value as Parameters<typeof usePlateEditor>[0]['value'],
     override: {
       components: {},
@@ -93,9 +101,9 @@ export function SimpleEditor({
   onChange,
   placeholder = 'Enter text...',
   className,
-}: Omit<PlateEditorProps, 'readOnly' | 'autoFocus'>): React.ReactElement {
+}: Omit<PlateEditorProps, 'readOnly' | 'autoFocus' | 'showFixedToolbar'>): React.ReactElement {
   const editor = usePlateEditor({
-    plugins: [...BasicMarksKit, ...AutoformatKit],
+    plugins: [...BasicMarksKit, ...AutoformatKit, ...FloatingToolbarKit],
     value: value as Parameters<typeof usePlateEditor>[0]['value'],
   });
 
@@ -127,7 +135,7 @@ export function ContentRenderer({
   className?: string;
 }): React.ReactElement {
   const editor = usePlateEditor({
-    plugins,
+    plugins: pluginsWithoutFixedToolbar,
     value: value as Parameters<typeof usePlateEditor>[0]['value'],
   });
 

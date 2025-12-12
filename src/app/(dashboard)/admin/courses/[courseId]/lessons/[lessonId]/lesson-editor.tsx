@@ -7,7 +7,6 @@ import { Id } from "../../../../../../../../convex/_generated/dataModel";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  ArrowLeft,
   Save,
   FileText,
   Video,
@@ -27,7 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -141,6 +140,36 @@ export function LessonEditor({
     setEstimatedDuration(lesson.estimatedDuration?.toString() || "");
   }, [lesson.title, lesson.description, lesson.estimatedDuration]);
 
+  // Apply viewport height constraints only on this page
+  // This ensures the editor Card stays at fixed height with scroll inside PlateEditor
+  useEffect(() => {
+    const sidebarInset = document.querySelector('[data-slot="sidebar-inset"]') as HTMLElement;
+    const mainElement = document.querySelector('main.flex.flex-1.flex-col.gap-4.p-4') as HTMLElement;
+
+    // Apply styles
+    if (sidebarInset) {
+      sidebarInset.style.maxHeight = '100vh';
+      sidebarInset.style.overflow = 'hidden';
+    }
+
+    if (mainElement) {
+      mainElement.style.overflow = 'hidden';
+      mainElement.style.minHeight = '0';
+    }
+
+    // Cleanup on unmount - remove styles so other pages work normally
+    return () => {
+      if (sidebarInset) {
+        sidebarInset.style.maxHeight = '';
+        sidebarInset.style.overflow = '';
+      }
+      if (mainElement) {
+        mainElement.style.overflow = '';
+        mainElement.style.minHeight = '';
+      }
+    };
+  }, []);
+
   // Save basic info
   const handleSaveInfo = async () => {
     setIsSaving(true);
@@ -174,175 +203,161 @@ export function LessonEditor({
   const Icon = lessonTypeIcons[lesson.type];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex-1 flex flex-col gap-6 overflow-hidden min-h-0">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white border-b">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" asChild>
-              <Link href={`/admin/courses/${courseId}`}>
-                <ArrowLeft className="size-5" />
-              </Link>
-            </Button>
-            <div>
-              <div className="flex items-center gap-2 text-sm text-neutral-500">
-                <Link
-                  href={`/admin/courses/${courseId}`}
-                  className="hover:text-neutral-900"
-                >
-                  {courseTitle}
-                </Link>
-                <span>/</span>
-                <span className="text-neutral-900">{lesson.title}</span>
-              </div>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant="secondary" className="gap-1">
-                  <Icon className="size-3" />
-                  {lessonTypeLabels[lesson.type]}
-                </Badge>
-                {hasUnsavedChanges && (
-                  <Badge variant="outline" className="text-amber-600 border-amber-300">
-                    Unsaved changes
-                  </Badge>
-                )}
-              </div>
-            </div>
+      <div className="flex items-center justify-between shrink-0">
+        <div>
+          <h1 className="text-3xl font-bold text-neutral-950">{lesson.title}</h1>
+          <div className="flex items-center gap-2 mt-1">
+            <Badge variant="secondary" className="gap-1">
+              <Icon className="size-3" />
+              {lessonTypeLabels[lesson.type]}
+            </Badge>
+            <Link
+              href={`/admin/courses/${courseId}`}
+              className="text-sm text-neutral-500 hover:text-neutral-900"
+            >
+              {courseTitle}
+            </Link>
           </div>
-
-          <div className="flex items-center gap-2">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline" size="sm" className="text-red-600">
-                  <Trash2 className="size-4 mr-2" />
-                  Delete
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete lesson?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will permanently delete &quot;{lesson.title}&quot; and all its
-                    content. This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDelete}
-                    className="bg-red-600 hover:bg-red-700"
-                  >
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-
-            <Button onClick={handleSaveInfo} disabled={isSaving}>
-              {isSaving ? (
-                <Loader2 className="size-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="size-4 mr-2" />
-              )}
-              Save
-            </Button>
-          </div>
+          {hasUnsavedChanges && (
+            <Badge variant="outline" className="text-amber-600 border-amber-300 mt-2">
+              Unsaved changes
+            </Badge>
+          )}
         </div>
-      </header>
+
+        <div className="flex items-center gap-2">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" size="sm" className="text-red-600">
+                <Trash2 className="size-4 mr-2" />
+                Delete
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete lesson?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete &quot;{lesson.title}&quot; and all its
+                  content. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDelete}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          <Button onClick={handleSaveInfo} disabled={isSaving}>
+            {isSaving ? (
+              <Loader2 className="size-4 mr-2 animate-spin" />
+            ) : (
+              <Save className="size-4 mr-2" />
+            )}
+            Save
+          </Button>
+        </div>
+      </div>
 
       {/* Main Content */}
-      <main className="max-w-5xl mx-auto px-6 py-8">
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Left Column: Main Editor */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Type-specific editor */}
-            {lesson.type === "text" && (
-              <TextLessonEditor
-                lessonId={lesson._id}
-                initialContent={lesson.content}
-              />
-            )}
+      <div className="grid gap-6 lg:grid-cols-3 flex-1 min-h-0 overflow-hidden">
+        {/* Left Column: Main Editor */}
+        <div className="lg:col-span-2 flex flex-col min-h-0 overflow-hidden">
+          {/* Type-specific editor */}
+          {lesson.type === "text" && (
+            <TextLessonEditor
+              lessonId={lesson._id}
+              initialContent={lesson.content}
+            />
+          )}
 
-            {lesson.type === "embed" && (
-              <EmbedLessonEditor
-                lessonId={lesson._id}
-                initialContent={lesson.content}
-                embedConfig={lesson.embedConfig}
-              />
-            )}
+          {lesson.type === "embed" && (
+            <EmbedLessonEditor
+              lessonId={lesson._id}
+              initialContent={lesson.content}
+              embedConfig={lesson.embedConfig}
+            />
+          )}
 
-            {lesson.type === "quiz" && (
-              <QuizLessonEditor
-                lessonId={lesson._id}
-                quizConfig={lesson.quizConfig}
-              />
-            )}
+          {lesson.type === "quiz" && (
+            <QuizLessonEditor
+              lessonId={lesson._id}
+              quizConfig={lesson.quizConfig}
+            />
+          )}
 
-            {lesson.type === "files" && (
-              <FilesLessonEditor
-                lessonId={lesson._id}
-                initialContent={lesson.content}
-                files={lesson.files}
-              />
-            )}
-          </div>
-
-          {/* Right Column: Settings */}
-          <div className="space-y-6">
-            <Card className="shadow-none">
-              <CardHeader className="bg-neutral-50 rounded-t-lg border-b">
-                <CardTitle className="text-base">Lesson Settings</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6 space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Title</Label>
-                  <Input
-                    id="title"
-                    value={title}
-                    onChange={(e) => {
-                      setTitle(e.target.value);
-                      setHasUnsavedChanges(true);
-                    }}
-                    placeholder="Lesson title"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description (optional)</Label>
-                  <Textarea
-                    id="description"
-                    value={description}
-                    onChange={(e) => {
-                      setDescription(e.target.value);
-                      setHasUnsavedChanges(true);
-                    }}
-                    placeholder="Brief description of this lesson"
-                    rows={3}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="duration">Estimated Duration (minutes)</Label>
-                  <div className="relative">
-                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
-                    <Input
-                      id="duration"
-                      type="number"
-                      min="1"
-                      value={estimatedDuration}
-                      onChange={(e) => {
-                        setEstimatedDuration(e.target.value);
-                        setHasUnsavedChanges(true);
-                      }}
-                      placeholder="e.g., 15"
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          {lesson.type === "files" && (
+            <FilesLessonEditor
+              lessonId={lesson._id}
+              initialContent={lesson.content}
+              files={lesson.files}
+            />
+          )}
         </div>
-      </main>
+
+        {/* Right Column: Settings */}
+        <div className="space-y-6">
+          <Card className="rounded-2xl border-gray-200 py-0 gap-0">
+            <div className="border-b border-gray-200 bg-gray-50 px-6 py-4 rounded-t-2xl">
+              <h2 className="text-lg font-semibold text-neutral-950">Lesson Settings</h2>
+            </div>
+            <CardContent className="p-6 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="title">Title</Label>
+                <Input
+                  id="title"
+                  value={title}
+                  onChange={(e) => {
+                    setTitle(e.target.value);
+                    setHasUnsavedChanges(true);
+                  }}
+                  placeholder="Lesson title"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Description (optional)</Label>
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => {
+                    setDescription(e.target.value);
+                    setHasUnsavedChanges(true);
+                  }}
+                  placeholder="Brief description of this lesson"
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="duration">Estimated Duration (minutes)</Label>
+                <div className="relative">
+                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
+                  <Input
+                    id="duration"
+                    type="number"
+                    min="1"
+                    value={estimatedDuration}
+                    onChange={(e) => {
+                      setEstimatedDuration(e.target.value);
+                      setHasUnsavedChanges(true);
+                    }}
+                    placeholder="e.g., 15"
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
@@ -380,32 +395,30 @@ function TextLessonEditor({ lessonId, initialContent }: TextLessonEditorProps) {
   }, [error]);
 
   return (
-    <Card className="shadow-none">
-      <CardHeader className="bg-neutral-50 rounded-t-lg border-b">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base">Content</CardTitle>
-          <div className="flex items-center gap-2 text-sm text-neutral-500">
-            {isSaving && (
-              <>
-                <Loader2 className="size-3 animate-spin" />
-                <span>Saving...</span>
-              </>
-            )}
-            {!isSaving && lastSaved && (
-              <>
-                <Check className="size-3 text-green-600" />
-                <span>Saved</span>
-              </>
-            )}
-          </div>
+    <Card className="rounded-2xl border-gray-200 py-0 gap-0 flex-1 flex flex-col min-h-0 overflow-hidden">
+      <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-4 rounded-t-2xl shrink-0">
+        <h2 className="text-lg font-semibold text-neutral-950">Content</h2>
+        <div className="flex items-center gap-2 text-sm text-neutral-500">
+          {isSaving && (
+            <>
+              <Loader2 className="size-3 animate-spin" />
+              <span>Saving...</span>
+            </>
+          )}
+          {!isSaving && lastSaved && (
+            <>
+              <Check className="size-3 text-green-600" />
+              <span>Saved</span>
+            </>
+          )}
         </div>
-      </CardHeader>
-      <CardContent className="p-0">
+      </div>
+      <CardContent className="p-0 flex-1 flex flex-col min-h-0 overflow-auto">
         <PlateEditor
           value={content}
           onChange={setContent}
           placeholder="Start writing your lesson content..."
-          className="min-h-[500px] border-0 rounded-t-none"
+          className="flex-1 min-h-0 overflow-y-auto border-0 rounded-t-none"
           autoFocus
         />
       </CardContent>
@@ -535,10 +548,10 @@ function EmbedLessonEditor({ lessonId, initialContent, embedConfig }: EmbedLesso
   return (
     <div className="space-y-6">
       {/* Embed URL Card */}
-      <Card className="shadow-none">
-        <CardHeader className="bg-neutral-50 rounded-t-lg border-b">
-          <CardTitle className="text-base">Video / Embed</CardTitle>
-        </CardHeader>
+      <Card className="rounded-2xl border-gray-200 py-0 gap-0">
+        <div className="border-b border-gray-200 bg-gray-50 px-6 py-4 rounded-t-2xl">
+          <h2 className="text-lg font-semibold text-neutral-950">Video / Embed</h2>
+        </div>
         <CardContent className="pt-6 space-y-6">
           <div className="space-y-2">
             <Label htmlFor="embed-url">Embed URL</Label>
@@ -579,26 +592,24 @@ function EmbedLessonEditor({ lessonId, initialContent, embedConfig }: EmbedLesso
       </Card>
 
       {/* Content Card with PlateEditor */}
-      <Card className="shadow-none">
-        <CardHeader className="bg-neutral-50 rounded-t-lg border-b">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Additional Content</CardTitle>
-            <div className="flex items-center gap-2 text-sm text-neutral-500">
-              {isContentSaving && (
-                <>
-                  <Loader2 className="size-3 animate-spin" />
-                  <span>Saving...</span>
-                </>
-              )}
-              {!isContentSaving && lastSaved && (
-                <>
-                  <Check className="size-3 text-green-600" />
-                  <span>Saved</span>
-                </>
-              )}
-            </div>
+      <Card className="rounded-2xl border-gray-200 py-0 gap-0">
+        <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-4 rounded-t-2xl">
+          <h2 className="text-lg font-semibold text-neutral-950">Additional Content</h2>
+          <div className="flex items-center gap-2 text-sm text-neutral-500">
+            {isContentSaving && (
+              <>
+                <Loader2 className="size-3 animate-spin" />
+                <span>Saving...</span>
+              </>
+            )}
+            {!isContentSaving && lastSaved && (
+              <>
+                <Check className="size-3 text-green-600" />
+                <span>Saved</span>
+              </>
+            )}
           </div>
-        </CardHeader>
+        </div>
         <CardContent className="p-0">
           <PlateEditor
             value={content}
@@ -819,10 +830,10 @@ function QuizLessonEditor({ lessonId, quizConfig }: QuizLessonEditorProps) {
   return (
     <div className="space-y-6">
       {/* Quiz Settings */}
-      <Card className="shadow-none">
-        <CardHeader className="bg-neutral-50 rounded-t-lg border-b">
-          <CardTitle className="text-base">Quiz Settings</CardTitle>
-        </CardHeader>
+      <Card className="rounded-2xl border-gray-200 py-0 gap-0">
+        <div className="border-b border-gray-200 bg-gray-50 px-6 py-4 rounded-t-2xl">
+          <h2 className="text-lg font-semibold text-neutral-950">Quiz Settings</h2>
+        </div>
         <CardContent className="pt-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -882,18 +893,16 @@ function QuizLessonEditor({ lessonId, quizConfig }: QuizLessonEditorProps) {
       </Card>
 
       {/* Questions */}
-      <Card className="shadow-none">
-        <CardHeader className="bg-neutral-50 rounded-t-lg border-b">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base">
-              Questions ({questions.length})
-            </CardTitle>
-            <Button size="sm" onClick={() => setShowNewQuestion(true)}>
-              <Plus className="size-4 mr-2" />
-              Add Question
-            </Button>
-          </div>
-        </CardHeader>
+      <Card className="rounded-2xl border-gray-200 py-0 gap-0">
+        <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-4 rounded-t-2xl">
+          <h2 className="text-lg font-semibold text-neutral-950">
+            Questions ({questions.length})
+          </h2>
+          <Button size="sm" onClick={() => setShowNewQuestion(true)}>
+            <Plus className="size-4 mr-2" />
+            Add Question
+          </Button>
+        </div>
         <CardContent className="pt-6">
           {/* Existing Questions */}
           <div className="space-y-4">
@@ -1339,10 +1348,10 @@ function FilesLessonEditor({ lessonId, initialContent, files }: FilesLessonEdito
   return (
     <div className="space-y-6">
       {/* Files Card */}
-      <Card className="shadow-none">
-        <CardHeader className="bg-neutral-50 rounded-t-lg border-b">
-          <CardTitle className="text-base">Files</CardTitle>
-        </CardHeader>
+      <Card className="rounded-2xl border-gray-200 py-0 gap-0">
+        <div className="border-b border-gray-200 bg-gray-50 px-6 py-4 rounded-t-2xl">
+          <h2 className="text-lg font-semibold text-neutral-950">Files</h2>
+        </div>
         <CardContent className="pt-6 space-y-4">
           {/* Upload Zone */}
           <label className={`block p-8 border-2 border-dashed rounded-lg text-center cursor-pointer hover:bg-neutral-50 transition-colors ${isUploading ? "opacity-50 pointer-events-none" : ""}`}>
@@ -1432,26 +1441,24 @@ function FilesLessonEditor({ lessonId, initialContent, files }: FilesLessonEdito
       </Card>
 
       {/* Content Card with PlateEditor */}
-      <Card className="shadow-none">
-        <CardHeader className="bg-neutral-50 rounded-t-lg border-b">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Description & Instructions</CardTitle>
-            <div className="flex items-center gap-2 text-sm text-neutral-500">
-              {isContentSaving && (
-                <>
-                  <Loader2 className="size-3 animate-spin" />
-                  <span>Saving...</span>
-                </>
-              )}
-              {!isContentSaving && lastSaved && (
-                <>
-                  <Check className="size-3 text-green-600" />
-                  <span>Saved</span>
-                </>
-              )}
-            </div>
+      <Card className="rounded-2xl border-gray-200 py-0 gap-0">
+        <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-4 rounded-t-2xl">
+          <h2 className="text-lg font-semibold text-neutral-950">Description & Instructions</h2>
+          <div className="flex items-center gap-2 text-sm text-neutral-500">
+            {isContentSaving && (
+              <>
+                <Loader2 className="size-3 animate-spin" />
+                <span>Saving...</span>
+              </>
+            )}
+            {!isContentSaving && lastSaved && (
+              <>
+                <Check className="size-3 text-green-600" />
+                <span>Saved</span>
+              </>
+            )}
           </div>
-        </CardHeader>
+        </div>
         <CardContent className="p-0">
           <PlateEditor
             value={content}

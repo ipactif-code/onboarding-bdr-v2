@@ -62,9 +62,10 @@ export const getOverview = query({
     // Get users (optionally filtered by team)
     let userIds: Set<Id<"users">> | null = null;
     if (args.teamId) {
+      const teamId = args.teamId;
       const teamMembers = await ctx.db
         .query("teamMembers")
-        .withIndex("by_team", (q) => q.eq("teamId", args.teamId))
+        .withIndex("by_team", (q) => q.eq("teamId", teamId))
         .collect();
       userIds = new Set(teamMembers.map((m) => m.userId));
     }
@@ -180,9 +181,10 @@ export const getUserActivity = query({
     let users = await ctx.db.query("users").collect();
 
     if (args.teamId) {
+      const teamId = args.teamId;
       const teamMembers = await ctx.db
         .query("teamMembers")
-        .withIndex("by_team", (q) => q.eq("teamId", args.teamId))
+        .withIndex("by_team", (q) => q.eq("teamId", teamId))
         .collect();
       const memberIds = new Set(teamMembers.map((m) => m.userId.toString()));
       users = users.filter((u) => memberIds.has(u._id.toString()));
@@ -293,9 +295,10 @@ export const getQuizMetrics = query({
     // Get user IDs if filtered by team
     let userIds: Set<string> | null = null;
     if (args.teamId) {
+      const teamId = args.teamId;
       const teamMembers = await ctx.db
         .query("teamMembers")
-        .withIndex("by_team", (q) => q.eq("teamId", args.teamId))
+        .withIndex("by_team", (q) => q.eq("teamId", teamId))
         .collect();
       userIds = new Set(teamMembers.map((m) => m.userId.toString()));
     }
@@ -460,9 +463,10 @@ export const getCourseMetrics = query({
     // Get user IDs if filtered by team
     let userIds: Set<string> | null = null;
     if (args.teamId) {
+      const teamId = args.teamId;
       const teamMembers = await ctx.db
         .query("teamMembers")
-        .withIndex("by_team", (q) => q.eq("teamId", args.teamId))
+        .withIndex("by_team", (q) => q.eq("teamId", teamId))
         .collect();
       userIds = new Set(teamMembers.map((m) => m.userId.toString()));
     }
@@ -592,9 +596,10 @@ export const getActivityLog = query({
     // Get user IDs if filtered by team
     let userIds: Set<string> | null = null;
     if (args.teamId) {
+      const teamId = args.teamId;
       const teamMembers = await ctx.db
         .query("teamMembers")
-        .withIndex("by_team", (q) => q.eq("teamId", args.teamId))
+        .withIndex("by_team", (q) => q.eq("teamId", teamId))
         .collect();
       userIds = new Set(teamMembers.map((m) => m.userId.toString()));
     }
@@ -682,9 +687,10 @@ export const getSessionStats = query({
     // Get user IDs if filtered by team
     let userIds: Set<string> | null = null;
     if (args.teamId) {
+      const teamId = args.teamId;
       const teamMembers = await ctx.db
         .query("teamMembers")
-        .withIndex("by_team", (q) => q.eq("teamId", args.teamId))
+        .withIndex("by_team", (q) => q.eq("teamId", teamId))
         .collect();
       userIds = new Set(teamMembers.map((m) => m.userId.toString()));
     }

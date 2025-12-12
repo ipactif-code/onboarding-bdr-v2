@@ -55,9 +55,10 @@ export const list = query({
 
     // Filter by team
     if (args.teamId) {
+      const teamId = args.teamId;
       const teamMemberships = await ctx.db
         .query("teamMembers")
-        .withIndex("by_team", (q) => q.eq("teamId", args.teamId))
+        .withIndex("by_team", (q) => q.eq("teamId", teamId))
         .collect();
       const teamUserIds = new Set(teamMemberships.map((m) => m.userId.toString()));
       users = users.filter((u) => teamUserIds.has(u._id.toString()));

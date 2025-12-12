@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 import { requireAuth, requireAdmin } from "./lib/auth";
 
 // ============================================================================
@@ -114,7 +115,7 @@ export const get = query({
 
     // Get lead info
     let lead: {
-      _id: typeof args.teamId extends never ? never : ReturnType<typeof ctx.db.get> extends Promise<infer T> ? T extends { _id: infer Id } ? Id : never : never;
+      _id: Id<"users">;
       name: string;
       email: string;
       avatarUrl?: string;
@@ -356,21 +357,22 @@ export const update = mutation({
     const updates: { name?: string; description?: string } = {};
 
     if (args.name !== undefined) {
-      if (args.name.length < 2 || args.name.length > 100) {
+      const name = args.name;
+      if (name.length < 2 || name.length > 100) {
         throw new Error("Team name must be between 2 and 100 characters");
       }
 
       // Check if new name already exists (excluding current team)
       const existing = await ctx.db
         .query("teams")
-        .withIndex("by_name", (q) => q.eq("name", args.name))
+        .withIndex("by_name", (q) => q.eq("name", name))
         .unique();
 
       if (existing && existing._id !== args.teamId) {
         throw new Error("A team with this name already exists");
       }
 
-      updates.name = args.name;
+      updates.name = name;
     }
 
     if (args.description !== undefined) {
@@ -594,8 +596,9 @@ export const setLead = mutation({
     }
 
     if (args.userId) {
+      const userId = args.userId;
       // Validate user exists
-      const user = await ctx.db.get(args.userId);
+      const user = await ctx.db.get(userId);
       if (!user) {
         throw new Error("User not found");
       }
@@ -604,7 +607,7 @@ export const setLead = mutation({
       const membership = await ctx.db
         .query("teamMembers")
         .withIndex("by_user_team", (q) =>
-          q.eq("userId", args.userId).eq("teamId", args.teamId)
+          q.eq("userId", userId).eq("teamId", args.teamId)
         )
         .unique();
 
@@ -612,7 +615,7 @@ export const setLead = mutation({
       if (!membership) {
         await ctx.db.insert("teamMembers", {
           teamId: args.teamId,
-          userId: args.userId,
+          userId: userId,
           joinedAt: Date.now(),
         });
       }

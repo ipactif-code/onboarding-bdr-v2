@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query, mutation } from "./_generated/server";
+import { query, mutation, MutationCtx } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 import { requireAuth, requireSelfOrAdmin } from "./lib/auth";
 
@@ -11,44 +11,33 @@ import { requireAuth, requireSelfOrAdmin } from "./lib/auth";
  * Check if user has access to a lesson's course.
  */
 async function checkLessonAccess(
-  ctx: { db: { get: (id: Id<"lessons"> | Id<"sections"> | Id<"courses">) => Promise<Doc<"lessons"> | Doc<"sections"> | Doc<"courses"> | null>; query: (table: string) => unknown } },
+  ctx: MutationCtx,
   lessonId: Id<"lessons">,
   user: Doc<"users">
 ): Promise<boolean> {
   const lesson = await ctx.db.get(lessonId);
   if (!lesson) return false;
 
-  const section = await ctx.db.get((lesson as Doc<"lessons">).sectionId);
+  const section = await ctx.db.get(lesson.sectionId);
   if (!section) return false;
 
-  const course = await ctx.db.get((section as Doc<"sections">).courseId);
+  const course = await ctx.db.get(section.courseId);
   if (!course) return false;
-
-  const courseDoc = course as Doc<"courses">;
 
   // Admins can access all
   if (user.role === "admin") return true;
 
   // Only published courses for regular users
-  if (courseDoc.status !== "published") return false;
+  if (course.status !== "published") return false;
 
   // All teams visibility
-  if (courseDoc.visibility === "all_teams") return true;
+  if (course.visibility === "all_teams") return true;
 
   // Check specific assignments
-  const db = ctx.db as unknown as {
-    query: (table: "courseAssignments" | "teamMembers") => {
-      withIndex: (
-        name: string,
-        fn: (q: { eq: (field: string, value: unknown) => unknown }) => unknown
-      ) => { collect: () => Promise<Doc<"courseAssignments">[] | Doc<"teamMembers">[]> };
-    };
-  };
-
-  const assignments = (await db
+  const assignments = await ctx.db
     .query("courseAssignments")
-    .withIndex("by_course", (q) => q.eq("courseId", courseDoc._id))
-    .collect()) as Doc<"courseAssignments">[];
+    .withIndex("by_course", (q) => q.eq("courseId", course._id))
+    .collect();
 
   // Direct user assignment
   if (assignments.some((a) => a.userId === user._id)) {
@@ -56,10 +45,10 @@ async function checkLessonAccess(
   }
 
   // Team assignment
-  const userTeams = (await db
+  const userTeams = await ctx.db
     .query("teamMembers")
     .withIndex("by_user", (q) => q.eq("userId", user._id))
-    .collect()) as Doc<"teamMembers">[];
+    .collect();
 
   const userTeamIds = new Set(userTeams.map((t) => t.teamId.toString()));
 

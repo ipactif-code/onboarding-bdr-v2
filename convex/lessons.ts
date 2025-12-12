@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query, mutation } from "./_generated/server";
+import { query, mutation, QueryCtx, MutationCtx } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 import { requireAuth, requireAdmin } from "./lib/auth";
 
@@ -11,16 +11,11 @@ import { requireAuth, requireAdmin } from "./lib/auth";
  * Check if user has access to a lesson's course.
  */
 async function checkLessonAccess(
-  ctx: { db: { get: (id: Id<"sections"> | Id<"courses">) => Promise<Doc<"sections"> | Doc<"courses"> | null>; query: (table: string) => unknown }; auth: { getUserIdentity: () => Promise<{ subject: string } | null> } },
+  ctx: QueryCtx | MutationCtx,
   lessonId: Id<"lessons">,
   user: Doc<"users">
 ): Promise<{ hasAccess: boolean; courseId: Id<"courses"> | null }> {
-  const db = ctx.db as unknown as {
-    get: (id: Id<"lessons">) => Promise<Doc<"lessons"> | null>;
-    query: (table: string) => unknown;
-  };
-
-  const lesson = await db.get(lessonId);
+  const lesson = await ctx.db.get(lessonId);
   if (!lesson) {
     return { hasAccess: false, courseId: null };
   }
@@ -30,60 +25,39 @@ async function checkLessonAccess(
     return { hasAccess: false, courseId: null };
   }
 
-  const sectionDoc = section as Doc<"sections">;
-  const course = await ctx.db.get(sectionDoc.courseId);
+  const course = await ctx.db.get(section.courseId);
   if (!course) {
     return { hasAccess: false, courseId: null };
   }
 
-  const courseDoc = course as Doc<"courses">;
-
   // Admins can access all
   if (user.role === "admin") {
-    return { hasAccess: true, courseId: courseDoc._id };
+    return { hasAccess: true, courseId: course._id };
   }
 
   // Only published courses for regular users
-  if (courseDoc.status !== "published") {
-    return { hasAccess: false, courseId: courseDoc._id };
+  if (course.status !== "published") {
+    return { hasAccess: false, courseId: course._id };
   }
 
   // All teams visibility
-  if (courseDoc.visibility === "all_teams") {
-    return { hasAccess: true, courseId: courseDoc._id };
+  if (course.visibility === "all_teams") {
+    return { hasAccess: true, courseId: course._id };
   }
 
   // Check specific assignments
-  const assignmentsDb = ctx.db as unknown as {
-    query: (table: "courseAssignments") => {
-      withIndex: (
-        name: string,
-        fn: (q: { eq: (field: string, value: unknown) => unknown }) => unknown
-      ) => { collect: () => Promise<Doc<"courseAssignments">[]> };
-    };
-  };
-
-  const assignments = await assignmentsDb
+  const assignments = await ctx.db
     .query("courseAssignments")
-    .withIndex("by_course", (q) => q.eq("courseId", courseDoc._id))
+    .withIndex("by_course", (q) => q.eq("courseId", course._id))
     .collect();
 
   // Direct user assignment
   if (assignments.some((a) => a.userId === user._id)) {
-    return { hasAccess: true, courseId: courseDoc._id };
+    return { hasAccess: true, courseId: course._id };
   }
 
   // Team assignment
-  const teamDb = ctx.db as unknown as {
-    query: (table: "teamMembers") => {
-      withIndex: (
-        name: string,
-        fn: (q: { eq: (field: string, value: unknown) => unknown }) => unknown
-      ) => { collect: () => Promise<Doc<"teamMembers">[]> };
-    };
-  };
-
-  const userTeams = await teamDb
+  const userTeams = await ctx.db
     .query("teamMembers")
     .withIndex("by_user", (q) => q.eq("userId", user._id))
     .collect();
@@ -94,7 +68,7 @@ async function checkLessonAccess(
     (a) => a.teamId && userTeamIds.has(a.teamId.toString())
   );
 
-  return { hasAccess: hasTeamAccess, courseId: courseDoc._id };
+  return { hasAccess: hasTeamAccess, courseId: course._id };
 }
 
 // ============================================================================
@@ -652,7 +626,9 @@ export const remove = mutation({
       .collect();
 
     for (const file of files) {
-      await ctx.storage.delete(file.storageId);
+      if (file.storageId) {
+        await ctx.storage.delete(file.storageId);
+      }
       await ctx.db.delete(file._id);
     }
 

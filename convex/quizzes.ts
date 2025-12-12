@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query, mutation } from "./_generated/server";
+import { query, mutation, QueryCtx, MutationCtx } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 import { requireAuth } from "./lib/auth";
 
@@ -11,7 +11,7 @@ import { requireAuth } from "./lib/auth";
  * Get quiz config and validate lesson is a quiz type.
  */
 async function getQuizConfig(
-  ctx: { db: { get: (id: Id<"lessons">) => Promise<Doc<"lessons"> | null>; query: (table: string) => unknown } },
+  ctx: QueryCtx | MutationCtx,
   lessonId: Id<"lessons">
 ): Promise<Doc<"quizConfigs"> | null> {
   const lesson = await ctx.db.get(lessonId);
@@ -19,16 +19,7 @@ async function getQuizConfig(
     return null;
   }
 
-  const db = ctx.db as unknown as {
-    query: (table: "quizConfigs") => {
-      withIndex: (
-        name: string,
-        fn: (q: { eq: (field: string, value: unknown) => unknown }) => unknown
-      ) => { unique: () => Promise<Doc<"quizConfigs"> | null> };
-    };
-  };
-
-  return await db
+  return await ctx.db
     .query("quizConfigs")
     .withIndex("by_lesson", (q) => q.eq("lessonId", lessonId))
     .unique();
@@ -38,44 +29,33 @@ async function getQuizConfig(
  * Check if user has access to a lesson's course.
  */
 async function checkLessonAccess(
-  ctx: { db: { get: (id: Id<"lessons"> | Id<"sections"> | Id<"courses">) => Promise<Doc<"lessons"> | Doc<"sections"> | Doc<"courses"> | null>; query: (table: string) => unknown } },
+  ctx: QueryCtx | MutationCtx,
   lessonId: Id<"lessons">,
   user: Doc<"users">
 ): Promise<boolean> {
   const lesson = await ctx.db.get(lessonId);
   if (!lesson) return false;
 
-  const section = await ctx.db.get((lesson as Doc<"lessons">).sectionId);
+  const section = await ctx.db.get(lesson.sectionId);
   if (!section) return false;
 
-  const course = await ctx.db.get((section as Doc<"sections">).courseId);
+  const course = await ctx.db.get(section.courseId);
   if (!course) return false;
-
-  const courseDoc = course as Doc<"courses">;
 
   // Admins can access all
   if (user.role === "admin") return true;
 
   // Only published courses for regular users
-  if (courseDoc.status !== "published") return false;
+  if (course.status !== "published") return false;
 
   // All teams visibility
-  if (courseDoc.visibility === "all_teams") return true;
+  if (course.visibility === "all_teams") return true;
 
   // Check specific assignments
-  const db = ctx.db as unknown as {
-    query: (table: "courseAssignments" | "teamMembers") => {
-      withIndex: (
-        name: string,
-        fn: (q: { eq: (field: string, value: unknown) => unknown }) => unknown
-      ) => { collect: () => Promise<Doc<"courseAssignments">[] | Doc<"teamMembers">[]> };
-    };
-  };
-
-  const assignments = (await db
+  const assignments = await ctx.db
     .query("courseAssignments")
-    .withIndex("by_course", (q) => q.eq("courseId", courseDoc._id))
-    .collect()) as Doc<"courseAssignments">[];
+    .withIndex("by_course", (q) => q.eq("courseId", course._id))
+    .collect();
 
   // Direct user assignment
   if (assignments.some((a) => a.userId === user._id)) {
@@ -83,10 +63,10 @@ async function checkLessonAccess(
   }
 
   // Team assignment
-  const userTeams = (await db
+  const userTeams = await ctx.db
     .query("teamMembers")
     .withIndex("by_user", (q) => q.eq("userId", user._id))
-    .collect()) as Doc<"teamMembers">[];
+    .collect();
 
   const userTeamIds = new Set(userTeams.map((t) => t.teamId.toString()));
 
@@ -182,7 +162,7 @@ export const getLatestAttempt = query({
   args: {
     lessonId: v.id("lessons"),
   },
-  returns: v.optional(
+  returns: v.union(
     v.object({
       _id: v.id("quizAttempts"),
       attemptNumber: v.number(),
@@ -205,7 +185,8 @@ export const getLatestAttempt = query({
       ),
       canRetry: v.boolean(),
       attemptsRemaining: v.optional(v.number()),
-    })
+    }),
+    v.null()
   ),
   handler: async (ctx, args) => {
     const user = await requireAuth(ctx);
@@ -213,7 +194,7 @@ export const getLatestAttempt = query({
     // Get quiz config
     const quizConfig = await getQuizConfig(ctx, args.lessonId);
     if (!quizConfig) {
-      return undefined;
+      return null;
     }
 
     // Get user's attempts for this quiz
@@ -225,13 +206,17 @@ export const getLatestAttempt = query({
       .collect();
 
     if (attempts.length === 0) {
-      return undefined;
+      return null;
     }
 
     // Get the latest attempt
-    const latestAttempt = attempts.sort(
+    const sortedAttempts = attempts.sort(
       (a, b) => b.submittedAt - a.submittedAt
-    )[0];
+    );
+    const latestAttempt = sortedAttempts[0];
+    if (!latestAttempt) {
+      return null;
+    }
 
     // Get all questions for this quiz
     const questions = await ctx.db

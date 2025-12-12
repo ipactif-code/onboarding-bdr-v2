@@ -216,7 +216,9 @@ export const remove = mutation({
         .collect();
 
       for (const file of files) {
-        await ctx.storage.delete(file.storageId);
+        if (file.storageId) {
+          await ctx.storage.delete(file.storageId);
+        }
         await ctx.db.delete(file._id);
       }
 

@@ -87,10 +87,11 @@ export const seedDatabase = mutation({
     ];
 
     for (let i = 0; i < userNames.length; i++) {
+      const userData = userNames[i]!;
       const userId = await ctx.db.insert("users", {
         clerkId: `seed_user_${String(i + 1).padStart(3, "0")}`,
-        email: userNames[i].email,
-        name: userNames[i].name,
+        email: userData.email,
+        name: userData.name,
         role: "user",
         status: i < 3 ? "online" : "offline",
         lastActiveAt: now - Math.floor(Math.random() * 7 * 24 * 60 * 60 * 1000),
@@ -103,65 +104,65 @@ export const seedDatabase = mutation({
     const salesTeam = await ctx.db.insert("teams", {
       name: "Sales Team",
       description: "Business development representatives",
-      leadId: users[0],
+      leadId: users[0]!,
     });
     counts.teams++;
 
     const marketingTeam = await ctx.db.insert("teams", {
       name: "Marketing Team",
       description: "Marketing and growth team",
-      leadId: users[3],
+      leadId: users[3]!,
     });
     counts.teams++;
 
     const supportTeam = await ctx.db.insert("teams", {
       name: "Support Team",
       description: "Customer success and support",
-      leadId: users[6],
+      leadId: users[6]!,
     });
     counts.teams++;
 
     // Add members to teams
     await ctx.db.insert("teamMembers", {
       teamId: salesTeam,
-      userId: users[0],
+      userId: users[0]!!,
       joinedAt: now,
     });
     await ctx.db.insert("teamMembers", {
       teamId: salesTeam,
-      userId: users[1],
+      userId: users[1]!!,
       joinedAt: now,
     });
     await ctx.db.insert("teamMembers", {
       teamId: salesTeam,
-      userId: users[2],
+      userId: users[2]!!,
       joinedAt: now,
     });
 
     await ctx.db.insert("teamMembers", {
       teamId: marketingTeam,
-      userId: users[3],
+      userId: users[3]!!,
       joinedAt: now,
     });
     await ctx.db.insert("teamMembers", {
       teamId: marketingTeam,
-      userId: users[4],
+      userId: users[4]!!,
       joinedAt: now,
     });
 
     await ctx.db.insert("teamMembers", {
       teamId: supportTeam,
-      userId: users[5],
+      userId: users[5]!!,
       joinedAt: now,
     });
     await ctx.db.insert("teamMembers", {
       teamId: supportTeam,
-      userId: users[6],
+      userId: users[6]!!,
       joinedAt: now,
     });
     await ctx.db.insert("teamMembers", {
       teamId: supportTeam,
-      userId: users[7],
+      userId: users[7]!!,
       joinedAt: now,
     });
 
@@ -442,7 +443,7 @@ export const seedDatabase = mutation({
 
     // Create some progress records
     await ctx.db.insert("progress", {
-      userId: users[0],
+      userId: users[0]!,
       lessonId: lesson1_1_1,
       status: "completed",
       completedAt: now - 5 * 24 * 60 * 60 * 1000,
@@ -451,7 +452,7 @@ export const seedDatabase = mutation({
     });
 
     await ctx.db.insert("progress", {
-      userId: users[0],
+      userId: users[0]!,
       lessonId: lesson1_1_2,
       status: "completed",
       completedAt: now - 4 * 24 * 60 * 60 * 1000,
@@ -460,7 +461,7 @@ export const seedDatabase = mutation({
     });
 
     await ctx.db.insert("progress", {
-      userId: users[0],
+      userId: users[0]!,
       lessonId: lesson1_2_1,
       status: "in_progress",
       lastAccessedAt: now - 1 * 24 * 60 * 60 * 1000,
@@ -468,7 +469,7 @@ export const seedDatabase = mutation({
     });
 
     await ctx.db.insert("progress", {
-      userId: users[1],
+      userId: users[1]!,
       lessonId: lesson1_1_1,
       status: "completed",
       completedAt: now - 10 * 24 * 60 * 60 * 1000,
@@ -478,7 +479,7 @@ export const seedDatabase = mutation({
 
     // Create a quiz attempt
     await ctx.db.insert("quizAttempts", {
-      userId: users[0],
+      userId: users[0]!,
       quizConfigId: quizConfig1,
       answers: { q1: 1, q2: 1 },
       score: 20,
@@ -490,7 +491,7 @@ export const seedDatabase = mutation({
 
     // Create some comments
     await ctx.db.insert("comments", {
-      authorId: users[0],
+      authorId: users[0]!,
       courseId: course1,
       content:
         "Great course! Really helped me understand the basics of B2B sales.",
@@ -499,7 +500,7 @@ export const seedDatabase = mutation({
     });
 
     const comment2 = await ctx.db.insert("comments", {
-      authorId: users[1],
+      authorId: users[1]!,
       lessonId: lesson1_1_1,
       content: "Could you add more examples about the sales process?",
       isPinned: false,
@@ -524,35 +525,35 @@ export const seedDatabase = mutation({
 
     await ctx.db.insert("conversationParticipants", {
       conversationId: conversation,
-      userId: users[0],
+      userId: users[0]!,
       joinedAt: now - 3 * 24 * 60 * 60 * 1000,
       lastReadAt: now,
     });
 
     await ctx.db.insert("conversationParticipants", {
       conversationId: conversation,
-      userId: users[1],
+      userId: users[1]!,
       joinedAt: now - 3 * 24 * 60 * 60 * 1000,
       lastReadAt: now - 1 * 24 * 60 * 60 * 1000,
     });
 
     await ctx.db.insert("messages", {
       conversationId: conversation,
-      senderId: users[0],
+      senderId: users[0]!,
       content: "Hey Bob, did you finish the Sales Fundamentals course?",
       createdAt: now - 2 * 24 * 60 * 60 * 1000,
     });
 
     await ctx.db.insert("messages", {
       conversationId: conversation,
-      senderId: users[1],
+      senderId: users[1]!,
       content: "Almost! Just have the quiz left. How was it?",
       createdAt: now - 1 * 24 * 60 * 60 * 1000 - 60 * 60 * 1000,
     });
 
     await ctx.db.insert("messages", {
       conversationId: conversation,
-      senderId: users[0],
+      senderId: users[0]!,
       content:
         "Pretty straightforward if you paid attention to the prospecting section!",
       createdAt: now - 1 * 24 * 60 * 60 * 1000,
@@ -560,14 +561,14 @@ export const seedDatabase = mutation({
 
     // Create some activity logs
     await ctx.db.insert("activityLogs", {
-      userId: users[0],
+      userId: users[0]!,
       actionType: "login",
       category: "user",
       timestamp: now - 1 * 24 * 60 * 60 * 1000,
     });
 
     await ctx.db.insert("activityLogs", {
-      userId: users[0],
+      userId: users[0]!,
       actionType: "lesson_view",
       category: "course",
       entityType: "lesson",
@@ -576,7 +577,7 @@ export const seedDatabase = mutation({
     });
 
     await ctx.db.insert("activityLogs", {
-      userId: users[0],
+      userId: users[0]!,
       actionType: "quiz_submit",
       category: "quiz",
       entityType: "quiz",
@@ -587,14 +588,14 @@ export const seedDatabase = mutation({
 
     // Create sessions
     await ctx.db.insert("sessions", {
-      userId: users[0],
+      userId: users[0]!,
       startedAt: now - 1 * 24 * 60 * 60 * 1000,
       endedAt: now - 1 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000,
       duration: 2 * 60 * 60 * 1000,
     });
 
     await ctx.db.insert("sessions", {
-      userId: users[1],
+      userId: users[1]!,
       startedAt: now - 2 * 60 * 60 * 1000,
     });
 

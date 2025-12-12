@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 import { requireAuth } from "./lib/auth";
 
 // ============================================================================
@@ -70,23 +71,23 @@ export const globalSearch = query({
 
     const result: {
       courses: Array<{
-        _id: typeof args extends never ? never : ReturnType<typeof ctx.db.get> extends Promise<infer T> ? T extends { _id: infer Id } ? Id : never : never;
+        _id: Id<"courses">;
         title: string;
         description?: string;
         status: "draft" | "published";
         matchField: string;
       }>;
       lessons: Array<{
-        _id: typeof args extends never ? never : ReturnType<typeof ctx.db.get> extends Promise<infer T> ? T extends { _id: infer Id } ? Id : never : never;
+        _id: Id<"lessons">;
         title: string;
         description?: string;
         type: "text" | "embed" | "quiz" | "files";
-        courseId: typeof args extends never ? never : ReturnType<typeof ctx.db.get> extends Promise<infer T> ? T extends { _id: infer Id } ? Id : never : never;
+        courseId: Id<"courses">;
         courseTitle: string;
         matchField: string;
       }>;
       users: Array<{
-        _id: typeof args extends never ? never : ReturnType<typeof ctx.db.get> extends Promise<infer T> ? T extends { _id: infer Id } ? Id : never : never;
+        _id: Id<"users">;
         name: string;
         email: string;
         avatarUrl?: string;

@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query, mutation } from "./_generated/server";
+import { query, mutation, QueryCtx, MutationCtx } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 import { getCurrentUser, requireAuth, requireAdmin } from "./lib/auth";
 
@@ -11,7 +11,7 @@ import { getCurrentUser, requireAuth, requireAdmin } from "./lib/auth";
  * Check if user has access to a course based on visibility settings.
  */
 async function checkCourseAccess(
-  ctx: { db: { get: (id: Id<"courses">) => Promise<Doc<"courses"> | null>; query: (table: string) => unknown } },
+  ctx: QueryCtx | MutationCtx,
   courseId: Id<"courses">,
   user: Doc<"users">
 ): Promise<boolean> {
@@ -28,16 +28,7 @@ async function checkCourseAccess(
   if (course.visibility === "all_teams") return true;
 
   // Check specific team/user assignments
-  const db = ctx.db as unknown as {
-    query: (table: "courseAssignments") => {
-      withIndex: (
-        name: string,
-        fn: (q: { eq: (field: string, value: unknown) => unknown }) => unknown
-      ) => { collect: () => Promise<Doc<"courseAssignments">[]> };
-    };
-  };
-
-  const assignments = await db
+  const assignments = await ctx.db
     .query("courseAssignments")
     .withIndex("by_course", (q) => q.eq("courseId", courseId))
     .collect();
@@ -48,16 +39,7 @@ async function checkCourseAccess(
   }
 
   // Check team assignment
-  const teamDb = ctx.db as unknown as {
-    query: (table: "teamMembers") => {
-      withIndex: (
-        name: string,
-        fn: (q: { eq: (field: string, value: unknown) => unknown }) => unknown
-      ) => { collect: () => Promise<Doc<"teamMembers">[]> };
-    };
-  };
-
-  const userTeams = await teamDb
+  const userTeams = await ctx.db
     .query("teamMembers")
     .withIndex("by_user", (q) => q.eq("userId", user._id))
     .collect();
@@ -73,7 +55,7 @@ async function checkCourseAccess(
  * Get course cover image URL from storage.
  */
 async function getCoverImageUrl(
-  ctx: { storage: { getUrl: (id: Id<"_storage">) => Promise<string | null> } },
+  ctx: QueryCtx | MutationCtx,
   coverImageId: Id<"_storage"> | undefined
 ): Promise<string | undefined> {
   if (!coverImageId) return undefined;
@@ -1147,7 +1129,9 @@ export const remove = mutation({
           .collect();
 
         for (const file of files) {
-          await ctx.storage.delete(file.storageId);
+          if (file.storageId) {
+            await ctx.storage.delete(file.storageId);
+          }
           await ctx.db.delete(file._id);
         }
 

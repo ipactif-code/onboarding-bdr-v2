@@ -102,8 +102,8 @@ export const listConversations = query({
             }
           | undefined;
 
-        if (messages.length > 0) {
-          const msg = messages[0];
+        const msg = messages[0];
+        if (msg) {
           const sender = await ctx.db.get(msg.senderId);
           lastMessage = {
             content:
@@ -739,9 +739,10 @@ export const broadcast = mutation({
 
     if (args.teamId) {
       // Broadcast to team members
+      const teamId = args.teamId;
       const teamMembers = await ctx.db
         .query("teamMembers")
-        .withIndex("by_team", (q) => q.eq("teamId", args.teamId))
+        .withIndex("by_team", (q) => q.eq("teamId", teamId))
         .collect();
       userIds = teamMembers
         .map((m) => m.userId)

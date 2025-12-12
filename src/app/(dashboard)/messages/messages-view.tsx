@@ -36,7 +36,10 @@ export function MessagesView() {
   // Select first conversation by default
   useEffect(() => {
     if (filteredConversations && filteredConversations.length > 0 && !selectedConversationId) {
-      setSelectedConversationId(filteredConversations[0]._id);
+      const firstConversation = filteredConversations[0];
+      if (firstConversation) {
+        setSelectedConversationId(firstConversation._id);
+      }
     }
   }, [filteredConversations, selectedConversationId]);
 

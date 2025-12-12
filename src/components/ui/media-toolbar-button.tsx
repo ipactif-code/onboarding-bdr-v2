@@ -88,7 +88,7 @@ export function MediaToolbarButton({
   const [dialogOpen, setDialogOpen] = React.useState(false);
 
   const { openFilePicker } = useFilePicker({
-    accept: currentConfig.accept,
+    accept: currentConfig?.accept ?? [],
     multiple: true,
     onFilesSelected: ({ plainFiles: updatedFiles }) => {
       editor.getTransforms(PlaceholderPlugin).insert.media(updatedFiles);
@@ -110,7 +110,7 @@ export function MediaToolbarButton({
         pressed={open}
       >
         <ToolbarSplitButtonPrimary>
-          {currentConfig.icon}
+          {currentConfig?.icon}
         </ToolbarSplitButtonPrimary>
 
         <DropdownMenu
@@ -130,7 +130,7 @@ export function MediaToolbarButton({
           >
             <DropdownMenuGroup>
               <DropdownMenuItem onSelect={() => openFilePicker()}>
-                {currentConfig.icon}
+                {currentConfig?.icon}
                 Upload from computer
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => setDialogOpen(true)}>
@@ -149,11 +149,13 @@ export function MediaToolbarButton({
         }}
       >
         <AlertDialogContent className="gap-6">
-          <MediaUrlDialogContent
-            currentConfig={currentConfig}
-            nodeType={nodeType}
-            setOpen={setDialogOpen}
-          />
+          {currentConfig && (
+            <MediaUrlDialogContent
+              currentConfig={currentConfig}
+              nodeType={nodeType}
+              setOpen={setDialogOpen}
+            />
+          )}
         </AlertDialogContent>
       </AlertDialog>
     </>
@@ -172,8 +174,11 @@ function MediaUrlDialogContent({
   const editor = useEditorRef();
   const [url, setUrl] = React.useState('');
 
-  const embedMedia = React.useCallback(() => {
-    if (!isUrl(url)) return toast.error('Invalid URL');
+  const embedMedia = React.useCallback((): void => {
+    if (!isUrl(url)) {
+      toast.error('Invalid URL');
+      return;
+    }
 
     setOpen(false);
     editor.tf.insertNodes({

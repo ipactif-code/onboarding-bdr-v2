@@ -30,7 +30,7 @@ export function ImageElementStatic(
           />
           {caption && (
             <figcaption className="mx-auto mt-2 h-[24px] max-w-full">
-              {NodeApi.string(caption[0])}
+              {NodeApi.string(caption[0]!)}
             </figcaption>
           )}
         </div>

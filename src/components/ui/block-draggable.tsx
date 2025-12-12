@@ -468,7 +468,7 @@ const calculatePreviewTop = (
 ): number => {
   const child = editor.api.toDOMNode(element)!;
   const editable = editor.api.toDOMNode(editor)!;
-  const firstSelectedChild = blocks[0];
+  const firstSelectedChild = blocks[0]!;
 
   const firstDomNode = editor.api.toDOMNode(firstSelectedChild)!;
   // Get editor's top padding

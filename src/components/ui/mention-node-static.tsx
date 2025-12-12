@@ -21,9 +21,9 @@ export function MentionElementStatic(
       {...props}
       className={cn(
         'inline-block rounded-md bg-muted px-1.5 py-0.5 align-baseline font-medium text-sm',
-        element.children[0][KEYS.bold] === true && 'font-bold',
-        element.children[0][KEYS.italic] === true && 'italic',
-        element.children[0][KEYS.underline] === true && 'underline'
+        element.children[0]?.[KEYS.bold] === true && 'font-bold',
+        element.children[0]?.[KEYS.italic] === true && 'italic',
+        element.children[0]?.[KEYS.underline] === true && 'underline'
       )}
       attributes={{
         ...props.attributes,

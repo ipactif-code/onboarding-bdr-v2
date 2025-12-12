@@ -140,10 +140,10 @@ export function getColumns(options: ColumnOptions): ColumnDef<CourseRow>[] {
           },
           draft: { label: "Draft", className: "bg-neutral-100 text-neutral-800" },
         };
-        const variant = variants[status] || variants.draft;
+        const variant = variants[status] ?? variants.draft;
         return (
-          <Badge variant="secondary" className={variant.className}>
-            {variant.label}
+          <Badge variant="secondary" className={variant?.className}>
+            {variant?.label}
           </Badge>
         );
       },

@@ -68,7 +68,7 @@ export function PlateEditor({
 }: PlateEditorProps): React.ReactElement {
   const editor = usePlateEditor({
     plugins: showFixedToolbar ? plugins : pluginsWithoutFixedToolbar,
-    value: value as Parameters<typeof usePlateEditor>[0]['value'],
+    value: value as NonNullable<Parameters<typeof usePlateEditor>[0]>['value'],
     override: {
       components: {},
     },
@@ -104,7 +104,7 @@ export function SimpleEditor({
 }: Omit<PlateEditorProps, 'readOnly' | 'autoFocus' | 'showFixedToolbar'>): React.ReactElement {
   const editor = usePlateEditor({
     plugins: [...BasicMarksKit, ...AutoformatKit, ...FloatingToolbarKit],
-    value: value as Parameters<typeof usePlateEditor>[0]['value'],
+    value: value as NonNullable<Parameters<typeof usePlateEditor>[0]>['value'],
   });
 
   return (
@@ -136,7 +136,7 @@ export function ContentRenderer({
 }): React.ReactElement {
   const editor = usePlateEditor({
     plugins: pluginsWithoutFixedToolbar,
-    value: value as Parameters<typeof usePlateEditor>[0]['value'],
+    value: value as NonNullable<Parameters<typeof usePlateEditor>[0]>['value'],
   });
 
   return (

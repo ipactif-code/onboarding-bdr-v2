@@ -52,8 +52,8 @@ export function ModeToolbarButton(props: DropdownMenuProps) {
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false} {...props}>
       <DropdownMenuTrigger asChild>
         <ToolbarButton pressed={open} tooltip="Editing mode" isDropdown>
-          {item[value].icon}
-          <span className="hidden lg:inline">{item[value].label}</span>
+          {item[value]?.icon}
+          <span className="hidden lg:inline">{item[value]?.label}</span>
         </ToolbarButton>
       </DropdownMenuTrigger>
 
@@ -87,8 +87,8 @@ export function ModeToolbarButton(props: DropdownMenuProps) {
             value="editing"
           >
             <Indicator />
-            {item.editing.icon}
-            {item.editing.label}
+            {item.editing?.icon}
+            {item.editing?.label}
           </DropdownMenuRadioItem>
 
           <DropdownMenuRadioItem
@@ -96,8 +96,8 @@ export function ModeToolbarButton(props: DropdownMenuProps) {
             value="viewing"
           >
             <Indicator />
-            {item.viewing.icon}
-            {item.viewing.label}
+            {item.viewing?.icon}
+            {item.viewing?.label}
           </DropdownMenuRadioItem>
 
           <DropdownMenuRadioItem
@@ -105,8 +105,8 @@ export function ModeToolbarButton(props: DropdownMenuProps) {
             value="suggestion"
           >
             <Indicator />
-            {item.suggestion.icon}
-            {item.suggestion.label}
+            {item.suggestion?.icon}
+            {item.suggestion?.label}
           </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>

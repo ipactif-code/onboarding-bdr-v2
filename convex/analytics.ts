@@ -360,11 +360,9 @@ export const getQuizMetrics = query({
 
     for (const attempt of attempts) {
       const score = (attempt.score / attempt.maxScore) * 100;
-      if (score <= 20) scoreDistribution[0].count++;
-      else if (score <= 40) scoreDistribution[1].count++;
-      else if (score <= 60) scoreDistribution[2].count++;
-      else if (score <= 80) scoreDistribution[3].count++;
-      else scoreDistribution[4].count++;
+      const bucket = score <= 20 ? 0 : score <= 40 ? 1 : score <= 60 ? 2 : score <= 80 ? 3 : 4;
+      const dist = scoreDistribution[bucket];
+      if (dist) dist.count++;
     }
 
     // Top quizzes by attempts
@@ -718,7 +716,7 @@ export const getSessionStats = query({
     // Daily session counts
     const dailyCounts = new Map<string, number>();
     for (const session of sessions) {
-      const date = new Date(session.startedAt).toISOString().split("T")[0];
+      const date = new Date(session.startedAt).toISOString().split("T")[0] ?? "";
       dailyCounts.set(date, (dailyCounts.get(date) ?? 0) + 1);
     }
 

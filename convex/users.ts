@@ -565,6 +565,45 @@ export const ensureCurrentUser = mutation({
   },
 });
 
+/**
+ * Server-side user creation (called from Next.js Server Components).
+ * This is used when a user is authenticated via Clerk but not yet in Convex.
+ * Unlike ensureCurrentUser, this doesn't require Convex auth context.
+ */
+export const createFromClerk = mutation({
+  args: {
+    clerkId: v.string(),
+    email: v.string(),
+    name: v.string(),
+    avatarUrl: v.optional(v.string()),
+  },
+  returns: v.id("users"),
+  handler: async (ctx, args) => {
+    // Check if user already exists
+    const existingUser = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .unique();
+
+    if (existingUser) {
+      return existingUser._id;
+    }
+
+    // Create new user
+    const userId = await ctx.db.insert("users", {
+      clerkId: args.clerkId,
+      email: args.email,
+      name: args.name,
+      avatarUrl: args.avatarUrl,
+      role: "user",
+      status: "online",
+      lastActiveAt: Date.now(),
+    });
+
+    return userId;
+  },
+});
+
 // ============================================================================
 // Internal Mutations (called from webhooks)
 // ============================================================================

@@ -140,9 +140,14 @@ export function LessonEditor({
     setEstimatedDuration(lesson.estimatedDuration?.toString() || "");
   }, [lesson.title, lesson.description, lesson.estimatedDuration]);
 
-  // Apply viewport height constraints only on this page
-  // This ensures the editor Card stays at fixed height with scroll inside PlateEditor
+  // Apply viewport height constraints ONLY for TEXT lessons
+  // Quiz, embed, and files lessons need normal page scrolling
   useEffect(() => {
+    // Only apply constraints for TEXT lesson type
+    if (lesson.type !== "text") {
+      return; // Exit early - don't apply any constraints
+    }
+
     const sidebarInset = document.querySelector('[data-slot="sidebar-inset"]') as HTMLElement;
     const mainElement = document.querySelector('main.flex.flex-1.flex-col.gap-4.p-4') as HTMLElement;
 
@@ -168,7 +173,7 @@ export function LessonEditor({
         mainElement.style.minHeight = '';
       }
     };
-  }, []);
+  }, [lesson.type]);
 
   // Save basic info
   const handleSaveInfo = async () => {

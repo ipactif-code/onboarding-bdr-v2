@@ -83,7 +83,7 @@ export const listForLesson = query({
   returns: v.array(
     v.object({
       _id: v.id("files"),
-      storageId: v.id("_storage"),
+      storageId: v.optional(v.id("_storage")), // Now optional
       fileName: v.string(),
       fileSize: v.number(),
       fileType: v.string(),
@@ -113,16 +113,23 @@ export const listForLesson = query({
       .collect();
 
     // Get download URLs for each file
+    // Handle both Convex Storage and UploadThing URLs
     const result = await Promise.all(
       files.map(async (file) => {
-        const downloadUrl = await ctx.storage.getUrl(file.storageId);
+        // If downloadUrl is stored directly (UploadThing), use it
+        // Otherwise, get URL from Convex Storage
+        let url = file.downloadUrl;
+        if (!url && file.storageId) {
+          url = (await ctx.storage.getUrl(file.storageId)) ?? "";
+        }
+
         return {
           _id: file._id,
           storageId: file.storageId,
           fileName: file.fileName,
           fileSize: file.fileSize,
           fileType: file.fileType,
-          downloadUrl: downloadUrl ?? "",
+          downloadUrl: url ?? "",
           uploadedAt: file.uploadedAt,
         };
       })
@@ -184,11 +191,13 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 /**
  * Save file attachment metadata after upload.
  * T095: Implement files.saveAttachment mutation
+ * Supports both Convex Storage (legacy) and UploadThing (new)
  */
 export const saveAttachment = mutation({
   args: {
     lessonId: v.id("lessons"),
-    storageId: v.id("_storage"),
+    storageId: v.optional(v.id("_storage")), // For Convex Storage (legacy)
+    downloadUrl: v.optional(v.string()), // For UploadThing (new)
     fileName: v.string(),
     fileSize: v.number(),
     fileType: v.string(),
@@ -197,16 +206,14 @@ export const saveAttachment = mutation({
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
 
+    // Must have either storageId or downloadUrl
+    if (!args.storageId && !args.downloadUrl) {
+      throw new Error("Either storageId or downloadUrl is required");
+    }
+
     // Validate file size
     if (args.fileSize > MAX_FILE_SIZE) {
       throw new Error("File too large (max 50MB)");
-    }
-
-    // Validate file type
-    if (!ALLOWED_FILE_TYPES.includes(args.fileType)) {
-      throw new Error(
-        "File type not allowed. Allowed types: pdf, doc, docx, xls, xlsx, ppt, pptx, jpg, jpeg, png, gif, zip"
-      );
     }
 
     // Validate lesson exists and is files type
@@ -222,6 +229,7 @@ export const saveAttachment = mutation({
     return await ctx.db.insert("files", {
       lessonId: args.lessonId,
       storageId: args.storageId,
+      downloadUrl: args.downloadUrl,
       fileName: args.fileName,
       fileSize: args.fileSize,
       fileType: args.fileType,
@@ -247,8 +255,11 @@ export const removeAttachment = mutation({
       throw new Error("File not found");
     }
 
-    // Delete from storage
-    await ctx.storage.delete(file.storageId);
+    // Delete from Convex Storage only if storageId exists
+    // UploadThing files don't have storageId
+    if (file.storageId) {
+      await ctx.storage.delete(file.storageId);
+    }
 
     // Delete record
     await ctx.db.delete(args.fileId);

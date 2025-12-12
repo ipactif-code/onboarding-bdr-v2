@@ -148,10 +148,11 @@ export default defineSchema({
   // File attachments for file lessons
   files: defineTable({
     lessonId: v.id("lessons"),
-    storageId: v.id("_storage"),
+    storageId: v.optional(v.id("_storage")), // Optional for backward compatibility
     fileName: v.string(),
     fileSize: v.number(),
     fileType: v.string(),
+    downloadUrl: v.optional(v.string()), // UploadThing URL stored directly
     uploadedAt: v.number(),
   }).index("by_lesson", ["lessonId"]),
 

@@ -44,6 +44,7 @@ import { toast } from "sonner";
 import { PlateEditor } from "@/components/editor/plate-editor";
 import { useAutoSaveContent } from "@/hooks/use-auto-save-content";
 import { sanitizeEditorContent } from "@/lib/sanitize-editor-content";
+import { uploadFiles } from "@/hooks/use-upload-file";
 
 // ============================================================================
 // Types
@@ -1211,10 +1212,10 @@ interface FilesLessonEditorProps {
 
 function FilesLessonEditor({ lessonId, initialContent, files }: FilesLessonEditorProps) {
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Mutations
   const updateContent = useMutation(api.lessons.updateContent);
-  const getUploadUrl = useMutation(api.files.getUploadUrl);
   const saveAttachment = useMutation(api.files.saveAttachment);
   const removeAttachment = useMutation(api.files.removeAttachment);
 
@@ -1246,36 +1247,42 @@ function FilesLessonEditor({ lessonId, initialContent, files }: FilesLessonEdito
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  // Handle file upload via UploadThing
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const selectedFiles = event.target.files;
+    if (!selectedFiles || selectedFiles.length === 0) return;
 
     setIsUploading(true);
+    setUploadProgress(0);
+
     try {
-      // Get upload URL
-      const uploadUrl = await getUploadUrl();
+      // Convert FileList to array
+      const filesArray = Array.from(selectedFiles);
 
-      // Upload file to Convex storage
-      const result = await fetch(uploadUrl, {
-        method: "POST",
-        headers: { "Content-Type": file.type },
-        body: file,
+      // Upload via UploadThing
+      const uploadedFiles = await uploadFiles("editorUploader", {
+        files: filesArray,
+        onUploadProgress: ({ progress }) => {
+          setUploadProgress(Math.min(progress, 100));
+        },
       });
 
-      if (!result.ok) throw new Error("Upload failed");
+      // Save each uploaded file to Convex
+      for (const file of uploadedFiles) {
+        await saveAttachment({
+          lessonId,
+          downloadUrl: file.url, // UploadThing URL
+          fileName: file.name,
+          fileSize: file.size,
+          fileType: file.type,
+        });
+      }
 
-      const { storageId } = await result.json();
-
-      // Save file metadata
-      await saveAttachment({
-        lessonId,
-        storageId,
-        fileName: file.name,
-        fileSize: file.size,
-        fileType: file.type,
-      });
-
-      toast.success("File uploaded");
+      toast.success(
+        uploadedFiles.length === 1
+          ? "File uploaded"
+          : `${uploadedFiles.length} files uploaded`
+      );
 
       // Reset input
       event.target.value = "";
@@ -1284,6 +1291,7 @@ function FilesLessonEditor({ lessonId, initialContent, files }: FilesLessonEdito
       console.error(error);
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -1304,7 +1312,7 @@ function FilesLessonEditor({ lessonId, initialContent, files }: FilesLessonEdito
         <div className="border-b border-gray-200 bg-gray-50 px-6 py-4 rounded-t-2xl">
           <h2 className="text-lg font-semibold text-neutral-950">Files</h2>
         </div>
-        <CardContent className="pt-6 space-y-4">
+        <CardContent className="px-6 pt-6 pb-6 space-y-4">
           {/* Upload Zone */}
           <label className={`block p-8 border-2 border-dashed rounded-lg text-center cursor-pointer hover:bg-neutral-50 transition-colors ${isUploading ? "opacity-50 pointer-events-none" : ""}`}>
             <input
@@ -1312,20 +1320,21 @@ function FilesLessonEditor({ lessonId, initialContent, files }: FilesLessonEdito
               className="hidden"
               onChange={handleUpload}
               disabled={isUploading}
+              multiple
             />
             {isUploading ? (
               <>
                 <Loader2 className="size-8 mx-auto mb-2 text-neutral-400 animate-spin" />
-                <p className="text-sm text-neutral-600">Uploading...</p>
+                <p className="text-sm text-neutral-600">Uploading... {uploadProgress}%</p>
               </>
             ) : (
               <>
                 <Plus className="size-8 mx-auto mb-2 text-neutral-400" />
                 <p className="text-sm text-neutral-600">
-                  Click to upload a file
+                  Click to upload files
                 </p>
                 <p className="text-xs text-neutral-400 mt-1">
-                  PDF, Word, Excel, PowerPoint, Images (max 50MB)
+                  PDF, Word, Excel, PowerPoint, Images, Videos (max 50MB each)
                 </p>
               </>
             )}
@@ -1393,8 +1402,8 @@ function FilesLessonEditor({ lessonId, initialContent, files }: FilesLessonEdito
       </Card>
 
       {/* Content Card with PlateEditor */}
-      <Card className="rounded-2xl border-gray-200 py-0 gap-0">
-        <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-4 rounded-t-2xl">
+      <Card className="rounded-2xl border-gray-200 py-0 gap-0 h-[600px] flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-4 rounded-t-2xl shrink-0">
           <h2 className="text-lg font-semibold text-neutral-950">Description & Instructions</h2>
           <div className="flex items-center gap-2 text-sm text-neutral-500">
             {isContentSaving && (
@@ -1411,12 +1420,12 @@ function FilesLessonEditor({ lessonId, initialContent, files }: FilesLessonEdito
             )}
           </div>
         </div>
-        <CardContent className="p-0">
+        <CardContent className="p-0 flex-1 flex flex-col min-h-0 overflow-hidden">
           <PlateEditor
             value={content}
             onChange={setContent}
             placeholder="Add instructions on how to use these files, what learners should do with them..."
-            className="min-h-[300px] border-0 rounded-t-none"
+            className="flex-1 min-h-0 overflow-y-auto border-0 rounded-t-none"
           />
         </CardContent>
       </Card>

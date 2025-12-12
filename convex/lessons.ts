@@ -293,13 +293,17 @@ export const get = query({
 
       files = await Promise.all(
         fileRecords.map(async (file) => {
-          const downloadUrl = await ctx.storage.getUrl(file.storageId);
+          // Handle both Convex Storage (storageId) and UploadThing (downloadUrl) files
+          let url = file.downloadUrl;
+          if (!url && file.storageId) {
+            url = (await ctx.storage.getUrl(file.storageId)) ?? "";
+          }
           return {
             _id: file._id,
             fileName: file.fileName,
             fileSize: file.fileSize,
             fileType: file.fileType,
-            downloadUrl: downloadUrl ?? "",
+            downloadUrl: url ?? "",
           };
         })
       );

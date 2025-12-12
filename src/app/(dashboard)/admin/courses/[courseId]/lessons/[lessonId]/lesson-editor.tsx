@@ -129,9 +129,24 @@ export function LessonEditor({
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
+  // Quiz settings state (only used when lesson.type === "quiz")
+  const [passingScore, setPassingScore] = useState(
+    lesson.quizConfig?.passingScore ?? 70
+  );
+  const [maxAttempts, setMaxAttempts] = useState(
+    lesson.quizConfig?.maxAttempts?.toString() ?? ""
+  );
+  const [allowRetry, setAllowRetry] = useState(
+    lesson.quizConfig?.allowRetry ?? true
+  );
+  const [showAnswers, setShowAnswers] = useState(
+    lesson.quizConfig?.showAnswers ?? true
+  );
+
   // Mutations
   const updateLesson = useMutation(api.lessons.update);
   const removeLesson = useMutation(api.lessons.remove);
+  const updateQuizConfig = useMutation(api.lessons.updateQuizConfig);
 
   // Update local state when lesson changes
   useEffect(() => {
@@ -139,6 +154,16 @@ export function LessonEditor({
     setDescription(lesson.description || "");
     setEstimatedDuration(lesson.estimatedDuration?.toString() || "");
   }, [lesson.title, lesson.description, lesson.estimatedDuration]);
+
+  // Update quiz settings when lesson changes
+  useEffect(() => {
+    if (lesson.type === "quiz" && lesson.quizConfig) {
+      setPassingScore(lesson.quizConfig.passingScore ?? 70);
+      setMaxAttempts(lesson.quizConfig.maxAttempts?.toString() ?? "");
+      setAllowRetry(lesson.quizConfig.allowRetry ?? true);
+      setShowAnswers(lesson.quizConfig.showAnswers ?? true);
+    }
+  }, [lesson.type, lesson.quizConfig]);
 
   // Apply viewport height constraints ONLY for TEXT lessons
   // Quiz, embed, and files lessons need normal page scrolling
@@ -175,16 +200,29 @@ export function LessonEditor({
     };
   }, [lesson.type]);
 
-  // Save basic info
+  // Save basic info (and quiz config if quiz lesson)
   const handleSaveInfo = async () => {
     setIsSaving(true);
     try {
+      // Save basic lesson info
       await updateLesson({
         lessonId: lesson._id,
         title: title.trim(),
         description: description.trim() || undefined,
         estimatedDuration: estimatedDuration ? parseInt(estimatedDuration) : undefined,
       });
+
+      // If quiz lesson, also save quiz config
+      if (lesson.type === "quiz") {
+        await updateQuizConfig({
+          lessonId: lesson._id,
+          passingScore,
+          allowRetry,
+          maxAttempts: maxAttempts ? parseInt(maxAttempts) : undefined,
+          showAnswers,
+        });
+      }
+
       setHasUnsavedChanges(false);
       toast.success("Lesson saved");
     } catch (error) {
@@ -314,6 +352,7 @@ export function LessonEditor({
               <h2 className="text-lg font-semibold text-neutral-950">Lesson Settings</h2>
             </div>
             <CardContent className="p-6 space-y-4">
+              {/* Common Settings */}
               <div className="space-y-2">
                 <Label htmlFor="title">Title</Label>
                 <Input
@@ -359,6 +398,79 @@ export function LessonEditor({
                   />
                 </div>
               </div>
+
+              {/* Quiz-specific Settings */}
+              {lesson.type === "quiz" && (
+                <>
+                  <Separator className="my-4" />
+
+                  <h3 className="text-sm font-semibold text-neutral-700">Quiz Settings</h3>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="passing-score">Passing Score (%)</Label>
+                      <Input
+                        id="passing-score"
+                        type="number"
+                        min="1"
+                        max="100"
+                        value={passingScore}
+                        onChange={(e) => {
+                          setPassingScore(parseInt(e.target.value) || 70);
+                          setHasUnsavedChanges(true);
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="max-attempts">Max Attempts</Label>
+                      <Input
+                        id="max-attempts"
+                        type="number"
+                        min="1"
+                        max="10"
+                        value={maxAttempts}
+                        onChange={(e) => {
+                          setMaxAttempts(e.target.value);
+                          setHasUnsavedChanges(true);
+                        }}
+                        placeholder="Unlimited"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Allow Retry</Label>
+                      <p className="text-xs text-neutral-500">
+                        Users can retake the quiz after failing
+                      </p>
+                    </div>
+                    <Switch
+                      checked={allowRetry}
+                      onCheckedChange={(checked) => {
+                        setAllowRetry(checked);
+                        setHasUnsavedChanges(true);
+                      }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Show Correct Answers</Label>
+                      <p className="text-xs text-neutral-500">
+                        Display correct answers after submission
+                      </p>
+                    </div>
+                    <Switch
+                      checked={showAnswers}
+                      onCheckedChange={(checked) => {
+                        setShowAnswers(checked);
+                        setHasUnsavedChanges(true);
+                      }}
+                    />
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -672,14 +784,6 @@ function QuizLessonEditor({ lessonId, quizConfig }: QuizLessonEditorProps) {
   // Questions from props (included in lessons.get response)
   const questions = quizConfig?.questions ?? [];
 
-  const [passingScore, setPassingScore] = useState(quizConfig?.passingScore || 70);
-  const [allowRetry, setAllowRetry] = useState(quizConfig?.allowRetry ?? true);
-  const [maxAttempts, setMaxAttempts] = useState(
-    quizConfig?.maxAttempts?.toString() || ""
-  );
-  const [showAnswers, setShowAnswers] = useState(quizConfig?.showAnswers ?? true);
-  const [isSavingConfig, setIsSavingConfig] = useState(false);
-
   // New question state
   const [showNewQuestion, setShowNewQuestion] = useState(false);
   const [newQuestionText, setNewQuestionText] = useState("");
@@ -699,28 +803,9 @@ function QuizLessonEditor({ lessonId, quizConfig }: QuizLessonEditorProps) {
   const [editPoints, setEditPoints] = useState("1");
   const [isSavingQuestion, setIsSavingQuestion] = useState(false);
 
-  const updateQuizConfig = useMutation(api.lessons.updateQuizConfig);
   const addQuestion = useMutation(api.lessons.addQuestion);
   const updateQuestion = useMutation(api.lessons.updateQuestion);
   const removeQuestion = useMutation(api.lessons.removeQuestion);
-
-  const handleSaveConfig = async () => {
-    setIsSavingConfig(true);
-    try {
-      await updateQuizConfig({
-        lessonId,
-        passingScore,
-        allowRetry,
-        maxAttempts: maxAttempts ? parseInt(maxAttempts) : null,
-        showAnswers,
-      });
-      toast.success("Quiz settings saved");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to save settings");
-    } finally {
-      setIsSavingConfig(false);
-    }
-  };
 
   const handleAddQuestion = async () => {
     if (!newQuestionText.trim()) {
@@ -833,82 +918,17 @@ function QuizLessonEditor({ lessonId, quizConfig }: QuizLessonEditorProps) {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Quiz Settings */}
-      <Card className="rounded-2xl border-gray-200 py-0 gap-0">
-        <div className="border-b border-gray-200 bg-gray-50 px-6 py-4 rounded-t-2xl">
-          <h2 className="text-lg font-semibold text-neutral-950">Quiz Settings</h2>
-        </div>
-        <CardContent className="pt-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="passing-score">Passing Score (%)</Label>
-              <Input
-                id="passing-score"
-                type="number"
-                min="1"
-                max="100"
-                value={passingScore}
-                onChange={(e) => setPassingScore(parseInt(e.target.value) || 70)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="max-attempts">Max Attempts (leave empty for unlimited)</Label>
-              <Input
-                id="max-attempts"
-                type="number"
-                min="1"
-                max="10"
-                value={maxAttempts}
-                onChange={(e) => setMaxAttempts(e.target.value)}
-                placeholder="Unlimited"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Allow Retry</Label>
-              <p className="text-xs text-neutral-500">
-                Users can retake the quiz after failing
-              </p>
-            </div>
-            <Switch checked={allowRetry} onCheckedChange={setAllowRetry} />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Show Correct Answers</Label>
-              <p className="text-xs text-neutral-500">
-                Display correct answers after submission
-              </p>
-            </div>
-            <Switch checked={showAnswers} onCheckedChange={setShowAnswers} />
-          </div>
-
-          <Button onClick={handleSaveConfig} disabled={isSavingConfig} className="w-full">
-            {isSavingConfig ? (
-              <Loader2 className="size-4 mr-2 animate-spin" />
-            ) : (
-              <Save className="size-4 mr-2" />
-            )}
-            Save Settings
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Questions */}
-      <Card className="rounded-2xl border-gray-200 py-0 gap-0">
+    <Card className="rounded-2xl border-gray-200 py-0 gap-0 shadow-sm">
         <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-4 rounded-t-2xl">
           <h2 className="text-lg font-semibold text-neutral-950">
             Questions ({questions.length})
           </h2>
-          <Button size="sm" onClick={() => setShowNewQuestion(true)}>
+          <Button size="sm" variant="outline" onClick={() => setShowNewQuestion(true)}>
             <Plus className="size-4 mr-2" />
             Add Question
           </Button>
         </div>
-        <CardContent className="pt-6">
+        <CardContent className="pt-6 pb-6">
           {/* Existing Questions */}
           <div className="space-y-4">
             {questions
@@ -1241,8 +1261,7 @@ function QuizLessonEditor({ lessonId, quizConfig }: QuizLessonEditorProps) {
             </>
           )}
         </CardContent>
-      </Card>
-    </div>
+    </Card>
   );
 }
 

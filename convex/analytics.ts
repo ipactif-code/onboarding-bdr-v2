@@ -314,9 +314,10 @@ export const getQuizMetrics = query({
 
     // Filter by course if specified
     if (args.courseId) {
+      const courseId = args.courseId;
       const sections = await ctx.db
         .query("sections")
-        .withIndex("by_course", (q) => q.eq("courseId", args.courseId))
+        .withIndex("by_course", (q) => q.eq("courseId", courseId))
         .collect();
       const sectionIds = new Set(sections.map((s) => s._id.toString()));
 

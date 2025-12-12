@@ -143,10 +143,17 @@ export function LessonEditor({
     lesson.quizConfig?.showAnswers ?? true
   );
 
+  // Embed settings state (only used when lesson.type === "embed")
+  const [embedUrl, setEmbedUrl] = useState(lesson.embedConfig?.url ?? "");
+  const [embedProvider, setEmbedProvider] = useState<"youtube" | "vimeo" | "loom" | "figma" | "other">(
+    lesson.embedConfig?.provider ?? "other"
+  );
+
   // Mutations
   const updateLesson = useMutation(api.lessons.update);
   const removeLesson = useMutation(api.lessons.remove);
   const updateQuizConfig = useMutation(api.lessons.updateQuizConfig);
+  const setEmbed = useMutation(api.lessons.setEmbed);
 
   // Update local state when lesson changes
   useEffect(() => {
@@ -165,11 +172,19 @@ export function LessonEditor({
     }
   }, [lesson.type, lesson.quizConfig]);
 
-  // Apply viewport height constraints ONLY for TEXT lessons
-  // Quiz, embed, and files lessons need normal page scrolling
+  // Update embed settings when lesson changes
   useEffect(() => {
-    // Only apply constraints for TEXT lesson type
-    if (lesson.type !== "text") {
+    if (lesson.type === "embed" && lesson.embedConfig) {
+      setEmbedUrl(lesson.embedConfig.url ?? "");
+      setEmbedProvider(lesson.embedConfig.provider ?? "other");
+    }
+  }, [lesson.type, lesson.embedConfig]);
+
+  // Apply viewport height constraints for TEXT and EMBED lessons
+  // Quiz and files lessons need normal page scrolling
+  useEffect(() => {
+    // Only apply constraints for TEXT and EMBED lesson types
+    if (lesson.type !== "text" && lesson.type !== "embed") {
       return; // Exit early - don't apply any constraints
     }
 
@@ -200,7 +215,16 @@ export function LessonEditor({
     };
   }, [lesson.type]);
 
-  // Save basic info (and quiz config if quiz lesson)
+  // Detect embed provider from URL
+  const detectProvider = (url: string): "youtube" | "vimeo" | "loom" | "figma" | "other" => {
+    if (url.includes("youtube.com") || url.includes("youtu.be")) return "youtube";
+    if (url.includes("vimeo.com")) return "vimeo";
+    if (url.includes("loom.com")) return "loom";
+    if (url.includes("figma.com")) return "figma";
+    return "other";
+  };
+
+  // Save basic info (and quiz/embed config if applicable)
   const handleSaveInfo = async () => {
     setIsSaving(true);
     try {
@@ -221,6 +245,16 @@ export function LessonEditor({
           maxAttempts: maxAttempts ? parseInt(maxAttempts) : undefined,
           showAnswers,
         });
+      }
+
+      // If embed lesson, also save embed config
+      if (lesson.type === "embed" && embedUrl.trim()) {
+        const detectedProvider = detectProvider(embedUrl.trim());
+        await setEmbed({
+          lessonId: lesson._id,
+          url: embedUrl.trim(),
+        });
+        setEmbedProvider(detectedProvider);
       }
 
       setHasUnsavedChanges(false);
@@ -325,7 +359,6 @@ export function LessonEditor({
             <EmbedLessonEditor
               lessonId={lesson._id}
               initialContent={lesson.content}
-              embedConfig={lesson.embedConfig}
             />
           )}
 
@@ -471,6 +504,51 @@ export function LessonEditor({
                   </div>
                 </>
               )}
+
+              {/* Embed-specific Settings */}
+              {lesson.type === "embed" && (
+                <>
+                  <Separator className="my-4" />
+
+                  <h3 className="text-sm font-semibold text-neutral-700">Embed Settings</h3>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="embed-url">Embed URL</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="embed-url"
+                        value={embedUrl}
+                        onChange={(e) => {
+                          setEmbedUrl(e.target.value);
+                          setHasUnsavedChanges(true);
+                        }}
+                        placeholder="https://www.youtube.com/watch?v=..."
+                        className="flex-1"
+                      />
+                      {embedUrl && (
+                        <Button variant="outline" size="icon" asChild>
+                          <a href={embedUrl} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="size-4" />
+                          </a>
+                        </Button>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {embedUrl && (
+                        <>
+                          <Badge variant="secondary">{detectProvider(embedUrl)}</Badge>
+                          <span className="text-xs text-neutral-500">Detected provider</span>
+                        </>
+                      )}
+                      {!embedUrl && (
+                        <p className="text-xs text-neutral-500">
+                          Supports YouTube, Vimeo, Loom, Figma, and other embeddable URLs
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -530,7 +608,7 @@ function TextLessonEditor({ lessonId, initialContent }: TextLessonEditorProps) {
           )}
         </div>
       </div>
-      <CardContent className="p-0 flex-1 flex flex-col min-h-0 overflow-auto">
+      <CardContent className="p-0 flex-1 flex flex-col min-h-0 overflow-hidden">
         <PlateEditor
           value={content}
           onChange={setContent}
@@ -550,19 +628,11 @@ function TextLessonEditor({ lessonId, initialContent }: TextLessonEditorProps) {
 interface EmbedLessonEditorProps {
   lessonId: Id<"lessons">;
   initialContent?: unknown;
-  embedConfig?: {
-    url: string;
-    provider: "youtube" | "vimeo" | "loom" | "figma" | "other";
-  };
 }
 
-function EmbedLessonEditor({ lessonId, initialContent, embedConfig }: EmbedLessonEditorProps) {
-  const [url, setUrl] = useState(embedConfig?.url || "");
-  const [isSavingEmbed, setIsSavingEmbed] = useState(false);
-
+function EmbedLessonEditor({ lessonId, initialContent }: EmbedLessonEditorProps) {
   // Mutations
   const updateContent = useMutation(api.lessons.updateContent);
-  const setEmbed = useMutation(api.lessons.setEmbed);
 
   // Auto-save callback
   const handleSaveContent = useCallback(
@@ -585,177 +655,35 @@ function EmbedLessonEditor({ lessonId, initialContent, embedConfig }: EmbedLesso
     }
   }, [error]);
 
-  const handleSaveEmbed = async () => {
-    if (!url.trim()) {
-      toast.error("Please enter a URL");
-      return;
-    }
-
-    setIsSavingEmbed(true);
-    try {
-      await setEmbed({ lessonId, url: url.trim() });
-      toast.success("Embed URL saved");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to save embed");
-    } finally {
-      setIsSavingEmbed(false);
-    }
-  };
-
-  // Get embed preview
-  const getEmbedPreview = () => {
-    if (!embedConfig?.url) return null;
-
-    const { url, provider } = embedConfig;
-
-    if (provider === "youtube") {
-      const videoId = extractYouTubeId(url);
-      if (videoId) {
-        return (
-          <iframe
-            src={`https://www.youtube.com/embed/${videoId}`}
-            className="w-full aspect-video rounded-lg"
-            allowFullScreen
-          />
-        );
-      }
-    }
-
-    if (provider === "vimeo") {
-      const videoId = extractVimeoId(url);
-      if (videoId) {
-        return (
-          <iframe
-            src={`https://player.vimeo.com/video/${videoId}`}
-            className="w-full aspect-video rounded-lg"
-            allowFullScreen
-          />
-        );
-      }
-    }
-
-    if (provider === "loom") {
-      const videoId = extractLoomId(url);
-      if (videoId) {
-        return (
-          <iframe
-            src={`https://www.loom.com/embed/${videoId}`}
-            className="w-full aspect-video rounded-lg"
-            allowFullScreen
-          />
-        );
-      }
-    }
-
-    return (
-      <div className="aspect-video bg-neutral-100 rounded-lg flex items-center justify-center">
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 text-blue-600 hover:underline"
-        >
-          <ExternalLink className="size-4" />
-          Open embed URL
-        </a>
-      </div>
-    );
-  };
-
   return (
-    <div className="space-y-6">
-      {/* Embed URL Card */}
-      <Card className="rounded-2xl border-gray-200 py-0 gap-0">
-        <div className="border-b border-gray-200 bg-gray-50 px-6 py-4 rounded-t-2xl">
-          <h2 className="text-lg font-semibold text-neutral-950">Video / Embed</h2>
-        </div>
-        <CardContent className="pt-6 space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="embed-url">Embed URL</Label>
-            <div className="flex gap-2">
-              <Input
-                id="embed-url"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://www.youtube.com/watch?v=..."
-                className="flex-1"
-              />
-              <Button onClick={handleSaveEmbed} disabled={isSavingEmbed}>
-                {isSavingEmbed ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  "Save"
-                )}
-              </Button>
-            </div>
-            <p className="text-xs text-neutral-500">
-              Supports YouTube, Vimeo, Loom, Figma, and other embeddable URLs
-            </p>
-          </div>
-
-          {embedConfig?.url && (
+    <Card className="rounded-2xl border-gray-200 py-0 gap-0 flex-1 flex flex-col min-h-0 overflow-hidden">
+      <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-4 rounded-t-2xl shrink-0">
+        <h2 className="text-lg font-semibold text-neutral-950">Additional Content</h2>
+        <div className="flex items-center gap-2 text-sm text-neutral-500">
+          {isContentSaving && (
             <>
-              <Separator />
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Preview</Label>
-                  <Badge variant="secondary">{embedConfig.provider}</Badge>
-                </div>
-                {getEmbedPreview()}
-              </div>
+              <Loader2 className="size-3 animate-spin" />
+              <span>Saving...</span>
             </>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Content Card with PlateEditor */}
-      <Card className="rounded-2xl border-gray-200 py-0 gap-0">
-        <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-4 rounded-t-2xl">
-          <h2 className="text-lg font-semibold text-neutral-950">Additional Content</h2>
-          <div className="flex items-center gap-2 text-sm text-neutral-500">
-            {isContentSaving && (
-              <>
-                <Loader2 className="size-3 animate-spin" />
-                <span>Saving...</span>
-              </>
-            )}
-            {!isContentSaving && lastSaved && (
-              <>
-                <Check className="size-3 text-green-600" />
-                <span>Saved</span>
-              </>
-            )}
-          </div>
+          {!isContentSaving && lastSaved && (
+            <>
+              <Check className="size-3 text-green-600" />
+              <span>Saved</span>
+            </>
+          )}
         </div>
-        <CardContent className="p-0">
-          <PlateEditor
-            value={content}
-            onChange={setContent}
-            placeholder="Add notes, instructions, or additional context for this video..."
-            className="min-h-[300px] border-0 rounded-t-none"
-          />
-        </CardContent>
-      </Card>
-    </div>
+      </div>
+      <CardContent className="p-0 flex-1 flex flex-col min-h-0 overflow-hidden">
+        <PlateEditor
+          value={content}
+          onChange={setContent}
+          placeholder="Add notes, instructions, or additional context for this video..."
+          className="flex-1 min-h-0 overflow-y-auto border-0 rounded-t-none"
+        />
+      </CardContent>
+    </Card>
   );
-}
-
-// Helper functions for embed
-function extractYouTubeId(url: string): string | null {
-  const match = url.match(
-    /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/
-  );
-  return match?.[1] ?? null;
-}
-
-function extractVimeoId(url: string): string | null {
-  const match = url.match(/vimeo\.com\/(?:.*\/)?(\d+)/);
-  return match?.[1] ?? null;
-}
-
-function extractLoomId(url: string): string | null {
-  const match = url.match(/loom\.com\/(?:share|embed)\/([a-zA-Z0-9]+)/);
-  return match?.[1] ?? null;
 }
 
 // ============================================================================

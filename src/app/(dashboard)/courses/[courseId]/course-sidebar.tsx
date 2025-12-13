@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Play } from "lucide-react";
+import { Play, CheckCircle2, Circle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -12,7 +12,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { CourseWithProgress } from "@/types/course";
 
@@ -114,10 +113,11 @@ export function CourseSidebar({ course }: CourseSidebarProps) {
                   >
                     <AccordionTrigger className="px-3 py-2 hover:no-underline hover:bg-neutral-50">
                       <div className="flex items-center gap-2">
-                        <Checkbox
-                          checked={sectionCompleted}
-                          className="pointer-events-none"
-                        />
+                        {sectionCompleted ? (
+                          <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0" />
+                        ) : (
+                          <Circle className="h-4 w-4 text-neutral-300 flex-shrink-0" />
+                        )}
                         <span className="font-medium text-sm text-neutral-950">
                           Sec {sectionIndex + 1}: {section.title}
                         </span>
@@ -134,10 +134,11 @@ export function CourseSidebar({ course }: CourseSidebarProps) {
                             href={`/courses/${course._id}/lessons/${lesson._id}`}
                             className="flex items-center gap-2 pl-7 pr-3 py-2 hover:bg-neutral-50 transition-colors"
                           >
-                            <Checkbox
-                              checked={isCompleted}
-                              className="pointer-events-none"
-                            />
+                            {isCompleted ? (
+                              <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0" />
+                            ) : (
+                              <Circle className="h-4 w-4 text-neutral-300 flex-shrink-0" />
+                            )}
                             <span
                               className={cn(
                                 "text-sm",

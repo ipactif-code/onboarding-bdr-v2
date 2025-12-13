@@ -14,6 +14,26 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "acoustic-buffalo-308.convex.cloud",
       },
+      {
+        protocol: "https",
+        hostname: "media.giphy.com",
+      },
+      {
+        protocol: "https",
+        hostname: "media1.giphy.com",
+      },
+      {
+        protocol: "https",
+        hostname: "media2.giphy.com",
+      },
+      {
+        protocol: "https",
+        hostname: "media3.giphy.com",
+      },
+      {
+        protocol: "https",
+        hostname: "i.giphy.com",
+      },
     ],
   },
 };

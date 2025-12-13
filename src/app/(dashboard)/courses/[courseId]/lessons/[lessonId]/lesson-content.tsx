@@ -6,8 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useMutation } from "convex/react";
 import { api } from "../../../../../../../convex/_generated/api";
 import { Id } from "../../../../../../../convex/_generated/dataModel";
-import { CheckCircle, FileText, HelpCircle } from "lucide-react";
+import { CheckCircle, FileText } from "lucide-react";
 import { EmbedViewer } from "@/components/lessons/embed-viewer";
+import { QuizPlayer } from "@/components/lessons/quiz-player";
 import { useState } from "react";
 
 interface LessonContentProps {
@@ -22,7 +23,20 @@ interface LessonContentProps {
     };
     quizConfig?: {
       passingScore: number;
-      questions: unknown[];
+      allowRetry: boolean;
+      maxAttempts?: number;
+      showAnswers: boolean;
+      questions: Array<{
+        _id: Id<"quizQuestions">;
+        questionText: string;
+        options: Array<{
+          text: string;
+          isCorrect: boolean;
+        }>;
+        explanation?: string;
+        points: number;
+        displayOrder: number;
+      }>;
     };
     files?: Array<{
       _id: Id<"files">;
@@ -122,28 +136,24 @@ export function LessonContent({ lesson }: LessonContentProps) {
       );
 
     case "quiz":
-      // Phase 3: QuizPlayer component
-      return (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <HelpCircle className="size-5" />
-              Quiz
-            </CardTitle>
-            <CardDescription>Test your knowledge with this quiz.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-muted rounded-lg p-8 text-center text-muted-foreground">
-              Quiz player coming in Phase 3
-            </div>
-            {lesson.quizConfig && (
-              <p className="text-sm text-muted-foreground mt-4">
-                {lesson.quizConfig.questions?.length || 0} questions |{" "}
-                Passing score: {lesson.quizConfig.passingScore}%
+      if (!lesson.quizConfig || !lesson.quizConfig.questions.length) {
+        return (
+          <Card>
+            <CardContent className="py-8">
+              <p className="text-center text-muted-foreground">
+                No quiz configured for this lesson.
               </p>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        );
+      }
+
+      return (
+        <QuizPlayer
+          lessonId={lesson._id}
+          quizConfig={lesson.quizConfig}
+          lessonTitle={lesson.title}
+        />
       );
 
     case "files":

@@ -490,3 +490,49 @@ export const submit = mutation({
     };
   },
 });
+
+/**
+ * Check a single answer without submitting the quiz.
+ * Used for immediate feedback in the quiz player.
+ * Note: This reveals correct answers for learning purposes.
+ * The final quiz score is based on the actual submission.
+ */
+export const checkAnswer = mutation({
+  args: {
+    questionId: v.id("quizQuestions"),
+    selectedOptions: v.array(v.number()),
+  },
+  returns: v.object({
+    isCorrect: v.boolean(),
+    correctOptions: v.array(v.number()),
+    explanation: v.optional(v.string()),
+    points: v.number(),
+  }),
+  handler: async (ctx, args) => {
+    // Verify user is authenticated
+    await requireAuth(ctx);
+
+    // Get the question
+    const question = await ctx.db.get(args.questionId);
+    if (!question) {
+      throw new Error("Question not found");
+    }
+
+    // Find correct options
+    const correctOptions = question.options
+      .map((opt, idx) => (opt.isCorrect ? idx : -1))
+      .filter((idx) => idx >= 0);
+
+    // Check if answer is correct
+    const isCorrect =
+      args.selectedOptions.length === correctOptions.length &&
+      args.selectedOptions.every((idx) => correctOptions.includes(idx));
+
+    return {
+      isCorrect,
+      correctOptions,
+      explanation: question.explanation,
+      points: isCorrect ? question.points : 0,
+    };
+  },
+});

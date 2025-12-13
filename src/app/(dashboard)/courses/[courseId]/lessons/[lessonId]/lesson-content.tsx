@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useMutation } from "convex/react";
 import { api } from "../../../../../../../convex/_generated/api";
 import { Id } from "../../../../../../../convex/_generated/dataModel";
-import { CheckCircle, FileText, Play, HelpCircle } from "lucide-react";
+import { CheckCircle, FileText, HelpCircle } from "lucide-react";
+import { EmbedViewer } from "@/components/lessons/embed-viewer";
 import { useState } from "react";
 
 interface LessonContentProps {
@@ -17,7 +18,7 @@ interface LessonContentProps {
     content?: unknown[];
     embedConfig?: {
       url: string;
-      provider: string;
+      provider: "youtube" | "vimeo" | "loom" | "figma" | "other";
     };
     quizConfig?: {
       passingScore: number;
@@ -83,27 +84,41 @@ export function LessonContent({ lesson }: LessonContentProps) {
       );
 
     case "embed":
-      // Phase 2: EmbedViewer component
       return (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Play className="size-5" />
-              Video Content
-            </CardTitle>
-            <CardDescription>Video player will be available soon.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-muted rounded-lg p-8 text-center text-muted-foreground">
-              Embed viewer coming in Phase 2
+        <div className="space-y-6">
+          {lesson.embedConfig?.url && lesson.embedConfig?.provider ? (
+            <EmbedViewer
+              url={lesson.embedConfig.url}
+              provider={lesson.embedConfig.provider}
+              title={lesson.title}
+            />
+          ) : (
+            <div className="aspect-video w-full rounded-lg bg-muted flex items-center justify-center">
+              <p className="text-muted-foreground">No video configured for this lesson.</p>
             </div>
-            {lesson.embedConfig?.url && (
-              <p className="text-sm text-muted-foreground mt-4">
-                URL: {lesson.embedConfig.url}
-              </p>
-            )}
-          </CardContent>
-        </Card>
+          )}
+
+          {/* Mark as Complete button */}
+          <div className="flex justify-end pt-4 border-t">
+            <Button
+              onClick={handleMarkComplete}
+              disabled={isCompleted}
+              variant={isCompleted ? "outline" : "default"}
+            >
+              {isCompleted ? (
+                <>
+                  <CheckCircle className="size-4 mr-2" />
+                  Completed
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="size-4 mr-2" />
+                  Mark as Complete
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
       );
 
     case "quiz":

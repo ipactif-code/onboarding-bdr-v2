@@ -2,13 +2,14 @@
 
 import { ContentRenderer } from "@/components/editor/plate-editor";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useMutation } from "convex/react";
 import { api } from "../../../../../../../convex/_generated/api";
 import { Id } from "../../../../../../../convex/_generated/dataModel";
-import { CheckCircle, FileText } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 import { EmbedViewer } from "@/components/lessons/embed-viewer";
 import { QuizPlayer } from "@/components/lessons/quiz-player";
+import { FilesList } from "@/components/lessons/files-list";
 import { useState } from "react";
 
 interface LessonContentProps {
@@ -157,27 +158,11 @@ export function LessonContent({ lesson }: LessonContentProps) {
       );
 
     case "files":
-      // Phase 4: FilesList component
       return (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="size-5" />
-              Files
-            </CardTitle>
-            <CardDescription>Download the course materials.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-muted rounded-lg p-8 text-center text-muted-foreground">
-              File downloads coming in Phase 4
-            </div>
-            {lesson.files && lesson.files.length > 0 && (
-              <p className="text-sm text-muted-foreground mt-4">
-                {lesson.files.length} file(s) available
-              </p>
-            )}
-          </CardContent>
-        </Card>
+        <FilesList
+          lessonId={lesson._id}
+          files={lesson.files || []}
+        />
       );
 
     default:

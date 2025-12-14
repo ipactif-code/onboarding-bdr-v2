@@ -132,8 +132,7 @@ export function AdminDashboard() {
             email: user.email,
             avatar: user.avatarUrl,
             team: user.teamCount > 0 ? `${user.teamCount} team(s)` : undefined,
-            coursesCompleted: 0, // Would need separate query for this
-            totalCourses: analytics.publishedCourses,
+            progress: user.overallProgress,
             role: user.role,
           }))}
         />

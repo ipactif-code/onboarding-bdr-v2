@@ -26,8 +26,7 @@ interface User {
   email: string;
   avatar?: string;
   team?: string;
-  coursesCompleted: number;
-  totalCourses: number;
+  progress: number;
   role: "user" | "admin";
 }
 
@@ -56,9 +55,6 @@ export function RecentUsersTable({ users }: RecentUsersTableProps) {
         </TableHeader>
         <TableBody>
           {users.map((user) => {
-            const progress = user.totalCourses > 0
-              ? Math.round((user.coursesCompleted / user.totalCourses) * 100)
-              : 0;
             const role = roleConfig[user.role];
 
             return (
@@ -83,10 +79,10 @@ export function RecentUsersTable({ users }: RecentUsersTableProps) {
                     <div className="w-20 h-2 bg-neutral-100 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-green-600 rounded-full"
-                        style={{ width: `${progress}%` }}
+                        style={{ width: `${user.progress}%` }}
                       />
                     </div>
-                    <span className="text-xs text-neutral-500">{progress}%</span>
+                    <span className="text-xs text-neutral-500">{user.progress}%</span>
                   </div>
                 </TableCell>
                 <TableCell>

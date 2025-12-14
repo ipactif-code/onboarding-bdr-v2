@@ -1,5 +1,6 @@
 import { v } from "convex/values";
-import { query, mutation, internalMutation } from "./_generated/server";
+import { query, mutation, internalMutation, QueryCtx } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 import { getCurrentUser, requireAuth, requireAdmin, requireSelfOrAdmin, ensureUser } from "./lib/auth";
 
 // ============================================================================
@@ -79,6 +80,35 @@ export const list = query({
     const startIndex = (page - 1) * pageSize;
     const paginatedUsers = users.slice(startIndex, startIndex + pageSize);
 
+    // Preload all data for optimized progress calculation
+    const allSections = await ctx.db.query("sections").collect();
+    const allLessons = await ctx.db.query("lessons").collect();
+
+    // Create Map: sectionId -> courseId
+    const sectionToCourse = new Map<string, Id<"courses">>();
+    for (const section of allSections) {
+      sectionToCourse.set(section._id.toString(), section.courseId);
+    }
+
+    // Create Map: courseId -> lesson count
+    const courseLessonCount = new Map<string, number>();
+    for (const lesson of allLessons) {
+      const courseId = sectionToCourse.get(lesson.sectionId.toString());
+      if (courseId) {
+        const key = courseId.toString();
+        courseLessonCount.set(key, (courseLessonCount.get(key) ?? 0) + 1);
+      }
+    }
+
+    // Create Map: lessonId -> courseId (for finding user's enrolled courses)
+    const lessonToCourse = new Map<string, Id<"courses">>();
+    for (const lesson of allLessons) {
+      const courseId = sectionToCourse.get(lesson.sectionId.toString());
+      if (courseId) {
+        lessonToCourse.set(lesson._id.toString(), courseId);
+      }
+    }
+
     // Get team counts and progress for each user
     const data = await Promise.all(
       paginatedUsers.map(async (user) => {
@@ -87,13 +117,27 @@ export const list = query({
           .withIndex("by_user", (q) => q.eq("userId", user._id))
           .collect();
 
-        // Calculate overall progress from the progress table
+        // Calculate overall progress correctly
         const progress = await ctx.db
           .query("progress")
           .withIndex("by_user", (q) => q.eq("userId", user._id))
           .collect();
 
-        const totalLessons = progress.length;
+        // Find unique courses the user has progress in
+        const userCourseIds = new Set<string>();
+        for (const p of progress) {
+          const courseId = lessonToCourse.get(p.lessonId.toString());
+          if (courseId) {
+            userCourseIds.add(courseId.toString());
+          }
+        }
+
+        // Sum total lessons across enrolled courses
+        let totalLessons = 0;
+        for (const courseId of userCourseIds) {
+          totalLessons += courseLessonCount.get(courseId) ?? 0;
+        }
+
         const completedLessons = progress.filter((p) => p.status === "completed").length;
         const overallProgress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 
@@ -192,8 +236,36 @@ export const get = query({
     const coursesInProgress = progress.filter((p) => p.status === "in_progress").length;
     const totalTimeSpent = progress.reduce((sum, p) => sum + p.timeSpent, 0);
 
-    // Calculate overall progress (simplified - would need lesson counts per course in real impl)
-    const totalLessons = progress.length;
+    // Calculate overall progress correctly
+    // Find unique courses the user has progress in
+    const userCourseIds = new Set<Id<"courses">>();
+    for (const p of progress) {
+      const lesson = await ctx.db.get(p.lessonId);
+      if (lesson) {
+        const section = await ctx.db.get(lesson.sectionId);
+        if (section) {
+          userCourseIds.add(section.courseId);
+        }
+      }
+    }
+
+    // Sum total lessons across enrolled courses
+    let totalLessons = 0;
+    for (const courseId of userCourseIds) {
+      const sections = await ctx.db
+        .query("sections")
+        .withIndex("by_course", (q) => q.eq("courseId", courseId))
+        .collect();
+
+      for (const section of sections) {
+        const lessons = await ctx.db
+          .query("lessons")
+          .withIndex("by_section", (q) => q.eq("sectionId", section._id))
+          .collect();
+        totalLessons += lessons.length;
+      }
+    }
+
     const completedLessons = progress.filter((p) => p.status === "completed").length;
     const overallProgress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 

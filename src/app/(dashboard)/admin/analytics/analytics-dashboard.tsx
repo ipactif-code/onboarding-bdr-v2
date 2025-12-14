@@ -109,32 +109,32 @@ function KPICardSkeleton() {
 const activityChartConfig = {
   sessions: {
     label: "Sessions",
-    color: "hsl(var(--chart-1))",
+    color: "var(--chart-1)",
   },
 } satisfies ChartConfig;
 
 const courseChartConfig = {
   completionRate: {
     label: "Completion Rate",
-    color: "hsl(var(--chart-2))",
+    color: "var(--chart-2)",
   },
 } satisfies ChartConfig;
 
 const quizPassChartConfig = {
   passed: {
     label: "Passed",
-    color: "hsl(var(--chart-2))",
+    color: "var(--chart-2)",
   },
   failed: {
     label: "Failed",
-    color: "hsl(var(--chart-5))",
+    color: "var(--chart-5)",
   },
 } satisfies ChartConfig;
 
 const scoreDistributionConfig = {
   count: {
     label: "Attempts",
-    color: "hsl(var(--chart-3))",
+    color: "var(--chart-3)",
   },
 } satisfies ChartConfig;
 

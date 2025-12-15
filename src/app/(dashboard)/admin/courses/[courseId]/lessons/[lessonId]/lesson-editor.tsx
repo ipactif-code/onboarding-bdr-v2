@@ -27,7 +27,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
@@ -843,7 +845,7 @@ function QuizLessonEditor({ lessonId, quizConfig }: QuizLessonEditorProps) {
   };
 
   return (
-    <Card className="rounded-2xl border-border py-0 gap-0 shadow-sm">
+    <Card className="rounded-2xl border-border py-0 gap-0 shadow-sm flex flex-col flex-1 min-h-0">
         <div className="flex items-center justify-between border-b border-border bg-muted/50 px-6 py-4 rounded-t-2xl">
           <h2 className="text-lg font-semibold text-foreground">
             Questions ({questions.length})
@@ -853,6 +855,7 @@ function QuizLessonEditor({ lessonId, quizConfig }: QuizLessonEditorProps) {
             Add Question
           </Button>
         </div>
+        <ScrollArea className="h-0 flex-1">
         <CardContent className="pt-6 pb-6">
           {/* Existing Questions */}
           <div className="space-y-4">
@@ -1184,6 +1187,7 @@ function QuizLessonEditor({ lessonId, quizConfig }: QuizLessonEditorProps) {
             </>
           )}
         </CardContent>
+        </ScrollArea>
     </Card>
   );
 }
@@ -1300,101 +1304,26 @@ function FilesLessonEditor({ lessonId, initialContent, files }: FilesLessonEdito
   };
 
   return (
-    <div className="space-y-6">
-      {/* Files Card */}
-      <Card className="rounded-2xl border-border py-0 gap-0">
-        <div className="border-b border-border bg-muted/50 px-6 py-4 rounded-t-2xl">
-          <h2 className="text-lg font-semibold text-foreground">Files</h2>
-        </div>
-        <CardContent className="px-6 pt-6 pb-6 space-y-4">
-          {/* Upload Zone */}
-          <label className={`block p-8 border-2 border-dashed rounded-lg text-center cursor-pointer hover:bg-muted/50 transition-colors ${isUploading ? "opacity-50 pointer-events-none" : ""}`}>
-            <input
-              type="file"
-              className="hidden"
-              onChange={handleUpload}
-              disabled={isUploading}
-              multiple
-            />
-            {isUploading ? (
-              <>
-                <Loader2 className="size-8 mx-auto mb-2 text-muted-foreground animate-spin" />
-                <p className="text-sm text-muted-foreground">Uploading... {uploadProgress}%</p>
-              </>
-            ) : (
-              <>
-                <Plus className="size-8 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">
-                  Click to upload files
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  PDF, Word, Excel, PowerPoint, Images, Videos (max 50MB each)
-                </p>
-              </>
-            )}
-          </label>
+    <Card className="rounded-2xl border-border py-0 gap-0 flex-1 flex flex-col min-h-0 overflow-hidden">
+      <Tabs defaultValue="files" className="flex flex-col h-full">
+        {/* Tab Header */}
+        <div className="flex items-center justify-between border-b border-border bg-muted/50 px-6 py-3 rounded-t-2xl shrink-0">
+          <TabsList className="bg-transparent h-auto p-0 gap-4">
+            <TabsTrigger
+              value="files"
+              className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:bg-transparent rounded-none px-1 py-2 font-semibold text-sm"
+            >
+              Files {files && files.length > 0 && `(${files.length})`}
+            </TabsTrigger>
+            <TabsTrigger
+              value="description"
+              className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:bg-transparent rounded-none px-1 py-2 font-semibold text-sm"
+            >
+              Description & Instructions
+            </TabsTrigger>
+          </TabsList>
 
-          {/* File List */}
-          {files && files.length > 0 && (
-            <div className="space-y-2">
-              {files.map((file) => (
-                <div
-                  key={file._id}
-                  className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <FileIcon className="size-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium">{file.fileName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatFileSize(file.fileSize)} · {file.fileType}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" render={<a href={file.downloadUrl} target="_blank" rel="noopener noreferrer" />}>
-                      <ExternalLink className="size-4" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="text-red-500" />}>
-                        <Trash2 className="size-4" />
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete file?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will permanently delete &quot;{file.fileName}&quot;.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDeleteFile(file._id)}
-                            className="bg-red-600 hover:bg-red-700"
-                          >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {(!files || files.length === 0) && (
-            <p className="text-center text-sm text-muted-foreground py-4">
-              No files uploaded yet
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Content Card with PlateEditor */}
-      <Card className="rounded-2xl border-border py-0 gap-0 h-[600px] flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between border-b border-border bg-muted/50 px-6 py-4 rounded-t-2xl shrink-0">
-          <h2 className="text-lg font-semibold text-foreground">Description & Instructions</h2>
+          {/* Auto-save indicator */}
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             {isContentSaving && (
               <>
@@ -1410,15 +1339,106 @@ function FilesLessonEditor({ lessonId, initialContent, files }: FilesLessonEdito
             )}
           </div>
         </div>
-        <CardContent className="p-0 flex-1 flex flex-col min-h-0 overflow-hidden">
+
+        {/* Files Tab */}
+        <TabsContent value="files" className="flex-1 flex flex-col m-0 min-h-0">
+          {/* Upload Zone - Fixed */}
+          <div className="px-6 py-6 border-b border-border shrink-0">
+            <label className={`block p-8 border-2 border-dashed rounded-lg text-center cursor-pointer hover:bg-muted/50 transition-colors ${isUploading ? "opacity-50 pointer-events-none" : ""}`}>
+              <input
+                type="file"
+                className="hidden"
+                onChange={handleUpload}
+                disabled={isUploading}
+                multiple
+              />
+              {isUploading ? (
+                <>
+                  <Loader2 className="size-8 mx-auto mb-2 text-muted-foreground animate-spin" />
+                  <p className="text-sm text-muted-foreground">Uploading... {uploadProgress}%</p>
+                </>
+              ) : (
+                <>
+                  <Plus className="size-8 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    Click to upload files
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    PDF, Word, Excel, PowerPoint, Images, Videos (max 50MB each)
+                  </p>
+                </>
+              )}
+            </label>
+          </div>
+
+          {/* File List - Scrollable */}
+          <ScrollArea className="h-0 flex-1">
+            <div className="px-6 py-4">
+              {files && files.length > 0 ? (
+                <div className="space-y-2">
+                  {files.map((file) => (
+                    <div
+                      key={file._id}
+                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <FileIcon className="size-5 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm font-medium">{file.fileName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatFileSize(file.fileSize)} · {file.fileType}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm" render={<a href={file.downloadUrl} target="_blank" rel="noopener noreferrer" />}>
+                          <ExternalLink className="size-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="text-red-500" />}>
+                            <Trash2 className="size-4" />
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete file?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete &quot;{file.fileName}&quot;.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteFile(file._id)}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-sm text-muted-foreground py-8">
+                  No files uploaded yet
+                </p>
+              )}
+            </div>
+          </ScrollArea>
+        </TabsContent>
+
+        {/* Description Tab */}
+        <TabsContent value="description" className="flex-1 flex flex-col m-0 min-h-0 overflow-hidden">
           <PlateEditor
             value={content}
             onChange={setContent}
             placeholder="Add instructions on how to use these files, what learners should do with them..."
-            className="flex-1 min-h-0 overflow-y-auto border-0 rounded-t-none"
+            className="flex-1 min-h-0 overflow-y-auto border-0 rounded-none"
           />
-        </CardContent>
-      </Card>
-    </div>
+        </TabsContent>
+      </Tabs>
+    </Card>
   );
 }

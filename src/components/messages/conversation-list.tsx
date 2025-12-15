@@ -43,26 +43,26 @@ export function ConversationList({
 
   return (
     <>
-      <div className="flex flex-col h-full bg-neutral-50 border-r border-neutral-200">
+      <div className="flex flex-col h-full bg-muted/50 border-r border-border">
         {/* Header */}
-        <div className="p-4 border-b border-neutral-200 space-y-4">
+        <div className="p-4 border-b border-border space-y-4">
           {/* Title + New Button */}
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-medium text-neutral-950">Inbox</h2>
+            <h2 className="text-base font-medium text-foreground">Inbox</h2>
             <Button size="sm" onClick={() => setNewMessageOpen(true)}>
-              <Plus className="mr-1 size-4" />
+              <Plus className="size-4" data-icon="inline-start" />
               New
             </Button>
           </div>
 
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
               placeholder="Search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 bg-white"
+              className="pl-9 bg-background"
             />
           </div>
         </div>
@@ -70,7 +70,7 @@ export function ConversationList({
         {/* Conversation List */}
         <ScrollArea className="flex-1">
           {filteredConversations.length === 0 ? (
-            <div className="p-4 text-center text-neutral-500 text-sm">
+            <div className="p-4 text-center text-muted-foreground text-sm">
               {search ? "No conversations found" : "No messages yet"}
             </div>
           ) : (

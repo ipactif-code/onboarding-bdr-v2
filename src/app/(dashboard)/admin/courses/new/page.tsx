@@ -44,12 +44,10 @@ export default function NewCoursePage() {
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href="/admin/courses">
-            <ArrowLeft className="size-5" />
-          </Link>
+        <Button variant="ghost" size="icon" render={<Link href="/admin/courses" />}>
+          <ArrowLeft className="size-5" />
         </Button>
-        <h1 className="text-2xl font-bold text-neutral-950">New Course</h1>
+        <h1 className="text-2xl font-bold text-foreground">New Course</h1>
       </div>
 
       {/* Form */}
@@ -63,7 +61,7 @@ export default function NewCoursePage() {
             placeholder="e.g., BDR Fundamentals"
             autoFocus
           />
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-muted-foreground">
             Choose a clear, descriptive title (3-200 characters)
           </p>
         </div>
@@ -80,8 +78,8 @@ export default function NewCoursePage() {
         </div>
 
         <div className="flex justify-end gap-3">
-          <Button variant="outline" asChild>
-            <Link href="/admin/courses">Cancel</Link>
+          <Button variant="outline" render={<Link href="/admin/courses" />}>
+            Cancel
           </Button>
           <Button onClick={handleCreate} disabled={isCreating || !title.trim()}>
             {isCreating ? "Creating..." : "Create Course"}

@@ -36,13 +36,11 @@ export function AdminDashboard() {
     <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-neutral-950">Dashboard</h1>
+        <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
         <div className="flex items-center gap-2">
-          <Button variant="outline" asChild>
-            <Link href="/admin/courses/new">
-              <Plus className="size-4 mr-2" />
-              New Course
-            </Link>
+          <Button variant="outline" render={<Link href="/admin/courses/new" />}>
+            <Plus className="size-4" data-icon="inline-start" />
+            New Course
           </Button>
         </div>
       </div>
@@ -81,45 +79,37 @@ export function AdminDashboard() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Button variant="outline" className="h-auto py-4 justify-start" asChild>
-          <Link href="/admin/courses">
-            <BookOpen className="size-5 mr-3 text-blue-600" />
-            <div className="text-left">
-              <p className="font-medium">Manage Courses</p>
-              <p className="text-xs text-neutral-500">Create, edit, publish</p>
-            </div>
-          </Link>
+        <Button variant="outline" className="h-auto py-4 justify-start" render={<Link href="/admin/courses" />}>
+          <BookOpen className="size-5 mr-3 text-blue-600" />
+          <div className="text-left">
+            <p className="font-medium">Manage Courses</p>
+            <p className="text-xs text-muted-foreground">Create, edit, publish</p>
+          </div>
         </Button>
-        <Button variant="outline" className="h-auto py-4 justify-start" asChild>
-          <Link href="/admin/teams">
-            <Users className="size-5 mr-3 text-green-600" />
-            <div className="text-left">
-              <p className="font-medium">Manage Teams</p>
-              <p className="text-xs text-neutral-500">Teams and members</p>
-            </div>
-          </Link>
+        <Button variant="outline" className="h-auto py-4 justify-start" render={<Link href="/admin/teams" />}>
+          <Users className="size-5 mr-3 text-green-600" />
+          <div className="text-left">
+            <p className="font-medium">Manage Teams</p>
+            <p className="text-xs text-muted-foreground">Teams and members</p>
+          </div>
         </Button>
-        <Button variant="outline" className="h-auto py-4 justify-start" asChild>
-          <Link href="/admin/analytics">
-            <TrendingUp className="size-5 mr-3 text-purple-600" />
-            <div className="text-left">
-              <p className="font-medium">View Analytics</p>
-              <p className="text-xs text-neutral-500">Detailed reports</p>
-            </div>
-          </Link>
+        <Button variant="outline" className="h-auto py-4 justify-start" render={<Link href="/admin/analytics" />}>
+          <TrendingUp className="size-5 mr-3 text-purple-600" />
+          <div className="text-left">
+            <p className="font-medium">View Analytics</p>
+            <p className="text-xs text-muted-foreground">Detailed reports</p>
+          </div>
         </Button>
       </div>
 
       {/* Recent Users */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold text-neutral-950">
+          <h2 className="text-2xl font-semibold text-foreground">
             Recent Users
           </h2>
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/admin/users" className="flex items-center gap-1">
-              View all <ArrowRight className="size-4" />
-            </Link>
+          <Button variant="ghost" size="sm" render={<Link href="/admin/users" className="flex items-center gap-1" />}>
+            View all <ArrowRight className="size-4" />
           </Button>
         </div>
 

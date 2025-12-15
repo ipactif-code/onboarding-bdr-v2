@@ -1,6 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { LessonPageContent } from "./lesson-page-content";
 
 interface LessonPageProps {
   params: Promise<{ courseId: string; lessonId: string }>;
@@ -14,5 +13,6 @@ export default async function LessonPage({ params }: LessonPageProps) {
     redirect("/sign-in");
   }
 
-  return <LessonPageContent courseId={courseId} lessonId={lessonId} />;
+  // Redirect to SPA-style URL with query param
+  redirect(`/courses/${courseId}?lesson=${lessonId}`);
 }

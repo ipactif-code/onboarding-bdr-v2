@@ -10,9 +10,9 @@ import { Id } from "../../../convex/_generated/dataModel";
 interface Course {
   _id: Id<"courses">;
   title: string;
-  description?: string;
   coverImage?: string;
-  progress?: number; // 0-100
+  progress?: number;
+  lessonsCount?: number;
 }
 
 interface CourseSectionProps {
@@ -30,13 +30,13 @@ export function CourseSection({
 
   const scrollLeft = () => {
     if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: -300, behavior: "smooth" });
+      scrollRef.current.scrollBy({ left: -344, behavior: "smooth" });
     }
   };
 
   const scrollRight = () => {
     if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: 300, behavior: "smooth" });
+      scrollRef.current.scrollBy({ left: 344, behavior: "smooth" });
     }
   };
 
@@ -44,7 +44,7 @@ export function CourseSection({
     <div className="flex flex-col gap-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold text-neutral-950 tracking-tight">
+        <h2 className="text-2xl font-semibold text-foreground tracking-tight">
           {title}
         </h2>
 

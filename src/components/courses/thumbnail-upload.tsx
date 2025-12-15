@@ -124,7 +124,7 @@ export function ThumbnailUpload({
         <img
           src={displayUrl}
           alt="Thumbnail preview"
-          className="h-40 w-full rounded-lg border border-gray-200 object-cover"
+          className="h-40 w-full rounded-lg border border-border object-cover"
         />
         <Button
           type="button"
@@ -148,7 +148,7 @@ export function ThumbnailUpload({
       className={`
         flex h-40 cursor-pointer flex-col items-center justify-center gap-2
         rounded-lg border-2 border-dashed transition-colors
-        ${isDragOver ? "border-primary bg-primary/5" : "border-gray-300 hover:border-gray-400"}
+        ${isDragOver ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"}
         ${isUploading ? "pointer-events-none opacity-50" : ""}
       `}
     >

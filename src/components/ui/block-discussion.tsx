@@ -25,13 +25,13 @@ import {
 } from 'platejs';
 import { useEditorPlugin, useEditorRef, usePluginOption } from 'platejs/react';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui-plate/button';
 import {
   Popover,
   PopoverAnchor,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
+} from '@/components/ui-plate/popover';
 import { commentPlugin } from '@/components/editor/plugins/comment-kit';
 import {
   type TDiscussion,

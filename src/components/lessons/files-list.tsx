@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -138,19 +136,8 @@ function isCodeFile(mimeType: string, fileName: string): boolean {
 }
 
 export function FilesList({ lessonId, files }: FilesListProps) {
-  const [isCompleted, setIsCompleted] = useState(false);
   const [downloadedFiles, setDownloadedFiles] = useState<Set<string>>(new Set());
   const [downloadingId, setDownloadingId] = useState<Id<"files"> | null>(null);
-  const markCompleted = useMutation(api.progress.markCompleted);
-
-  const handleMarkComplete = async () => {
-    try {
-      await markCompleted({ lessonId });
-      setIsCompleted(true);
-    } catch (error) {
-      console.error("Failed to mark lesson as completed:", error);
-    }
-  };
 
   const handleDownloadClick = (fileId: string) => {
     setDownloadedFiles((prev) => new Set([...prev, fileId]));
@@ -190,7 +177,7 @@ export function FilesList({ lessonId, files }: FilesListProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full">
       {/* Files list */}
       <div className="space-y-3">
         {files.map((file) => {
@@ -244,17 +231,17 @@ export function FilesList({ lessonId, files }: FilesListProps) {
                     >
                       {downloadingId === file._id ? (
                         <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          <Loader2 className="h-4 w-4 animate-spin" data-icon="inline-start" />
                           Downloading...
                         </>
                       ) : isDownloaded ? (
                         <>
-                          <Download className="h-4 w-4 mr-2" />
+                          <Download className="h-4 w-4" data-icon="inline-start" />
                           Download Again
                         </>
                       ) : (
                         <>
-                          <Download className="h-4 w-4 mr-2" />
+                          <Download className="h-4 w-4" data-icon="inline-start" />
                           Download
                         </>
                       )}
@@ -263,28 +250,26 @@ export function FilesList({ lessonId, files }: FilesListProps) {
                     <Button
                       variant="outline"
                       size="sm"
-                      asChild
-                      className="flex-shrink-0"
-                    >
-                      <a
+                      render={<a
                         href={file.downloadUrl}
                         download={file.fileName}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={() => handleDownloadClick(file._id)}
-                      >
-                        {isDownloaded ? (
-                          <>
-                            <ExternalLink className="h-4 w-4 mr-2" />
-                            Open
-                          </>
-                        ) : (
-                          <>
-                            <Download className="h-4 w-4 mr-2" />
-                            Download
-                          </>
-                        )}
-                      </a>
+                      />}
+                      className="flex-shrink-0"
+                    >
+                      {isDownloaded ? (
+                        <>
+                          <ExternalLink className="h-4 w-4" data-icon="inline-start" />
+                          Open
+                        </>
+                      ) : (
+                        <>
+                          <Download className="h-4 w-4" data-icon="inline-start" />
+                          Download
+                        </>
+                      )}
                     </Button>
                   )}
                 </div>
@@ -299,27 +284,6 @@ export function FilesList({ lessonId, files }: FilesListProps) {
         {files.length} file{files.length > 1 ? "s" : ""} •
         Total: {formatFileSize(files.reduce((sum, f) => sum + f.fileSize, 0))}
       </p>
-
-      {/* Mark as Complete button */}
-      <div className="pt-6 border-t">
-        <Button
-          onClick={handleMarkComplete}
-          disabled={isCompleted}
-          className="w-full sm:w-auto"
-        >
-          {isCompleted ? (
-            <>
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Completed
-            </>
-          ) : (
-            <>
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Mark as Complete
-            </>
-          )}
-        </Button>
-      </div>
     </div>
   );
 }

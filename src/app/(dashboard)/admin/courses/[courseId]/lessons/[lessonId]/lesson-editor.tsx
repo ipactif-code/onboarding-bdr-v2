@@ -285,7 +285,7 @@ export function LessonEditor({
       {/* Header */}
       <div className="flex items-center justify-between shrink-0">
         <div>
-          <h1 className="text-3xl font-bold text-neutral-950">{lesson.title}</h1>
+          <h1 className="text-3xl font-bold text-foreground">{lesson.title}</h1>
           <div className="flex items-center gap-2 mt-1">
             <Badge variant="secondary" className="gap-1">
               <Icon className="size-3" />
@@ -293,7 +293,7 @@ export function LessonEditor({
             </Badge>
             <Link
               href={`/admin/courses/${courseId}`}
-              className="text-sm text-neutral-500 hover:text-neutral-900"
+              className="text-sm text-muted-foreground hover:text-foreground"
             >
               {courseTitle}
             </Link>
@@ -307,11 +307,9 @@ export function LessonEditor({
 
         <div className="flex items-center gap-2">
           <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline" size="sm" className="text-red-600">
-                <Trash2 className="size-4 mr-2" />
-                Delete
-              </Button>
+            <AlertDialogTrigger render={<Button variant="outline" size="sm" className="text-red-600" />}>
+              <Trash2 className="size-4" data-icon="inline-start" />
+              Delete
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
@@ -335,9 +333,9 @@ export function LessonEditor({
 
           <Button onClick={handleSaveInfo} disabled={isSaving}>
             {isSaving ? (
-              <Loader2 className="size-4 mr-2 animate-spin" />
+              <Loader2 className="size-4 animate-spin" data-icon="inline-start" />
             ) : (
-              <Save className="size-4 mr-2" />
+              <Save className="size-4" data-icon="inline-start" />
             )}
             Save
           </Button>
@@ -381,9 +379,9 @@ export function LessonEditor({
 
         {/* Right Column: Settings */}
         <div className="space-y-6">
-          <Card className="rounded-2xl border-gray-200 py-0 gap-0">
-            <div className="border-b border-gray-200 bg-gray-50 px-6 py-4 rounded-t-2xl">
-              <h2 className="text-lg font-semibold text-neutral-950">Lesson Settings</h2>
+          <Card className="rounded-2xl border-border py-0 gap-0">
+            <div className="border-b border-border bg-muted/50 px-6 py-4 rounded-t-2xl">
+              <h2 className="text-lg font-semibold text-foreground">Lesson Settings</h2>
             </div>
             <CardContent className="p-6 space-y-4">
               {/* Common Settings */}
@@ -417,7 +415,7 @@ export function LessonEditor({
               <div className="space-y-2">
                 <Label htmlFor="duration">Estimated Duration (minutes)</Label>
                 <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
+                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                   <Input
                     id="duration"
                     type="number"
@@ -438,7 +436,7 @@ export function LessonEditor({
                 <>
                   <Separator className="my-4" />
 
-                  <h3 className="text-sm font-semibold text-neutral-700">Quiz Settings</h3>
+                  <h3 className="text-sm font-semibold text-muted-foreground">Quiz Settings</h3>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -475,7 +473,7 @@ export function LessonEditor({
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label>Allow Retry</Label>
-                      <p className="text-xs text-neutral-500">
+                      <p className="text-xs text-muted-foreground">
                         Users can retake the quiz after failing
                       </p>
                     </div>
@@ -491,7 +489,7 @@ export function LessonEditor({
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label>Show Correct Answers</Label>
-                      <p className="text-xs text-neutral-500">
+                      <p className="text-xs text-muted-foreground">
                         Display correct answers after submission
                       </p>
                     </div>
@@ -511,7 +509,7 @@ export function LessonEditor({
                 <>
                   <Separator className="my-4" />
 
-                  <h3 className="text-sm font-semibold text-neutral-700">Embed Settings</h3>
+                  <h3 className="text-sm font-semibold text-muted-foreground">Embed Settings</h3>
 
                   <div className="space-y-2">
                     <Label htmlFor="embed-url">Embed URL</Label>
@@ -527,10 +525,8 @@ export function LessonEditor({
                         className="flex-1"
                       />
                       {embedUrl && (
-                        <Button variant="outline" size="icon" asChild>
-                          <a href={embedUrl} target="_blank" rel="noopener noreferrer">
-                            <ExternalLink className="size-4" />
-                          </a>
+                        <Button variant="outline" size="icon" render={<a href={embedUrl} target="_blank" rel="noopener noreferrer" />}>
+                          <ExternalLink className="size-4" />
                         </Button>
                       )}
                     </div>
@@ -538,11 +534,11 @@ export function LessonEditor({
                       {embedUrl && (
                         <>
                           <Badge variant="secondary">{detectProvider(embedUrl)}</Badge>
-                          <span className="text-xs text-neutral-500">Detected provider</span>
+                          <span className="text-xs text-muted-foreground">Detected provider</span>
                         </>
                       )}
                       {!embedUrl && (
-                        <p className="text-xs text-neutral-500">
+                        <p className="text-xs text-muted-foreground">
                           Supports YouTube, Vimeo, Loom, Figma, and other embeddable URLs
                         </p>
                       )}
@@ -591,10 +587,10 @@ function TextLessonEditor({ lessonId, initialContent }: TextLessonEditorProps) {
   }, [error]);
 
   return (
-    <Card className="rounded-2xl border-gray-200 py-0 gap-0 flex-1 flex flex-col min-h-0 overflow-hidden">
-      <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-4 rounded-t-2xl shrink-0">
-        <h2 className="text-lg font-semibold text-neutral-950">Content</h2>
-        <div className="flex items-center gap-2 text-sm text-neutral-500">
+    <Card className="rounded-2xl border-border py-0 gap-0 flex-1 flex flex-col min-h-0 overflow-hidden">
+      <div className="flex items-center justify-between border-b border-border bg-muted/50 px-6 py-4 rounded-t-2xl shrink-0">
+        <h2 className="text-lg font-semibold text-foreground">Content</h2>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           {isSaving && (
             <>
               <Loader2 className="size-3 animate-spin" />
@@ -657,10 +653,10 @@ function EmbedLessonEditor({ lessonId, initialContent }: EmbedLessonEditorProps)
   }, [error]);
 
   return (
-    <Card className="rounded-2xl border-gray-200 py-0 gap-0 flex-1 flex flex-col min-h-0 overflow-hidden">
-      <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-4 rounded-t-2xl shrink-0">
-        <h2 className="text-lg font-semibold text-neutral-950">Additional Content</h2>
-        <div className="flex items-center gap-2 text-sm text-neutral-500">
+    <Card className="rounded-2xl border-border py-0 gap-0 flex-1 flex flex-col min-h-0 overflow-hidden">
+      <div className="flex items-center justify-between border-b border-border bg-muted/50 px-6 py-4 rounded-t-2xl shrink-0">
+        <h2 className="text-lg font-semibold text-foreground">Additional Content</h2>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           {isContentSaving && (
             <>
               <Loader2 className="size-3 animate-spin" />
@@ -847,13 +843,13 @@ function QuizLessonEditor({ lessonId, quizConfig }: QuizLessonEditorProps) {
   };
 
   return (
-    <Card className="rounded-2xl border-gray-200 py-0 gap-0 shadow-sm">
-        <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-4 rounded-t-2xl">
-          <h2 className="text-lg font-semibold text-neutral-950">
+    <Card className="rounded-2xl border-border py-0 gap-0 shadow-sm">
+        <div className="flex items-center justify-between border-b border-border bg-muted/50 px-6 py-4 rounded-t-2xl">
+          <h2 className="text-lg font-semibold text-foreground">
             Questions ({questions.length})
           </h2>
           <Button size="sm" variant="outline" onClick={() => setShowNewQuestion(true)}>
-            <Plus className="size-4 mr-2" />
+            <Plus className="size-4" data-icon="inline-start" />
             Add Question
           </Button>
         </div>
@@ -936,7 +932,7 @@ function QuizLessonEditor({ lessonId, quizConfig }: QuizLessonEditorProps) {
                               setEditOptions([...editOptions, { text: "", isCorrect: false }]);
                             }}
                           >
-                            <Plus className="size-4 mr-2" />
+                            <Plus className="size-4" data-icon="inline-start" />
                             Add Option
                           </Button>
                         )}
@@ -969,9 +965,9 @@ function QuizLessonEditor({ lessonId, quizConfig }: QuizLessonEditorProps) {
                           className="flex-1"
                         >
                           {isSavingQuestion ? (
-                            <Loader2 className="size-4 mr-2 animate-spin" />
+                            <Loader2 className="size-4 animate-spin" data-icon="inline-start" />
                           ) : (
-                            <Save className="size-4 mr-2" />
+                            <Save className="size-4" data-icon="inline-start" />
                           )}
                           Save Changes
                         </Button>
@@ -985,7 +981,7 @@ function QuizLessonEditor({ lessonId, quizConfig }: QuizLessonEditorProps) {
                     <>
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-neutral-500">
+                          <span className="text-sm font-medium text-muted-foreground">
                             Q{index + 1}
                           </span>
                           <Badge variant="outline">{question.points} pts</Badge>
@@ -997,13 +993,11 @@ function QuizLessonEditor({ lessonId, quizConfig }: QuizLessonEditorProps) {
                             className="size-8"
                             onClick={() => handleStartEdit(question)}
                           >
-                            <Pencil className="size-4 text-neutral-500" />
+                            <Pencil className="size-4 text-muted-foreground" />
                           </Button>
                           <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="size-8">
-                                <Trash2 className="size-4 text-red-500" />
-                              </Button>
+                            <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="size-8" />}>
+                              <Trash2 className="size-4 text-red-500" />
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
@@ -1033,7 +1027,7 @@ function QuizLessonEditor({ lessonId, quizConfig }: QuizLessonEditorProps) {
                             className={`p-2 rounded text-sm ${
                               option.isCorrect
                                 ? "bg-green-50 border border-green-200 text-green-700"
-                                : "bg-neutral-50 border"
+                                : "bg-muted/50 border"
                             }`}
                           >
                             {option.isCorrect && (
@@ -1044,7 +1038,7 @@ function QuizLessonEditor({ lessonId, quizConfig }: QuizLessonEditorProps) {
                         ))}
                       </div>
                       {question.explanation && (
-                        <p className="text-sm text-neutral-500 italic">
+                        <p className="text-sm text-muted-foreground italic">
                           {question.explanation}
                         </p>
                       )}
@@ -1054,8 +1048,8 @@ function QuizLessonEditor({ lessonId, quizConfig }: QuizLessonEditorProps) {
               ))}
 
             {(!quizConfig?.questions || quizConfig.questions.length === 0) && !showNewQuestion && (
-              <div className="text-center py-8 text-neutral-500">
-                <HelpCircle className="size-12 mx-auto mb-4 text-neutral-300" />
+              <div className="text-center py-8 text-muted-foreground">
+                <HelpCircle className="size-12 mx-auto mb-4 text-muted-foreground/50" />
                 <p>No questions yet</p>
                 <Button
                   variant="link"
@@ -1139,7 +1133,7 @@ function QuizLessonEditor({ lessonId, quizConfig }: QuizLessonEditorProps) {
                         setNewOptions([...newOptions, { text: "", isCorrect: false }]);
                       }}
                     >
-                      <Plus className="size-4 mr-2" />
+                      <Plus className="size-4" data-icon="inline-start" />
                       Add Option
                     </Button>
                   )}
@@ -1172,9 +1166,9 @@ function QuizLessonEditor({ lessonId, quizConfig }: QuizLessonEditorProps) {
                     className="flex-1"
                   >
                     {isAddingQuestion ? (
-                      <Loader2 className="size-4 mr-2 animate-spin" />
+                      <Loader2 className="size-4 animate-spin" data-icon="inline-start" />
                     ) : (
-                      <Plus className="size-4 mr-2" />
+                      <Plus className="size-4" data-icon="inline-start" />
                     )}
                     Add Question
                   </Button>
@@ -1308,13 +1302,13 @@ function FilesLessonEditor({ lessonId, initialContent, files }: FilesLessonEdito
   return (
     <div className="space-y-6">
       {/* Files Card */}
-      <Card className="rounded-2xl border-gray-200 py-0 gap-0">
-        <div className="border-b border-gray-200 bg-gray-50 px-6 py-4 rounded-t-2xl">
-          <h2 className="text-lg font-semibold text-neutral-950">Files</h2>
+      <Card className="rounded-2xl border-border py-0 gap-0">
+        <div className="border-b border-border bg-muted/50 px-6 py-4 rounded-t-2xl">
+          <h2 className="text-lg font-semibold text-foreground">Files</h2>
         </div>
         <CardContent className="px-6 pt-6 pb-6 space-y-4">
           {/* Upload Zone */}
-          <label className={`block p-8 border-2 border-dashed rounded-lg text-center cursor-pointer hover:bg-neutral-50 transition-colors ${isUploading ? "opacity-50 pointer-events-none" : ""}`}>
+          <label className={`block p-8 border-2 border-dashed rounded-lg text-center cursor-pointer hover:bg-muted/50 transition-colors ${isUploading ? "opacity-50 pointer-events-none" : ""}`}>
             <input
               type="file"
               className="hidden"
@@ -1324,16 +1318,16 @@ function FilesLessonEditor({ lessonId, initialContent, files }: FilesLessonEdito
             />
             {isUploading ? (
               <>
-                <Loader2 className="size-8 mx-auto mb-2 text-neutral-400 animate-spin" />
-                <p className="text-sm text-neutral-600">Uploading... {uploadProgress}%</p>
+                <Loader2 className="size-8 mx-auto mb-2 text-muted-foreground animate-spin" />
+                <p className="text-sm text-muted-foreground">Uploading... {uploadProgress}%</p>
               </>
             ) : (
               <>
-                <Plus className="size-8 mx-auto mb-2 text-neutral-400" />
-                <p className="text-sm text-neutral-600">
+                <Plus className="size-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
                   Click to upload files
                 </p>
-                <p className="text-xs text-neutral-400 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   PDF, Word, Excel, PowerPoint, Images, Videos (max 50MB each)
                 </p>
               </>
@@ -1346,28 +1340,24 @@ function FilesLessonEditor({ lessonId, initialContent, files }: FilesLessonEdito
               {files.map((file) => (
                 <div
                   key={file._id}
-                  className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg"
+                  className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
                 >
                   <div className="flex items-center gap-3">
-                    <FileIcon className="size-5 text-neutral-400" />
+                    <FileIcon className="size-5 text-muted-foreground" />
                     <div>
                       <p className="text-sm font-medium">{file.fileName}</p>
-                      <p className="text-xs text-neutral-500">
+                      <p className="text-xs text-muted-foreground">
                         {formatFileSize(file.fileSize)} · {file.fileType}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" asChild>
-                      <a href={file.downloadUrl} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="size-4" />
-                      </a>
+                    <Button variant="ghost" size="sm" render={<a href={file.downloadUrl} target="_blank" rel="noopener noreferrer" />}>
+                      <ExternalLink className="size-4" />
                     </Button>
                     <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="text-red-500">
-                          <Trash2 className="size-4" />
-                        </Button>
+                      <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="text-red-500" />}>
+                        <Trash2 className="size-4" />
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
@@ -1394,7 +1384,7 @@ function FilesLessonEditor({ lessonId, initialContent, files }: FilesLessonEdito
           )}
 
           {(!files || files.length === 0) && (
-            <p className="text-center text-sm text-neutral-500 py-4">
+            <p className="text-center text-sm text-muted-foreground py-4">
               No files uploaded yet
             </p>
           )}
@@ -1402,10 +1392,10 @@ function FilesLessonEditor({ lessonId, initialContent, files }: FilesLessonEdito
       </Card>
 
       {/* Content Card with PlateEditor */}
-      <Card className="rounded-2xl border-gray-200 py-0 gap-0 h-[600px] flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-4 rounded-t-2xl shrink-0">
-          <h2 className="text-lg font-semibold text-neutral-950">Description & Instructions</h2>
-          <div className="flex items-center gap-2 text-sm text-neutral-500">
+      <Card className="rounded-2xl border-border py-0 gap-0 h-[600px] flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between border-b border-border bg-muted/50 px-6 py-4 rounded-t-2xl shrink-0">
+          <h2 className="text-lg font-semibold text-foreground">Description & Instructions</h2>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
             {isContentSaving && (
               <>
                 <Loader2 className="size-3 animate-spin" />

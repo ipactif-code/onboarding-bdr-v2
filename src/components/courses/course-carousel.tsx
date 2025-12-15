@@ -8,9 +8,9 @@ import { CourseCard } from "./course-card";
 interface Course {
   _id: Id<"courses">;
   title: string;
-  description?: string;
   coverImage?: string;
   progress?: number;
+  lessonsCount?: number;
 }
 
 interface CourseCarouselProps {
@@ -23,7 +23,7 @@ export const CourseCarousel = forwardRef<HTMLDivElement, CourseCarouselProps>(
     return (
       <div
         ref={ref}
-        className="flex gap-6 overflow-x-auto pb-2 scrollbar-hide"
+        className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide"
         style={{
           scrollbarWidth: "none",
           msOverflowStyle: "none",
@@ -37,9 +37,9 @@ export const CourseCarousel = forwardRef<HTMLDivElement, CourseCarouselProps>(
           >
             <CourseCard
               title={course.title}
-              description={course.description}
               coverImage={course.coverImage}
               progress={showProgress ? course.progress : undefined}
+              lessonsCount={course.lessonsCount}
             />
           </Link>
         ))}

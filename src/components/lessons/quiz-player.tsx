@@ -353,7 +353,7 @@ export function QuizPlayer({ lessonId, quizConfig }: QuizPlayerProps) {
             >
               {isChecking ? (
                 <>
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  <RefreshCw className="h-4 w-4 animate-spin" data-icon="inline-start" />
                   Checking...
                 </>
               ) : (
@@ -423,19 +423,19 @@ export function QuizPlayer({ lessonId, quizConfig }: QuizPlayerProps) {
               {isLastQuestion ? (
                 isSubmitting ? (
                   <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    <RefreshCw className="h-4 w-4 animate-spin" data-icon="inline-start" />
                     Finishing...
                   </>
                 ) : (
                   <>
                     See Results
-                    <ChevronRight className="h-4 w-4 ml-2" />
+                    <ChevronRight className="h-4 w-4" data-icon="inline-end" />
                   </>
                 )
               ) : (
                 <>
                   Next Question
-                  <ChevronRight className="h-4 w-4 ml-2" />
+                  <ChevronRight className="h-4 w-4" data-icon="inline-end" />
                 </>
               )}
             </Button>
@@ -623,7 +623,7 @@ function QuizCompleted({
       {canRetry && (
         <CardFooter>
           <Button onClick={onRetry} variant="outline" className="w-full">
-            <RefreshCw className="h-4 w-4 mr-2" />
+            <RefreshCw className="h-4 w-4" data-icon="inline-start" />
             Try Again
           </Button>
         </CardFooter>

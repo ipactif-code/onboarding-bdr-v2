@@ -50,14 +50,14 @@ export function CoursesList() {
     <div className="flex flex-col gap-6 p-6">
       {/* Title + Search + Filter */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight text-neutral-950">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">
           Courses
         </h1>
 
         <div className="flex items-center gap-4">
           {/* Search */}
           <div className="relative w-96">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
               placeholder="Search"
               value={search}
@@ -88,9 +88,9 @@ export function CoursesList() {
               courses={coursesToComplete.map((course) => ({
                 _id: course._id,
                 title: course.title,
-                description: course.description,
                 coverImage: course.coverImageUrl,
                 progress: course.progress.percentage,
+                lessonsCount: course.progress.totalLessons,
               }))}
               showProgress
             />
@@ -103,8 +103,8 @@ export function CoursesList() {
               courses={recentCourses.map((course) => ({
                 _id: course._id,
                 title: course.title,
-                description: course.description,
                 coverImage: course.coverImageUrl,
+                lessonsCount: course.lessonCount,
               }))}
             />
           )}
@@ -112,7 +112,7 @@ export function CoursesList() {
           {/* Empty state */}
           {!coursesToComplete?.length && !recentCourses?.length && (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-neutral-500">No courses available yet.</p>
+              <p className="text-muted-foreground">No courses available yet.</p>
             </div>
           )}
         </div>
@@ -131,11 +131,13 @@ function CoursesListSkeleton() {
           <Skeleton className="h-px w-full" />
           <div className="flex gap-6">
             {[1, 2, 3, 4].map((j) => (
-              <div key={j} className="flex flex-col gap-3 w-[278px]">
-                <Skeleton className="h-[177px] w-full rounded-xl" />
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-3 w-full" />
-                <Skeleton className="h-2 w-32" />
+              <div key={j} className="flex flex-col w-80 shrink-0">
+                <Skeleton className="h-[180px] w-full rounded-t-xl" />
+                <div className="p-5 space-y-3">
+                  <Skeleton className="h-5 w-3/4" />
+                  <Skeleton className="h-3 w-24" />
+                  {i === 1 && <Skeleton className="h-1 w-full" />}
+                </div>
               </div>
             ))}
           </div>

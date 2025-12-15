@@ -106,14 +106,12 @@ export function TeamsList() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-neutral-950">Teams & Users</h1>
+        <h1 className="text-3xl font-bold text-foreground">Teams & Users</h1>
         {activeTab === "teams" ? (
           <Dialog open={newTeamOpen} onOpenChange={setNewTeamOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="size-4 mr-2" />
-                New Team
-              </Button>
+            <DialogTrigger render={<Button />}>
+              <Plus className="size-4" data-icon="inline-start" />
+              New Team
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
@@ -158,7 +156,7 @@ export function TeamsList() {
           </Dialog>
         ) : (
           <Button onClick={() => setInviteModalOpen(true)}>
-            <UserPlus className="size-4 mr-2" />
+            <UserPlus className="size-4" data-icon="inline-start" />
             Invite User
           </Button>
         )}
@@ -173,7 +171,7 @@ export function TeamsList() {
 
         {/* Search */}
         <div className="relative w-[373px] mt-4">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             placeholder={activeTab === "teams" ? "Search teams..." : "Search users..."}
             value={search}

@@ -304,25 +304,23 @@ export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href="/admin/courses">
-              <ArrowLeft className="size-5" />
-            </Link>
+          <Button variant="ghost" size="icon" render={<Link href="/admin/courses" />}>
+            <ArrowLeft className="size-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-neutral-950">{course.title}</h1>
+            <h1 className="text-2xl font-bold text-foreground">{course.title}</h1>
             <div className="flex items-center gap-2 mt-1">
               <Badge
                 variant="secondary"
                 className={
                   course.status === "published"
                     ? "bg-green-100 text-green-800"
-                    : "bg-neutral-100 text-neutral-800"
+                    : "bg-muted text-foreground"
                 }
               >
                 {course.status === "published" ? "Published" : "Draft"}
               </Badge>
-              <span className="text-sm text-neutral-500">
+              <span className="text-sm text-muted-foreground">
                 {course.sections.length} sections ·{" "}
                 {course.sections.reduce((sum, s) => sum + s.lessons.length, 0)} lessons
               </span>
@@ -332,26 +330,22 @@ export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
 
         <div className="flex items-center gap-2">
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon">
-                <MoreVertical className="size-4" />
-              </Button>
+            <DropdownMenuTrigger render={<Button variant="outline" size="icon" />}>
+              <MoreVertical className="size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link href={`/courses/${course._id}`} target="_blank">
-                  <ExternalLink className="size-4 mr-2" />
-                  View live
-                </Link>
+              <DropdownMenuItem render={<Link href={`/courses/${course._id}`} target="_blank" />}>
+                <ExternalLink className="size-4" data-icon="inline-start" />
+                View live
               </DropdownMenuItem>
               {course.status === "published" ? (
                 <DropdownMenuItem onClick={handleUnpublish}>
-                  <GlobeLock className="size-4 mr-2" />
+                  <GlobeLock className="size-4" data-icon="inline-start" />
                   Unpublish
                 </DropdownMenuItem>
               ) : (
                 <DropdownMenuItem onClick={handlePublish}>
-                  <Globe className="size-4 mr-2" />
+                  <Globe className="size-4" data-icon="inline-start" />
                   Publish
                 </DropdownMenuItem>
               )}
@@ -360,7 +354,7 @@ export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
                 onClick={() => setShowDeleteDialog(true)}
                 className="text-red-600 focus:text-red-600"
               >
-                <Trash2 className="size-4 mr-2" />
+                <Trash2 className="size-4" data-icon="inline-start" />
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -393,16 +387,14 @@ export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* ==================== LEFT PANEL: SECTIONS ==================== */}
         <div className="lg:col-span-2">
-          <Card className="rounded-2xl border-gray-200 py-0 gap-0">
+          <Card className="rounded-2xl border-border py-0 gap-0">
             {/* Sections Header */}
-            <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-4 rounded-t-2xl">
-              <h2 className="text-lg font-semibold text-neutral-950">Sections</h2>
+            <div className="flex items-center justify-between border-b border-border bg-muted/50 px-6 py-4 rounded-t-2xl">
+              <h2 className="text-lg font-semibold text-foreground">Sections</h2>
               <Dialog open={newSectionOpen} onOpenChange={setNewSectionOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add section
-                  </Button>
+                <DialogTrigger render={<Button variant="outline" size="sm" />}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add section
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
@@ -467,7 +459,7 @@ export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
 
               {course.sections.length === 0 && (
                 <div className="text-center py-8 border border-dashed rounded-lg">
-                  <p className="text-neutral-500">No sections yet</p>
+                  <p className="text-muted-foreground">No sections yet</p>
                   <Button
                     variant="link"
                     onClick={() => setNewSectionOpen(true)}
@@ -483,18 +475,18 @@ export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
 
         {/* ==================== RIGHT PANEL: SETTINGS ==================== */}
         <div className="lg:col-span-1">
-          <Card className="rounded-2xl border-gray-200 py-0 gap-0">
+          <Card className="rounded-2xl border-border py-0 gap-0">
             {/* Settings Header */}
-            <div className="border-b border-gray-200 bg-gray-50 px-6 py-4 rounded-t-2xl">
-              <h2 className="text-lg font-semibold text-neutral-950">Settings</h2>
+            <div className="border-b border-border bg-muted/50 px-6 py-4 rounded-t-2xl">
+              <h2 className="text-lg font-semibold text-foreground">Settings</h2>
             </div>
 
             {/* Settings Content */}
             <div className="space-y-4 p-6">
               {/* ===== Main Information Card ===== */}
-              <Card className="rounded-lg border-gray-200 py-0 gap-0 shadow-none">
-                <div className="flex items-center justify-between border-b px-4 py-3 bg-neutral-50 rounded-t-lg">
-                  <h3 className="font-medium text-neutral-950">Main information</h3>
+              <Card className="rounded-lg border-border py-0 gap-0 shadow-none">
+                <div className="flex items-center justify-between border-b px-4 py-3 bg-muted/50 rounded-t-lg">
+                  <h3 className="font-medium text-foreground">Main information</h3>
                   <Button
                     variant="link"
                     size="sm"
@@ -508,7 +500,7 @@ export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
                   {/* Title */}
                   <div>
                     <p className="text-xs text-gray-500">Title</p>
-                    <p className="text-sm font-medium text-neutral-950">
+                    <p className="text-sm font-medium text-foreground">
                       {course.title || "No title"}
                     </p>
                   </div>
@@ -528,10 +520,10 @@ export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
                       <img
                         src={course.coverImageUrl}
                         alt="Course thumbnail"
-                        className="mt-1 h-24 w-full rounded-lg border border-gray-200 object-cover"
+                        className="mt-1 h-24 w-full rounded-lg border border-border object-cover"
                       />
                     ) : (
-                      <div className="mt-1 flex h-24 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50">
+                      <div className="mt-1 flex h-24 items-center justify-center rounded-lg border border-dashed border-border bg-muted/50">
                         <ImageIcon className="h-8 w-8 text-gray-300" />
                       </div>
                     )}
@@ -540,9 +532,9 @@ export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
               </Card>
 
               {/* ===== Tags Card ===== */}
-              <Card className="rounded-lg border-gray-200 py-0 gap-0 shadow-none">
-                <div className="flex items-center justify-between border-b px-4 py-3 bg-neutral-50 rounded-t-lg">
-                  <h3 className="font-medium text-neutral-950">Tags</h3>
+              <Card className="rounded-lg border-border py-0 gap-0 shadow-none">
+                <div className="flex items-center justify-between border-b px-4 py-3 bg-muted/50 rounded-t-lg">
+                  <h3 className="font-medium text-foreground">Tags</h3>
                   <Button
                     variant="link"
                     size="sm"
@@ -564,7 +556,7 @@ export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
                           {tag.name}
                           <button
                             onClick={() => handleRemoveTag(tag._id)}
-                            className="ml-1 rounded-full hover:bg-gray-300"
+                            className="ml-1 rounded-full hover:bg-muted"
                           >
                             <X className="h-3 w-3" />
                           </button>
@@ -578,9 +570,9 @@ export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
               </Card>
 
               {/* ===== Visibility Card ===== */}
-              <Card className="rounded-lg border-gray-200 py-0 gap-0 shadow-none">
-                <div className="flex items-center justify-between border-b px-4 py-3 bg-neutral-50 rounded-t-lg">
-                  <h3 className="font-medium text-neutral-950">Visibility</h3>
+              <Card className="rounded-lg border-border py-0 gap-0 shadow-none">
+                <div className="flex items-center justify-between border-b px-4 py-3 bg-muted/50 rounded-t-lg">
+                  <h3 className="font-medium text-foreground">Visibility</h3>
                   <Button
                     variant="link"
                     size="sm"
@@ -751,25 +743,23 @@ function SortableSection({
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="rounded-lg border bg-white">
+    <div ref={setNodeRef} style={style} className="rounded-lg border bg-background">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <div className="flex items-center gap-2 p-3 bg-neutral-50 rounded-t-lg border-b">
+        <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-t-lg border-b">
           <button
-            className="cursor-grab hover:bg-neutral-200 rounded p-1"
+            className="cursor-grab hover:bg-muted rounded p-1"
             {...attributes}
             {...listeners}
           >
-            <GripVertical className="size-4 text-neutral-400" />
+            <GripVertical className="size-4 text-muted-foreground" />
           </button>
 
-          <CollapsibleTrigger asChild>
-            <button className="p-1 hover:bg-neutral-200 rounded">
-              {isOpen ? (
-                <ChevronDown className="size-4" />
-              ) : (
-                <ChevronRight className="size-4" />
-              )}
-            </button>
+          <CollapsibleTrigger render={<button className="p-1 hover:bg-muted rounded" />}>
+            {isOpen ? (
+              <ChevronDown className="size-4" />
+            ) : (
+              <ChevronRight className="size-4" />
+            )}
           </CollapsibleTrigger>
 
           {isEditing ? (
@@ -785,35 +775,28 @@ function SortableSection({
             <span className="font-medium flex-1">{section.title}</span>
           )}
 
-          <span className="text-sm text-neutral-500">
+          <span className="text-sm text-muted-foreground">
             {section.lessons.length} lesson{section.lessons.length !== 1 && "s"}
           </span>
 
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="size-8">
-                <MoreHorizontal className="size-4" />
-              </Button>
+            <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8" />}>
+              <MoreHorizontal className="size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => setIsEditing(true)}>
-                <Pencil className="size-4 mr-2" />
+                <Pencil className="size-4" data-icon="inline-start" />
                 Rename
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onAddLesson}>
-                <Plus className="size-4 mr-2" />
+                <Plus className="size-4" data-icon="inline-start" />
                 Add Lesson
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <DropdownMenuItem
-                    onSelect={(e) => e.preventDefault()}
-                    className="text-red-600"
-                  >
-                    <Trash2 className="size-4 mr-2" />
-                    Delete
-                  </DropdownMenuItem>
+                <AlertDialogTrigger render={<DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600" />}>
+                  <Trash2 className="size-4" data-icon="inline-start" />
+                  Delete
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
@@ -861,7 +844,7 @@ function SortableSection({
                   ))}
 
                 {section.lessons.length === 0 && (
-                  <div className="text-center py-4 text-sm text-neutral-500">
+                  <div className="text-center py-4 text-sm text-muted-foreground">
                     No lessons yet.{" "}
                     <button
                       onClick={onAddLesson}
@@ -903,17 +886,17 @@ function SortableLesson({ lesson, courseId, onDelete }: SortableLessonProps) {
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-2 p-2 rounded hover:bg-neutral-50 group"
+      className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 group"
     >
       <button
-        className="cursor-grab hover:bg-neutral-200 rounded p-1 opacity-0 group-hover:opacity-100"
+        className="cursor-grab hover:bg-muted rounded p-1 opacity-0 group-hover:opacity-100"
         {...attributes}
         {...listeners}
       >
-        <GripVertical className="size-4 text-neutral-400" />
+        <GripVertical className="size-4 text-muted-foreground" />
       </button>
 
-      <Icon className="size-4 text-neutral-500" />
+      <Icon className="size-4 text-muted-foreground" />
 
       <Link
         href={`/admin/courses/${courseId}/lessons/${lesson._id}`}
@@ -927,18 +910,12 @@ function SortableLesson({ lesson, courseId, onDelete }: SortableLessonProps) {
       </Badge>
 
       {lesson.estimatedDuration && (
-        <span className="text-xs text-neutral-500">{lesson.estimatedDuration} min</span>
+        <span className="text-xs text-muted-foreground">{lesson.estimatedDuration} min</span>
       )}
 
       <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7 opacity-0 group-hover:opacity-100"
-          >
-            <Trash2 className="size-3.5 text-red-500" />
-          </Button>
+        <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="size-7 opacity-0 group-hover:opacity-100" />}>
+          <Trash2 className="size-3.5 text-red-500" />
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>

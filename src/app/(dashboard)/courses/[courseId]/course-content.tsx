@@ -35,12 +35,12 @@ export function CourseContent({ course }: CourseContentProps) {
       : null;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Scrollable Content */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="h-0 flex-1">
         <div className="p-6 space-y-8">
           {/* Cover Image */}
-          <div className="relative aspect-video w-full max-w-4xl rounded-xl overflow-hidden bg-neutral-100">
+          <div className="relative aspect-video w-full max-w-4xl rounded-xl overflow-hidden bg-muted">
             {course.coverImageUrl ? (
               <Image
                 src={course.coverImageUrl}
@@ -56,11 +56,11 @@ export function CourseContent({ course }: CourseContentProps) {
 
           {/* Title & Description */}
           <div className="max-w-4xl space-y-4">
-            <h1 className="text-3xl font-bold text-neutral-950">
+            <h1 className="text-3xl font-bold text-foreground">
               {course.title}
             </h1>
             {course.description && (
-              <p className="text-base text-neutral-600 leading-relaxed">
+              <p className="text-base text-muted-foreground leading-relaxed">
                 {course.description}
               </p>
             )}
@@ -70,7 +70,7 @@ export function CourseContent({ course }: CourseContentProps) {
           <div className="max-w-4xl space-y-6">
             {course.sections.map((section) => (
               <div key={section._id} className="space-y-4">
-                <h2 className="text-xl font-semibold text-neutral-950">
+                <h2 className="text-xl font-semibold text-foreground">
                   {section.title}
                 </h2>
                 <div className="space-y-2">
@@ -93,55 +93,43 @@ export function CourseContent({ course }: CourseContentProps) {
       </ScrollArea>
 
       {/* Footer */}
-      <div className="border-t border-neutral-200 px-6 py-4">
+      <div className="border-t border-border px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Report Issue */}
           <div className="flex items-center gap-1">
-            <span className="text-sm text-neutral-400">
+            <span className="text-sm text-muted-foreground">
               Have an issue with this content?
             </span>
-            <Button variant="ghost" size="sm" className="text-neutral-900">
-              <Flag className="size-4 mr-2" />
+            <Button variant="ghost" size="sm" className="text-foreground">
+              <Flag className="size-4" data-icon="inline-start" />
               Report An Issue
             </Button>
           </div>
 
           {/* Navigation */}
           <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              disabled={!prevLesson}
-              asChild={!!prevLesson}
-            >
-              {prevLesson ? (
-                <Link
-                  href={`/courses/${course._id}/lessons/${prevLesson._id}`}
-                >
-                  <ChevronLeft className="size-4 mr-1" />
-                  Back
-                </Link>
-              ) : (
-                <>
-                  <ChevronLeft className="size-4 mr-1" />
-                  Back
-                </>
-              )}
-            </Button>
-            <Button disabled={!nextLesson} asChild={!!nextLesson}>
-              {nextLesson ? (
-                <Link
-                  href={`/courses/${course._id}/lessons/${nextLesson._id}`}
-                >
-                  Next Chapter
-                  <ChevronRight className="size-4 ml-1" />
-                </Link>
-              ) : (
-                <>
-                  Next Chapter
-                  <ChevronRight className="size-4 ml-1" />
-                </>
-              )}
-            </Button>
+            {prevLesson ? (
+              <Button variant="outline" render={<Link href={`/courses/${course._id}/lessons/${prevLesson._id}`} />}>
+                <ChevronLeft className="size-4" data-icon="inline-start" />
+                Back
+              </Button>
+            ) : (
+              <Button variant="outline" disabled>
+                <ChevronLeft className="size-4" data-icon="inline-start" />
+                Back
+              </Button>
+            )}
+            {nextLesson ? (
+              <Button render={<Link href={`/courses/${course._id}/lessons/${nextLesson._id}`} />}>
+                Next Chapter
+                <ChevronRight className="size-4" data-icon="inline-end" />
+              </Button>
+            ) : (
+              <Button disabled>
+                Next Chapter
+                <ChevronRight className="size-4" data-icon="inline-end" />
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -159,13 +147,13 @@ function LessonCheckItem({ lesson, courseId }: LessonCheckItemProps) {
   return (
     <Link
       href={`/courses/${courseId}/lessons/${lesson._id}`}
-      className="flex items-center gap-3 py-2 hover:bg-neutral-50 rounded-md px-2 transition-colors"
+      className="flex items-center gap-3 py-2 hover:bg-muted/50 rounded-md px-2 transition-colors"
     >
       <div
         className={`size-[18px] rounded border-2 flex items-center justify-center ${
           lesson.isCompleted
             ? "bg-blue-500 border-blue-500"
-            : "bg-white border-neutral-300"
+            : "bg-background border-border"
         }`}
       >
         {lesson.isCompleted && <Check className="size-3 text-white" />}
@@ -173,8 +161,8 @@ function LessonCheckItem({ lesson, courseId }: LessonCheckItemProps) {
       <span
         className={`text-base ${
           lesson.isCompleted
-            ? "text-neutral-400 line-through"
-            : "text-neutral-900"
+            ? "text-muted-foreground line-through"
+            : "text-foreground"
         }`}
       >
         {lesson.title}

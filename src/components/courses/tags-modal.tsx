@@ -127,7 +127,7 @@ export function TagsModal({
                     <button
                       onClick={() => handleRemoveTag(tag._id)}
                       disabled={isRemoving === tag._id}
-                      className="ml-1 rounded-full hover:bg-gray-300"
+                      className="ml-1 rounded-full hover:bg-muted"
                     >
                       {isRemoving === tag._id ? (
                         <Loader2 className="h-3 w-3 animate-spin" />
@@ -198,7 +198,7 @@ export function TagsModal({
                       key={tag._id}
                       onClick={() => handleAddTag(tag.name)}
                       disabled={isAdding === tag.name}
-                      className="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm hover:bg-gray-100 disabled:opacity-50"
+                      className="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm hover:bg-muted disabled:opacity-50"
                     >
                       <span>{tag.name}</span>
                       {isAdding === tag.name ? (

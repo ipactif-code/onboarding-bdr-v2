@@ -31,7 +31,7 @@ export function AppHeader({ breadcrumbs }: AppHeaderProps) {
   ];
 
   return (
-    <header className="h-16 border-b border-neutral-200 bg-white shrink-0">
+    <header className="h-16 border-b border-border bg-background shrink-0">
       <div className="flex items-center h-full px-4 gap-4">
         <Button
           variant="ghost"

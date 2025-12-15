@@ -17,7 +17,7 @@ export function ChatHeader({ name, avatar, isOnline }: ChatHeaderProps) {
     .slice(0, 2);
 
   return (
-    <div className="p-4 border-b border-neutral-200">
+    <div className="p-4 border-b border-border">
       <div className="flex items-center gap-3">
         {/* Avatar */}
         <div className="relative">
@@ -35,7 +35,7 @@ export function ChatHeader({ name, avatar, isOnline }: ChatHeaderProps) {
         <div className="flex flex-col">
           <span className="text-base font-medium text-black/85">{name}</span>
           <span
-            className={`text-sm ${isOnline ? "text-green-600" : "text-neutral-500"}`}
+            className={`text-sm ${isOnline ? "text-green-600" : "text-muted-foreground"}`}
           >
             {isOnline ? "Online" : "Offline"}
           </span>

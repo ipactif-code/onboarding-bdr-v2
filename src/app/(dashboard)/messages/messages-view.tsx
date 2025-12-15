@@ -48,7 +48,7 @@ export function MessagesView() {
   }
 
   return (
-    <div className="grid grid-cols-[0.3fr_1fr] h-screen">
+    <div className="grid grid-cols-[0.3fr_1fr] h-full overflow-hidden">
       {/* Left: Conversation List */}
       <ConversationList
         conversations={filteredConversations ?? []}
@@ -68,8 +68,8 @@ export function MessagesView() {
 
 function MessagesViewSkeleton() {
   return (
-    <div className="grid grid-cols-[0.3fr_1fr] h-screen">
-      <div className="bg-neutral-50 border-r border-neutral-200 p-4 space-y-4">
+    <div className="grid grid-cols-[0.3fr_1fr] h-full overflow-hidden">
+      <div className="bg-muted/50 border-r border-border p-4 space-y-4">
         <Skeleton className="h-9 w-full" />
         <Skeleton className="h-16 w-full" />
         <Skeleton className="h-16 w-full" />
@@ -84,8 +84,8 @@ function MessagesViewSkeleton() {
 
 function EmptyChat() {
   return (
-    <div className="flex items-center justify-center h-full bg-white">
-      <p className="text-neutral-500">Select a conversation to start messaging</p>
+    <div className="flex items-center justify-center h-full bg-background">
+      <p className="text-muted-foreground">Select a conversation to start messaging</p>
     </div>
   );
 }

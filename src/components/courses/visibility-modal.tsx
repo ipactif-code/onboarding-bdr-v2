@@ -134,8 +134,8 @@ export function VisibilityModal({
                     onClick={() => handleToggleTeam(team._id)}
                     className={`
                       flex cursor-pointer items-center justify-between rounded-lg border p-3
-                      transition-colors hover:bg-gray-50
-                      ${isSelected ? "border-primary bg-primary/5" : "border-gray-200"}
+                      transition-colors hover:bg-muted/50
+                      ${isSelected ? "border-primary bg-primary/5" : "border-border"}
                     `}
                   >
                     <div className="flex items-center gap-3">
@@ -155,7 +155,7 @@ export function VisibilityModal({
           )}
         </ScrollArea>
 
-        <div className="rounded-lg bg-gray-50 p-3 text-sm text-gray-600">
+        <div className="rounded-lg bg-muted/50 p-3 text-sm text-gray-600">
           {selectedTeamIds.size === 0 ? (
             <span>This course will be visible to <strong>all teams</strong></span>
           ) : (

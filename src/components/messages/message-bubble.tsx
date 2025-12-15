@@ -58,7 +58,7 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
             "px-4 py-2 rounded-2xl",
             isOwn
               ? "bg-blue-600 text-white rounded-br-md"
-              : "bg-neutral-100 text-neutral-950 rounded-bl-md"
+              : "bg-muted text-foreground rounded-bl-md"
           )}
         >
           <p className="text-sm whitespace-pre-wrap">{message.content}</p>
@@ -77,7 +77,7 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
                   "flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
                   isOwn
                     ? "bg-blue-500 text-white"
-                    : "bg-neutral-200 text-neutral-700"
+                    : "bg-muted text-muted-foreground"
                 )}
               >
                 {attachment.type.startsWith("image/") ? (
@@ -94,7 +94,7 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
         {/* Timestamp */}
         <span
           className={cn(
-            "text-xs text-neutral-500 block",
+            "text-xs text-muted-foreground block",
             isOwn ? "text-right" : "text-left"
           )}
         >

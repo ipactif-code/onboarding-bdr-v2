@@ -10,7 +10,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
+} from '@/components/ui-plate/popover';
 import { cn } from '@/lib/utils';
 
 export function DateElement(props: PlateElementProps<TDateElement>) {

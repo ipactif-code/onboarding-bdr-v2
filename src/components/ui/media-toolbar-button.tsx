@@ -33,8 +33,8 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
+} from '@/components/ui-plate/dropdown-menu';
+import { Input } from '@/components/ui-plate/input';
 
 import {
   ToolbarSplitButton,

@@ -9,8 +9,7 @@ import {
   Settings,
   GraduationCap
 } from "lucide-react";
-import { usePathname } from "next/navigation";
-import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 
 import {
@@ -62,27 +61,26 @@ const navigationItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-neutral-200 bg-neutral-50">
+    <Sidebar collapsible="icon" className="border-r border-border bg-muted/50">
       <SidebarHeader className="p-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               size="lg"
               className="flex items-center justify-center size-9 p-0"
-              asChild
+              onClick={() => router.push("/")}
             >
-              <Link href="/">
-                <div className="flex items-center justify-center size-8 rounded-lg bg-blue-600 text-white">
-                  <GraduationCap className="size-4" />
-                </div>
-                {!isCollapsed && (
-                  <span className="ml-2 font-semibold">BDR LMS</span>
-                )}
-              </Link>
+              <div className="flex items-center justify-center size-8 rounded-lg bg-blue-600 text-white">
+                <GraduationCap className="size-4" />
+              </div>
+              {!isCollapsed && (
+                <span className="ml-2 font-semibold">BDR LMS</span>
+              )}
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -96,7 +94,7 @@ export function AppSidebar() {
             return (
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
-                  asChild
+                  onClick={() => router.push(item.href)}
                   isActive={isActive}
                   tooltip={item.title}
                   className={cn(
@@ -104,12 +102,10 @@ export function AppSidebar() {
                     !isCollapsed && "justify-start px-3 w-full"
                   )}
                 >
-                  <Link href={item.href}>
-                    <item.icon className="size-4 shrink-0" />
-                    {!isCollapsed && (
-                      <span className="ml-2">{item.title}</span>
-                    )}
-                  </Link>
+                  <item.icon className="size-4 shrink-0" />
+                  {!isCollapsed && (
+                    <span className="ml-2">{item.title}</span>
+                  )}
                 </SidebarMenuButton>
               </SidebarMenuItem>
             );

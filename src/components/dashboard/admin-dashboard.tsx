@@ -33,10 +33,10 @@ export function AdminDashboard() {
     : 0;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+        <h1 className="text-2xl font-semibold text-foreground">Dashboard</h1>
         <div className="flex items-center gap-2">
           <Button variant="outline" render={<Link href="/admin/courses/new" />}>
             <Plus className="size-4" data-icon="inline-start" />
@@ -133,7 +133,7 @@ export function AdminDashboard() {
 
 function AdminDashboardSkeleton() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <Skeleton className="h-9 w-48" />
         <Skeleton className="h-10 w-32" />

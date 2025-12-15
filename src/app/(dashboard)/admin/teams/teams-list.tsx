@@ -106,7 +106,7 @@ export function TeamsList() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-foreground">Teams & Users</h1>
+        <h1 className="text-2xl font-semibold text-foreground">Teams & Users</h1>
         {activeTab === "teams" ? (
           <Dialog open={newTeamOpen} onOpenChange={setNewTeamOpen}>
             <DialogTrigger render={<Button />}>

@@ -1,120 +1,146 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { CourseSection } from "@/components/courses/course-section";
-import { CourseFilters } from "@/components/courses/course-filters";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CourseCard } from "@/components/courses/course-card";
+
+type StatusFilter = "all" | "not-started" | "in-progress" | "completed";
 
 export function CoursesList() {
   const [search, setSearch] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [tagFilter, setTagFilter] = useState<string>("all");
 
   // Fetch user's assigned courses with progress
-  const myCoursesData = useQuery(api.courses.listForUser, {});
+  const courses = useQuery(api.courses.listForUser, {});
 
-  // Fetch all published courses (for recent courses section)
-  const allCoursesData = useQuery(api.courses.list, {
-    status: "published",
-    search: search || undefined,
-    tagId: selectedTag ? (selectedTag as never) : undefined,
-  });
+  // Fetch tags for filter
+  const tags = useQuery(api.tags.list, {});
 
-  const isLoading = myCoursesData === undefined || allCoursesData === undefined;
+  // Filter courses based on search, status, and tag
+  const filteredCourses = useMemo(() => {
+    if (!courses) return [];
 
-  // Filter my courses by search
-  const filteredMyCourses = myCoursesData?.filter((course) => {
-    if (!search) return true;
-    return (
-      course.title.toLowerCase().includes(search.toLowerCase()) ||
-      course.description?.toLowerCase().includes(search.toLowerCase())
-    );
-  });
+    return courses.filter((course) => {
+      // Search filter
+      const matchesSearch =
+        !search ||
+        course.title.toLowerCase().includes(search.toLowerCase()) ||
+        course.description?.toLowerCase().includes(search.toLowerCase());
 
-  // Get courses with progress < 100% for "My courses to complete"
-  const coursesToComplete = filteredMyCourses?.filter(
-    (course) => course.progress.percentage < 100
-  );
+      // Status filter
+      let matchesStatus = true;
+      if (statusFilter === "not-started") {
+        matchesStatus = course.progress.percentage === 0;
+      } else if (statusFilter === "in-progress") {
+        matchesStatus = course.progress.percentage > 0 && course.progress.percentage < 100;
+      } else if (statusFilter === "completed") {
+        matchesStatus = course.progress.percentage === 100;
+      }
 
-  // Get recently published courses (sorted by creation time)
-  const recentCourses = allCoursesData
-    ?.slice()
-    .sort((a, b) => b._creationTime - a._creationTime)
-    .slice(0, 10);
+      // Tag filter - course.tags is array of { _id, name }
+      const matchesTag =
+        tagFilter === "all" ||
+        course.tags?.some((tag) => tag._id === tagFilter);
+
+      return matchesSearch && matchesStatus && matchesTag;
+    });
+  }, [courses, search, statusFilter, tagFilter]);
+
+  const isLoading = courses === undefined || tags === undefined;
+
+  if (isLoading) {
+    return <CoursesListSkeleton />;
+  }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      {/* Title + Search + Filter */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          Courses
-        </h1>
+    <div className="space-y-6">
+      {/* Header */}
+      <h1 className="text-2xl font-semibold text-foreground">Courses</h1>
 
-        <div className="flex items-center gap-4">
-          {/* Search */}
-          <div className="relative w-96">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-            <Input
-              placeholder="Search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 h-10"
-            />
-          </div>
+      {/* Filters Row */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        {/* Left side - Selects */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
+          {/* Status Select */}
+          <Select
+            value={statusFilter}
+            onValueChange={(v) => setStatusFilter(v as StatusFilter)}
+          >
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="not-started">Not Started</SelectItem>
+              <SelectItem value="in-progress">In Progress</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+            </SelectContent>
+          </Select>
 
-          {/* Filter Button */}
-          <CourseFilters
-            open={showFilters}
-            onOpenChange={setShowFilters}
-            selectedTag={selectedTag}
-            onTagChange={setSelectedTag}
+          {/* Tag Select */}
+          <Select
+            value={tagFilter}
+            onValueChange={(v) => setTagFilter(v as string)}
+          >
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Tags</SelectItem>
+              {tags?.map((tag) => (
+                <SelectItem key={tag._id} value={tag._id}>
+                  {tag.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Right side - Search */}
+        <div className="relative w-full sm:w-80">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input
+            placeholder="Search courses..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
           />
         </div>
       </div>
 
-      {/* Course Sections */}
-      {isLoading ? (
-        <CoursesListSkeleton />
+      {/* Courses Grid */}
+      {filteredCourses.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <p className="text-muted-foreground">
+            {search || statusFilter !== "all" || tagFilter !== "all"
+              ? "No courses match your filters."
+              : "No courses available."}
+          </p>
+        </div>
       ) : (
-        <div className="flex flex-col gap-8">
-          {/* My courses to complete */}
-          {coursesToComplete && coursesToComplete.length > 0 && (
-            <CourseSection
-              title="My courses to complete"
-              courses={coursesToComplete.map((course) => ({
-                _id: course._id,
-                title: course.title,
-                coverImage: course.coverImageUrl,
-                progress: course.progress.percentage,
-                lessonsCount: course.progress.totalLessons,
-              }))}
-              showProgress
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filteredCourses.map((course) => (
+            <CourseCard
+              key={course._id}
+              id={course._id}
+              title={course.title}
+              coverImage={course.coverImageUrl}
+              lessonsCount={course.progress.totalLessons}
+              progress={course.progress.percentage}
             />
-          )}
-
-          {/* The last courses */}
-          {recentCourses && recentCourses.length > 0 && (
-            <CourseSection
-              title="The last courses"
-              courses={recentCourses.map((course) => ({
-                _id: course._id,
-                title: course.title,
-                coverImage: course.coverImageUrl,
-                lessonsCount: course.lessonCount,
-              }))}
-            />
-          )}
-
-          {/* Empty state */}
-          {!coursesToComplete?.length && !recentCourses?.length && (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-muted-foreground">No courses available yet.</p>
-            </div>
-          )}
+          ))}
         </div>
       )}
     </div>
@@ -123,26 +149,25 @@ export function CoursesList() {
 
 function CoursesListSkeleton() {
   return (
-    <div className="flex flex-col gap-8">
-      {/* Section skeleton */}
-      {[1, 2].map((i) => (
-        <div key={i} className="flex flex-col gap-4">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-px w-full" />
-          <div className="flex gap-6">
-            {[1, 2, 3, 4].map((j) => (
-              <div key={j} className="flex flex-col w-80 shrink-0">
-                <Skeleton className="h-[180px] w-full rounded-t-xl" />
-                <div className="p-5 space-y-3">
-                  <Skeleton className="h-5 w-3/4" />
-                  <Skeleton className="h-3 w-24" />
-                  {i === 1 && <Skeleton className="h-1 w-full" />}
-                </div>
-              </div>
-            ))}
-          </div>
+    <div className="space-y-6">
+      {/* Header skeleton */}
+      <Skeleton className="h-8 w-32" />
+
+      {/* Filters skeleton */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
+          <Skeleton className="h-10 w-full sm:w-[180px]" />
+          <Skeleton className="h-10 w-full sm:w-[180px]" />
         </div>
-      ))}
+        <Skeleton className="h-10 w-full sm:w-80" />
+      </div>
+
+      {/* Grid skeleton */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <Skeleton key={i} className="aspect-video rounded-xl" />
+        ))}
+      </div>
     </div>
   );
 }

@@ -1,16 +1,11 @@
 "use client";
 
 import { ContentRenderer } from "@/components/editor/plate-editor";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useMutation } from "convex/react";
-import { api } from "../../../../../../../convex/_generated/api";
 import { Id } from "../../../../../../../convex/_generated/dataModel";
-import { CheckCircle } from "lucide-react";
 import { EmbedViewer } from "@/components/lessons/embed-viewer";
 import { QuizPlayer } from "@/components/lessons/quiz-player";
 import { FilesList } from "@/components/lessons/files-list";
-import { useState } from "react";
 
 interface LessonContentProps {
   lesson: {
@@ -51,18 +46,6 @@ interface LessonContentProps {
 }
 
 export function LessonContent({ lesson }: LessonContentProps) {
-  const [isCompleted, setIsCompleted] = useState(false);
-  const markCompleted = useMutation(api.progress.markCompleted);
-
-  const handleMarkComplete = async () => {
-    try {
-      await markCompleted({ lessonId: lesson._id });
-      setIsCompleted(true);
-    } catch (error) {
-      console.error("Failed to mark lesson as completed:", error);
-    }
-  };
-
   switch (lesson.type) {
     case "text":
       return (
@@ -74,27 +57,6 @@ export function LessonContent({ lesson }: LessonContentProps) {
               No content available for this lesson.
             </p>
           )}
-
-          {/* Mark as Complete button */}
-          <div className="flex justify-end pt-4 border-t">
-            <Button
-              onClick={handleMarkComplete}
-              disabled={isCompleted}
-              variant={isCompleted ? "outline" : "default"}
-            >
-              {isCompleted ? (
-                <>
-                  <CheckCircle className="size-4 mr-2" />
-                  Completed
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="size-4 mr-2" />
-                  Mark as Complete
-                </>
-              )}
-            </Button>
-          </div>
         </div>
       );
 
@@ -112,27 +74,6 @@ export function LessonContent({ lesson }: LessonContentProps) {
               <p className="text-muted-foreground">No video configured for this lesson.</p>
             </div>
           )}
-
-          {/* Mark as Complete button */}
-          <div className="flex justify-end pt-4 border-t">
-            <Button
-              onClick={handleMarkComplete}
-              disabled={isCompleted}
-              variant={isCompleted ? "outline" : "default"}
-            >
-              {isCompleted ? (
-                <>
-                  <CheckCircle className="size-4 mr-2" />
-                  Completed
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="size-4 mr-2" />
-                  Mark as Complete
-                </>
-              )}
-            </Button>
-          </div>
         </div>
       );
 

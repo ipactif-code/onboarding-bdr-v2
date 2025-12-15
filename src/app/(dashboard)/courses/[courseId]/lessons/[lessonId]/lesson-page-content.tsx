@@ -60,23 +60,23 @@ export function LessonPageContent({ courseId, lessonId }: LessonPageContentProps
   // Lesson not found
   if (lesson === null) {
     return (
-      <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] gap-4">
+      <div className="flex flex-col items-center justify-center h-full gap-4">
         <AlertCircle className="size-12 text-muted-foreground" />
         <h1 className="text-2xl font-bold">Lesson not found</h1>
         <p className="text-muted-foreground">
           This lesson doesn&apos;t exist or you don&apos;t have access to it.
         </p>
-        <Button asChild>
-          <Link href={`/courses/${courseId}`}>Back to course</Link>
+        <Button render={<Link href={`/courses/${courseId}`} />}>
+          Back to course
         </Button>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)]">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Main Content */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="h-0 flex-1">
         <div className="p-6 max-w-4xl mx-auto space-y-6">
           {/* Lesson Header */}
           <div className="space-y-2">
@@ -106,40 +106,32 @@ export function LessonPageContent({ courseId, lessonId }: LessonPageContentProps
       {/* Footer Navigation */}
       <div className="border-t px-6 py-4 flex items-center justify-between">
         <Button variant="ghost" size="sm" className="text-muted-foreground">
-          <Flag className="size-4 mr-2" />
+          <Flag className="size-4" data-icon="inline-start" />
           Report Issue
         </Button>
 
         <div className="flex items-center gap-3">
           {navigation.prev ? (
-            <Button variant="outline" asChild>
-              <Link href={`/courses/${courseId}/lessons/${navigation.prev._id}`}>
-                <ChevronLeft className="size-4 mr-1" />
-                Back
-              </Link>
+            <Button variant="outline" render={<Link href={`/courses/${courseId}/lessons/${navigation.prev._id}`} />}>
+              <ChevronLeft className="size-4" data-icon="inline-start" />
+              Back
             </Button>
           ) : (
-            <Button variant="outline" asChild>
-              <Link href={`/courses/${courseId}`}>
-                <ChevronLeft className="size-4 mr-1" />
-                Back to Course
-              </Link>
+            <Button variant="outline" render={<Link href={`/courses/${courseId}`} />}>
+              <ChevronLeft className="size-4" data-icon="inline-start" />
+              Back to Course
             </Button>
           )}
 
           {navigation.next ? (
-            <Button asChild>
-              <Link href={`/courses/${courseId}/lessons/${navigation.next._id}`}>
-                Next Chapter
-                <ChevronRight className="size-4 ml-1" />
-              </Link>
+            <Button render={<Link href={`/courses/${courseId}/lessons/${navigation.next._id}`} />}>
+              Next Chapter
+              <ChevronRight className="size-4" data-icon="inline-end" />
             </Button>
           ) : (
-            <Button asChild>
-              <Link href={`/courses/${courseId}`}>
-                Complete Course
-                <ChevronRight className="size-4 ml-1" />
-              </Link>
+            <Button render={<Link href={`/courses/${courseId}`} />}>
+              Complete Course
+              <ChevronRight className="size-4" data-icon="inline-end" />
             </Button>
           )}
         </div>
@@ -150,7 +142,7 @@ export function LessonPageContent({ courseId, lessonId }: LessonPageContentProps
 
 function LessonPageSkeleton() {
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)]">
+    <div className="flex flex-col h-full overflow-hidden">
       <div className="flex-1 p-6 max-w-4xl mx-auto w-full space-y-6">
         {/* Breadcrumb skeleton */}
         <div className="space-y-2">

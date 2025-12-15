@@ -21,7 +21,7 @@ export function MessageList({ messages }: MessageListProps) {
   if (messages.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-neutral-500">No messages yet. Start the conversation!</p>
+        <p className="text-muted-foreground">No messages yet. Start the conversation!</p>
       </div>
     );
   }

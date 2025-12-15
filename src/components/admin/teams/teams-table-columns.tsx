@@ -83,7 +83,7 @@ export function getColumns(options: ColumnOptions): ColumnDef<TeamRow>[] {
       cell: ({ row }) => {
         const description = row.getValue("description") as string | undefined;
         return (
-          <span className="text-neutral-500 line-clamp-1 max-w-[300px]">
+          <span className="text-muted-foreground line-clamp-1 max-w-[300px]">
             {description || "—"}
           </span>
         );
@@ -96,7 +96,7 @@ export function getColumns(options: ColumnOptions): ColumnDef<TeamRow>[] {
       header: "Team Lead",
       cell: ({ row }) => {
         const leadName = row.getValue("leadName") as string | undefined;
-        return <span className="text-neutral-700">{leadName || "—"}</span>;
+        return <span className="text-muted-foreground">{leadName || "—"}</span>;
       },
     },
 
@@ -106,7 +106,7 @@ export function getColumns(options: ColumnOptions): ColumnDef<TeamRow>[] {
       header: "Members",
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
-          <Users className="size-4 text-neutral-400" />
+          <Users className="size-4 text-muted-foreground" />
           <span>{row.getValue("memberCount")}</span>
         </div>
       ),
@@ -120,31 +120,22 @@ export function getColumns(options: ColumnOptions): ColumnDef<TeamRow>[] {
 
         return (
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="size-8">
-                <MoreHorizontal className="size-4" />
-                <span className="sr-only">Open menu</span>
-              </Button>
+            <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8" />}>
+              <MoreHorizontal className="size-4" />
+              <span className="sr-only">Open menu</span>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link href={`/admin/teams/${team._id}`}>
-                  <Pencil className="size-4 mr-2" />
-                  Edit
-                </Link>
+              <DropdownMenuItem render={<Link href={`/admin/teams/${team._id}`} />}>
+                <Pencil className="size-4" data-icon="inline-start" />
+                Edit
               </DropdownMenuItem>
 
               <DropdownMenuSeparator />
 
               <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <DropdownMenuItem
-                    onSelect={(e) => e.preventDefault()}
-                    className="text-red-600"
-                  >
-                    <Trash2 className="size-4 mr-2" />
-                    Delete
-                  </DropdownMenuItem>
+                <AlertDialogTrigger render={<DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600" />}>
+                  <Trash2 className="size-4" data-icon="inline-start" />
+                  Delete
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>

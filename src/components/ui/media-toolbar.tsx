@@ -27,7 +27,7 @@ import {
   Popover,
   PopoverAnchor,
   PopoverContent,
-} from '@/components/ui/popover';
+} from '@/components/ui-plate/popover';
 import { Separator } from '@/components/ui/separator';
 
 import { CaptionButton } from './caption';

@@ -35,16 +35,14 @@ export function CourseFilters({
 
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverTrigger asChild>
-        <Button variant="outline" className="h-10 gap-2">
-          <SlidersHorizontal className="size-4" />
-          Filter
-          {selectedTag && (
-            <Badge variant="secondary" className="ml-1 rounded-full px-1.5">
-              1
-            </Badge>
-          )}
-        </Button>
+      <PopoverTrigger render={<Button variant="outline" className="h-10 gap-2" />}>
+        <SlidersHorizontal className="size-4" />
+        Filter
+        {selectedTag && (
+          <Badge variant="secondary" className="ml-1 rounded-full px-1.5">
+            1
+          </Badge>
+        )}
       </PopoverTrigger>
 
       <PopoverContent className="w-64" align="end">
@@ -56,7 +54,7 @@ export function CourseFilters({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-auto p-0 text-xs text-neutral-500"
+                className="h-auto p-0 text-xs text-muted-foreground"
                 onClick={handleClear}
               >
                 Clear all
@@ -70,7 +68,7 @@ export function CourseFilters({
             <RadioGroup
               value={selectedTag || ""}
               onValueChange={(value) =>
-                onTagChange(value === "" ? null : value)
+                onTagChange(value === "" ? null : value as string)
               }
             >
               <div className="flex items-center space-x-2">
@@ -84,7 +82,7 @@ export function CourseFilters({
                   <RadioGroupItem value={tag._id} id={tag._id} />
                   <Label htmlFor={tag._id} className="text-sm font-normal">
                     {tag.name}
-                    <span className="text-neutral-400 ml-1">
+                    <span className="text-muted-foreground ml-1">
                       ({tag.courseCount})
                     </span>
                   </Label>

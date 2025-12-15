@@ -74,11 +74,9 @@ export function AddMemberDialog({ teamId, existingMemberIds }: AddMemberDialogPr
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <UserPlus className="size-4 mr-2" />
-          Add Member
-        </Button>
+      <DialogTrigger render={<Button />}>
+        <UserPlus className="size-4" data-icon="inline-start" />
+        Add Member
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -90,7 +88,7 @@ export function AddMemberDialog({ teamId, existingMemberIds }: AddMemberDialogPr
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             placeholder="Search users..."
             value={search}
@@ -108,16 +106,16 @@ export function AddMemberDialog({ teamId, existingMemberIds }: AddMemberDialogPr
                   key={i}
                   className="flex items-center gap-3 p-2 rounded-lg animate-pulse"
                 >
-                  <div className="size-9 rounded-full bg-neutral-200" />
+                  <div className="size-9 rounded-full bg-muted" />
                   <div className="flex-1">
-                    <div className="h-4 w-32 bg-neutral-200 rounded" />
-                    <div className="h-3 w-48 bg-neutral-100 rounded mt-1" />
+                    <div className="h-4 w-32 bg-muted rounded" />
+                    <div className="h-3 w-48 bg-muted rounded mt-1" />
                   </div>
                 </div>
               ))}
             </div>
           ) : availableUsers.length === 0 ? (
-            <div className="text-center py-8 text-neutral-500">
+            <div className="text-center py-8 text-muted-foreground">
               {search
                 ? "No users found matching your search"
                 : "All users are already members of this team"}
@@ -138,7 +136,7 @@ export function AddMemberDialog({ teamId, existingMemberIds }: AddMemberDialogPr
                     className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
                       isSelected
                         ? "bg-blue-50 border border-blue-200"
-                        : "hover:bg-neutral-50"
+                        : "hover:bg-muted/50"
                     }`}
                     onClick={() => toggleUser(user._id)}
                   >
@@ -151,10 +149,10 @@ export function AddMemberDialog({ teamId, existingMemberIds }: AddMemberDialogPr
                       <AvatarFallback>{initials}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-neutral-900 truncate">
+                      <p className="font-medium text-foreground truncate">
                         {user.name}
                       </p>
-                      <p className="text-sm text-neutral-500 truncate">
+                      <p className="text-sm text-muted-foreground truncate">
                         {user.email}
                       </p>
                     </div>
@@ -170,7 +168,7 @@ export function AddMemberDialog({ teamId, existingMemberIds }: AddMemberDialogPr
 
         {/* Selected count */}
         {selectedUserIds.length > 0 && (
-          <div className="text-sm text-neutral-500">
+          <div className="text-sm text-muted-foreground">
             {selectedUserIds.length} user{selectedUserIds.length !== 1 ? "s" : ""}{" "}
             selected
           </div>
@@ -188,7 +186,7 @@ export function AddMemberDialog({ teamId, existingMemberIds }: AddMemberDialogPr
               "Adding..."
             ) : (
               <>
-                <Plus className="size-4 mr-2" />
+                <Plus className="size-4" data-icon="inline-start" />
                 Add {selectedUserIds.length || ""} Member
                 {selectedUserIds.length !== 1 ? "s" : ""}
               </>

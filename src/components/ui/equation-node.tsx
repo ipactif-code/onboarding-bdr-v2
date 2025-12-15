@@ -21,12 +21,12 @@ import {
   useSelected,
 } from 'platejs/react';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui-plate/button';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
+} from '@/components/ui-plate/popover';
 import { cn } from '@/lib/utils';
 
 export function EquationElement(props: PlateElementProps<TEquationElement>) {

@@ -33,25 +33,25 @@ export function ConversationItem({
     <button
       onClick={onClick}
       className={cn(
-        "w-full text-left p-4 border-b border-neutral-200 transition-colors",
-        isSelected ? "bg-white" : "hover:bg-neutral-100"
+        "w-full text-left p-4 border-b border-border transition-colors",
+        isSelected ? "bg-background" : "hover:bg-muted"
       )}
     >
       {/* Header: Name + Time */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-normal text-neutral-950">
+          <span className="text-sm font-normal text-foreground">
             {conversation.participantName}
           </span>
           {conversation.unreadCount > 0 && (
             <span className="size-2 rounded-full bg-blue-600" />
           )}
         </div>
-        <span className="text-sm text-neutral-500">{timeAgo}</span>
+        <span className="text-sm text-muted-foreground">{timeAgo}</span>
       </div>
 
       {/* Message Preview */}
-      <p className="text-xs text-neutral-950 line-clamp-2 leading-4">
+      <p className="text-xs text-foreground line-clamp-2 leading-4">
         {conversation.lastMessage || "No messages yet"}
       </p>
     </button>

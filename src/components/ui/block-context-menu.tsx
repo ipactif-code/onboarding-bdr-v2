@@ -20,7 +20,7 @@ import {
   ContextMenuSubContent,
   ContextMenuSubTrigger,
   ContextMenuTrigger,
-} from '@/components/ui/context-menu';
+} from '@/components/ui-plate/context-menu';
 import { useIsTouchDevice } from '@/hooks/use-is-touch-device';
 
 type Value = 'askAI' | null;

@@ -106,7 +106,7 @@ export function NewMessageModal({
         <div className="space-y-4 py-4">
           {/* Selected User or Search */}
           {selectedUser ? (
-            <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
               <div className="flex items-center gap-3">
                 <Avatar className="size-10">
                   <AvatarImage src={selectedUser.avatarUrl} />
@@ -115,7 +115,7 @@ export function NewMessageModal({
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-medium text-neutral-950">
+                  <p className="font-medium text-foreground">
                     {selectedUser.name}
                   </p>
                 </div>
@@ -131,7 +131,7 @@ export function NewMessageModal({
           ) : (
             <div className="space-y-2">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                 <Input
                   placeholder="Search users..."
                   value={searchQuery}
@@ -146,10 +146,10 @@ export function NewMessageModal({
                 <ScrollArea className="h-[200px] border rounded-lg">
                   {searchResults === undefined ? (
                     <div className="flex items-center justify-center py-8">
-                      <Loader2 className="size-5 animate-spin text-neutral-400" />
+                      <Loader2 className="size-5 animate-spin text-muted-foreground" />
                     </div>
                   ) : searchResults.length === 0 ? (
-                    <div className="py-8 text-center text-sm text-neutral-500">
+                    <div className="py-8 text-center text-sm text-muted-foreground">
                       No users found
                     </div>
                   ) : (
@@ -158,7 +158,7 @@ export function NewMessageModal({
                         <button
                           key={user._id}
                           onClick={() => handleSelectUser(user)}
-                          className="flex w-full items-center gap-3 rounded-md p-2 hover:bg-neutral-100"
+                          className="flex w-full items-center gap-3 rounded-md p-2 hover:bg-muted"
                         >
                           <Avatar className="size-8">
                             <AvatarImage src={user.avatarUrl} />
@@ -177,7 +177,7 @@ export function NewMessageModal({
               )}
 
               {searchQuery.length > 0 && searchQuery.length < 2 && (
-                <p className="text-xs text-neutral-500">
+                <p className="text-xs text-muted-foreground">
                   Type at least 2 characters to search
                 </p>
               )}
@@ -200,9 +200,9 @@ export function NewMessageModal({
                   disabled={!message.trim() || isSending}
                 >
                   {isSending ? (
-                    <Loader2 className="mr-2 size-4 animate-spin" />
+                    <Loader2 className="size-4 animate-spin" data-icon="inline-start" />
                   ) : (
-                    <Send className="mr-2 size-4" />
+                    <Send className="size-4" data-icon="inline-start" />
                   )}
                   Send Message
                 </Button>

@@ -25,15 +25,15 @@ export function StatsCard({
   return (
     <Card className={cn("", className)}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-neutral-950">
+        <CardTitle className="text-sm font-medium text-foreground">
           {title}
         </CardTitle>
-        <Icon className="size-4 text-neutral-500" />
+        <Icon className="size-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold text-neutral-950">{value}</div>
+        <div className="text-2xl font-bold text-foreground">{value}</div>
         {(description || trend) && (
-          <p className="text-xs text-neutral-500 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             {trend && (
               <span className={cn(
                 "font-medium",

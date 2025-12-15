@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
   GraduationCap,
   LayoutDashboard,
@@ -44,6 +44,7 @@ const getNavigationItems = (isAdmin: boolean): NavigationItem[] => [
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
+  const router = useRouter()
   const { isAdmin } = useUserContext()
 
   const visibleItems = getNavigationItems(isAdmin).filter(
@@ -72,14 +73,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               return (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
-                    asChild
+                    onClick={() => router.push(item.url)}
                     tooltip={item.title}
                     isActive={isActive}
                   >
-                    <Link href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
+                    <item.icon />
+                    <span>{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )

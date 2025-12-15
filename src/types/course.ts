@@ -64,3 +64,46 @@ export interface LessonBasic {
 export interface LessonWithStatus extends LessonBasic {
   isCompleted: boolean;
 }
+
+/**
+ * Full lesson data from lessons.get API
+ */
+export interface LessonFull {
+  _id: Id<"lessons">;
+  sectionId: Id<"sections">;
+  courseId: Id<"courses">;
+  type: "text" | "embed" | "quiz" | "files";
+  title: string;
+  description?: string;
+  estimatedDuration?: number;
+  content?: unknown[];
+  displayOrder: number;
+  embedConfig?: {
+    url: string;
+    provider: "youtube" | "vimeo" | "loom" | "figma" | "other";
+  };
+  quizConfig?: {
+    passingScore: number;
+    allowRetry: boolean;
+    maxAttempts?: number;
+    showAnswers: boolean;
+    questions: Array<{
+      _id: Id<"quizQuestions">;
+      questionText: string;
+      options: Array<{
+        text: string;
+        isCorrect: boolean;
+      }>;
+      explanation?: string;
+      points: number;
+      displayOrder: number;
+    }>;
+  };
+  files?: Array<{
+    _id: Id<"files">;
+    fileName: string;
+    fileSize: number;
+    fileType: string;
+    downloadUrl: string;
+  }>;
+}

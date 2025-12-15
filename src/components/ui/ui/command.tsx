@@ -10,11 +10,11 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui-nova/dialog"
+} from "@/components/ui/dialog"
 import {
   InputGroup,
   InputGroupAddon,
-} from "@/components/ui-nova/input-group"
+} from "@/components/ui/input-group"
 import { SearchIcon, CheckIcon } from "lucide-react"
 
 function Command({

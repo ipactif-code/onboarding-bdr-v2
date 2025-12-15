@@ -69,7 +69,7 @@ export function MembersTable({
   return (
     <div className="space-y-4">
       {/* Table */}
-      <div className="rounded-lg border border-neutral-200">
+      <div className="rounded-lg border border-border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -124,7 +124,7 @@ export function MembersTable({
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
-            <ChevronLeft className="size-4 mr-1" />
+            <ChevronLeft className="size-4" data-icon="inline-start" />
             Previous
           </Button>
 
@@ -148,7 +148,7 @@ export function MembersTable({
                 </Button>
               ))}
             {table.getPageCount() > 5 && (
-              <span className="px-2 text-neutral-400">...</span>
+              <span className="px-2 text-muted-foreground">...</span>
             )}
           </div>
 
@@ -159,13 +159,13 @@ export function MembersTable({
             disabled={!table.getCanNextPage()}
           >
             Next
-            <ChevronRight className="size-4 ml-1" />
+            <ChevronRight className="size-4" data-icon="inline-end" />
           </Button>
         </div>
       )}
 
       {/* Member count */}
-      <div className="text-sm text-neutral-500">
+      <div className="text-sm text-muted-foreground">
         {members.length} member{members.length !== 1 ? "s" : ""} total
       </div>
     </div>

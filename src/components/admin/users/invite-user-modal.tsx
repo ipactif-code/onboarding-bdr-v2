@@ -102,7 +102,7 @@ export function InviteUserModal({
           <div className="space-y-2">
             <Label htmlFor="email">Email Address</Label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
               <Input
                 id="email"
                 type="email"
@@ -121,14 +121,14 @@ export function InviteUserModal({
             <Label htmlFor="role">Role</Label>
             <Select value={role} onValueChange={(v) => setRole(v as "user" | "admin")}>
               <SelectTrigger id="role">
-                <SelectValue placeholder="Select a role" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="user">User</SelectItem>
                 <SelectItem value="admin">Administrator</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-xs text-neutral-500">
+            <p className="text-xs text-muted-foreground">
               {role === "admin"
                 ? "Administrators can manage courses, teams, and users."
                 : "Users can view and complete assigned courses."}
@@ -146,12 +146,12 @@ export function InviteUserModal({
             <Button type="submit" disabled={!email.trim() || isSubmitting}>
               {isSubmitting ? (
                 <>
-                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  <Loader2 className="size-4 animate-spin" data-icon="inline-start" />
                   Sending...
                 </>
               ) : (
                 <>
-                  <UserPlus className="mr-2 size-4" />
+                  <UserPlus className="size-4" data-icon="inline-start" />
                   Send Invitation
                 </>
               )}

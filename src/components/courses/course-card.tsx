@@ -1,65 +1,110 @@
 "use client";
 
 import Image from "next/image";
+import { Play, BookOpen } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  Progress,
+  ProgressLabel,
+  ProgressValue,
+} from "@/components/ui/progress";
 
 interface CourseCardProps {
   title: string;
-  description?: string;
   coverImage?: string;
-  progress?: number; // 0-100, only shown if provided
+  progress?: number;
+  lessonsCount?: number;
 }
 
 export function CourseCard({
   title,
-  description,
   coverImage,
   progress,
+  lessonsCount,
 }: CourseCardProps) {
+  const hasProgress = progress !== undefined;
+
   return (
-    <div className="flex flex-col gap-3 w-[278px] group">
-      {/* Cover Image */}
-      <div className="h-[177px] relative rounded-xl overflow-hidden bg-neutral-100">
+    <div
+      className={cn(
+        "flex flex-col w-80 group cursor-pointer",
+        "rounded-xl overflow-hidden",
+        "bg-card border border-border",
+        "hover:border-primary/50 hover:shadow-xl",
+        "transition-all duration-300"
+      )}
+    >
+      {/* Cover Image - 16:9 ratio */}
+      <div className="h-[180px] relative overflow-hidden bg-muted">
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent z-10" />
+
         {coverImage ? (
           <Image
             src={coverImage}
             alt={title}
             fill
-            className="object-cover group-hover:scale-105 transition-transform"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            sizes="320px"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 group-hover:scale-105 transition-transform">
-            <span className="text-4xl">📚</span>
+          <div className="w-full h-full flex items-center justify-center bg-muted">
+            <BookOpen className="size-12 text-muted-foreground/40" />
           </div>
         )}
+
+        {/* Play button overlay on hover */}
+        <div
+          className={cn(
+            "absolute inset-0 z-20",
+            "flex items-center justify-center",
+            "opacity-0 group-hover:opacity-100",
+            "transition-opacity duration-300"
+          )}
+        >
+          <div
+            className={cn(
+              "size-14 rounded-full",
+              "bg-background/90 backdrop-blur-sm",
+              "flex items-center justify-center",
+              "shadow-lg"
+            )}
+          >
+            <Play className="size-6 fill-foreground text-foreground ml-1" />
+          </div>
+        </div>
       </div>
 
-      {/* Content */}
-      <div className="flex flex-col gap-2">
+      {/* Content - overlapping gradient */}
+      <div className="relative z-20 -mt-6 p-5 pt-0">
         {/* Title */}
-        <p className="text-sm font-semibold text-neutral-950 line-clamp-1">
+        <h3
+          className={cn(
+            "text-base font-bold text-foreground",
+            "leading-tight line-clamp-2 mb-3",
+            "group-hover:text-primary",
+            "transition-colors duration-200"
+          )}
+        >
           {title}
-        </p>
+        </h3>
 
-        {/* Description */}
-        {description && (
-          <p className="text-xs text-neutral-500 leading-4 line-clamp-2">
-            {description}
-          </p>
-        )}
-
-        {/* Progress Bar (optional) */}
-        {progress !== undefined && (
-          <div className="flex items-center gap-2">
-            <div className="bg-gray-100 h-2 w-20 rounded-lg overflow-hidden">
-              <div
-                className="bg-green-600 opacity-80 h-full transition-all"
-                style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
-              />
-            </div>
-            <span className="text-xs text-neutral-500">
-              {progress}% complete
+        {/* Meta info */}
+        {lessonsCount !== undefined && lessonsCount > 0 && (
+          <div className="flex items-center gap-3 text-muted-foreground text-xs mb-4">
+            <span className="flex items-center gap-1.5">
+              <BookOpen className="size-3.5" />
+              {lessonsCount} {lessonsCount === 1 ? "Lesson" : "Lessons"}
             </span>
           </div>
+        )}
+
+        {/* Progress Bar with Label */}
+        {hasProgress && (
+          <Progress value={progress}>
+            <ProgressLabel className="text-xs">Progress</ProgressLabel>
+            <ProgressValue className="text-xs" />
+          </Progress>
         )}
       </div>
     </div>

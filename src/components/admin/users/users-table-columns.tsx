@@ -96,7 +96,7 @@ export function getColumns(options: ColumnOptions): ColumnDef<UserRow>[] {
       accessorKey: "email",
       header: "Email",
       cell: ({ row }) => (
-        <span className="text-neutral-500">{row.getValue("email")}</span>
+        <span className="text-muted-foreground">{row.getValue("email")}</span>
       ),
     },
 
@@ -107,7 +107,7 @@ export function getColumns(options: ColumnOptions): ColumnDef<UserRow>[] {
       cell: ({ row }) => {
         const count = row.getValue("teamCount") as number;
         return (
-          <span className="text-neutral-700">
+          <span className="text-muted-foreground">
             {count} {count === 1 ? "team" : "teams"}
           </span>
         );
@@ -123,7 +123,7 @@ export function getColumns(options: ColumnOptions): ColumnDef<UserRow>[] {
         return (
           <div className="flex items-center gap-2 min-w-[120px]">
             <Progress value={progress} className="h-2 flex-1" />
-            <span className="text-sm text-neutral-500 w-10 text-right">
+            <span className="text-sm text-muted-foreground w-10 text-right">
               {progress}%
             </span>
           </div>
@@ -153,15 +153,13 @@ export function getColumns(options: ColumnOptions): ColumnDef<UserRow>[] {
 
         return (
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="size-8">
-                <MoreHorizontal className="size-4" />
-                <span className="sr-only">Open menu</span>
-              </Button>
+            <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8" />}>
+              <MoreHorizontal className="size-4" />
+              <span className="sr-only">Open menu</span>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem>
-                <Pencil className="size-4 mr-2" />
+                <Pencil className="size-4" data-icon="inline-start" />
                 Edit
               </DropdownMenuItem>
 
@@ -169,14 +167,9 @@ export function getColumns(options: ColumnOptions): ColumnDef<UserRow>[] {
                 <>
                   <DropdownMenuSeparator />
                   <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <DropdownMenuItem
-                        onSelect={(e) => e.preventDefault()}
-                        className="text-red-600"
-                      >
-                        <Trash2 className="size-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
+                    <AlertDialogTrigger render={<DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600" />}>
+                      <Trash2 className="size-4" data-icon="inline-start" />
+                      Delete
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>

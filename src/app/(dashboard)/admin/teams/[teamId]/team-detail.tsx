@@ -100,13 +100,13 @@ export function TeamDetail({ teamId }: TeamDetailProps) {
       <div className="space-y-6">
         <Link
           href="/admin/teams"
-          className="inline-flex items-center text-sm text-neutral-500 hover:text-neutral-700"
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-muted-foreground"
         >
-          <ArrowLeft className="size-4 mr-1" />
+          <ArrowLeft className="size-4" data-icon="inline-start" />
           Back to Teams
         </Link>
         <div className="text-center py-12">
-          <p className="text-neutral-500">Team not found</p>
+          <p className="text-muted-foreground">Team not found</p>
         </div>
       </div>
     );
@@ -117,14 +117,14 @@ export function TeamDetail({ teamId }: TeamDetailProps) {
       {/* Back link */}
       <Link
         href="/admin/teams"
-        className="inline-flex items-center text-sm text-neutral-500 hover:text-neutral-700"
+        className="inline-flex items-center text-sm text-muted-foreground hover:text-muted-foreground"
       >
-        <ArrowLeft className="size-4 mr-1" />
+        <ArrowLeft className="size-4" data-icon="inline-start" />
         Back to Teams
       </Link>
 
       {/* Team header */}
-      <div className="bg-white rounded-lg border border-neutral-200 p-6">
+      <div className="bg-background rounded-lg border border-border p-6">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             {isEditing ? (
@@ -147,11 +147,11 @@ export function TeamDetail({ teamId }: TeamDetailProps) {
                 </div>
                 <div className="flex items-center gap-2">
                   <Button onClick={handleSave} disabled={isSaving || !editName.trim()}>
-                    <Save className="size-4 mr-2" />
+                    <Save className="size-4" data-icon="inline-start" />
                     {isSaving ? "Saving..." : "Save"}
                   </Button>
                   <Button variant="outline" onClick={handleCancelEdit}>
-                    <X className="size-4 mr-2" />
+                    <X className="size-4" data-icon="inline-start" />
                     Cancel
                   </Button>
                 </div>
@@ -159,13 +159,13 @@ export function TeamDetail({ teamId }: TeamDetailProps) {
             ) : (
               <div>
                 <div className="flex items-center gap-3">
-                  <h1 className="text-2xl font-bold text-neutral-950">{team.name}</h1>
+                  <h1 className="text-2xl font-bold text-foreground">{team.name}</h1>
                   <Button variant="ghost" size="icon" onClick={handleStartEdit}>
                     <Pencil className="size-4" />
                   </Button>
                 </div>
                 {team.description && (
-                  <p className="mt-2 text-neutral-500">{team.description}</p>
+                  <p className="mt-2 text-muted-foreground">{team.description}</p>
                 )}
               </div>
             )}
@@ -174,19 +174,19 @@ export function TeamDetail({ teamId }: TeamDetailProps) {
 
         {/* Stats */}
         <div className="mt-6 flex items-center gap-6">
-          <div className="flex items-center gap-2 text-neutral-600">
+          <div className="flex items-center gap-2 text-muted-foreground">
             <Users className="size-5" />
             <span>{team.memberCount} members</span>
           </div>
-          <div className="flex items-center gap-2 text-neutral-600">
+          <div className="flex items-center gap-2 text-muted-foreground">
             <BookOpen className="size-5" />
             <span>{team.assignedCourseCount} courses assigned</span>
           </div>
         </div>
 
         {/* Lead */}
-        <div className="mt-6 pt-6 border-t border-neutral-100">
-          <h3 className="text-sm font-medium text-neutral-500 mb-3">Team Lead</h3>
+        <div className="mt-6 pt-6 border-t border-border">
+          <h3 className="text-sm font-medium text-muted-foreground mb-3">Team Lead</h3>
           {team.lead ? (
             <div className="flex items-center gap-3">
               <Avatar className="size-10">
@@ -200,23 +200,23 @@ export function TeamDetail({ teamId }: TeamDetailProps) {
                 </AvatarFallback>
               </Avatar>
               <div>
-                <p className="font-medium text-neutral-900">{team.lead.name}</p>
-                <p className="text-sm text-neutral-500">{team.lead.email}</p>
+                <p className="font-medium text-foreground">{team.lead.name}</p>
+                <p className="text-sm text-muted-foreground">{team.lead.email}</p>
               </div>
               <Badge variant="secondary" className="ml-2">
                 Lead
               </Badge>
             </div>
           ) : (
-            <p className="text-neutral-400">No team lead assigned</p>
+            <p className="text-muted-foreground">No team lead assigned</p>
           )}
         </div>
       </div>
 
       {/* Members section */}
-      <div className="bg-white rounded-lg border border-neutral-200 p-6">
+      <div className="bg-background rounded-lg border border-border p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-neutral-950">Team Members</h2>
+          <h2 className="text-lg font-semibold text-foreground">Team Members</h2>
           <AddMemberDialog teamId={teamId} existingMemberIds={members.map((m) => m._id)} />
         </div>
 
@@ -235,14 +235,14 @@ function TeamDetailSkeleton() {
   return (
     <div className="space-y-6">
       <Skeleton className="h-5 w-32" />
-      <div className="bg-white rounded-lg border border-neutral-200 p-6">
+      <div className="bg-background rounded-lg border border-border p-6">
         <Skeleton className="h-8 w-48 mb-2" />
         <Skeleton className="h-4 w-96" />
         <div className="mt-6 flex items-center gap-6">
           <Skeleton className="h-5 w-24" />
           <Skeleton className="h-5 w-32" />
         </div>
-        <div className="mt-6 pt-6 border-t border-neutral-100">
+        <div className="mt-6 pt-6 border-t border-border">
           <Skeleton className="h-4 w-20 mb-3" />
           <div className="flex items-center gap-3">
             <Skeleton className="size-10 rounded-full" />
@@ -253,7 +253,7 @@ function TeamDetailSkeleton() {
           </div>
         </div>
       </div>
-      <div className="bg-white rounded-lg border border-neutral-200 p-6">
+      <div className="bg-background rounded-lg border border-border p-6">
         <div className="flex items-center justify-between mb-6">
           <Skeleton className="h-6 w-32" />
           <Skeleton className="h-9 w-32" />

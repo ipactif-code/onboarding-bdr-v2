@@ -138,7 +138,7 @@ export function getColumns(options: ColumnOptions): ColumnDef<CourseRow>[] {
             label: "Published",
             className: "bg-green-100 text-green-800",
           },
-          draft: { label: "Draft", className: "bg-neutral-100 text-neutral-800" },
+          draft: { label: "Draft", className: "bg-muted text-foreground" },
         };
         const variant = variants[status] ?? variants.draft;
         return (
@@ -158,28 +158,24 @@ export function getColumns(options: ColumnOptions): ColumnDef<CourseRow>[] {
 
         return (
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="size-8">
-                <MoreHorizontal className="size-4" />
-                <span className="sr-only">Open menu</span>
-              </Button>
+            <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8" />}>
+              <MoreHorizontal className="size-4" />
+              <span className="sr-only">Open menu</span>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link href={`/admin/courses/${course._id}`}>
-                  <Pencil className="size-4 mr-2" />
-                  Edit
-                </Link>
+              <DropdownMenuItem render={<Link href={`/admin/courses/${course._id}`} />}>
+                <Pencil className="size-4" data-icon="inline-start" />
+                Edit
               </DropdownMenuItem>
 
               {isPublished ? (
                 <DropdownMenuItem onClick={() => options.onUnpublish(course._id)}>
-                  <GlobeLock className="size-4 mr-2" />
+                  <GlobeLock className="size-4" data-icon="inline-start" />
                   Unpublish
                 </DropdownMenuItem>
               ) : (
                 <DropdownMenuItem onClick={() => options.onPublish(course._id)}>
-                  <Globe className="size-4 mr-2" />
+                  <Globe className="size-4" data-icon="inline-start" />
                   Publish
                 </DropdownMenuItem>
               )}
@@ -187,14 +183,9 @@ export function getColumns(options: ColumnOptions): ColumnDef<CourseRow>[] {
               <DropdownMenuSeparator />
 
               <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <DropdownMenuItem
-                    onSelect={(e) => e.preventDefault()}
-                    className="text-red-600"
-                  >
-                    <Trash2 className="size-4 mr-2" />
-                    Delete
-                  </DropdownMenuItem>
+                <AlertDialogTrigger render={<DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600" />}>
+                  <Trash2 className="size-4" data-icon="inline-start" />
+                  Delete
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>

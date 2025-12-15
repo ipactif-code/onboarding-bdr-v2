@@ -17,6 +17,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserProvider } from "@/contexts/user-context";
 import { useConvexAuth } from "@/components/providers/convex-provider";
+import { cn } from "@/lib/utils";
 
 function AuthReadyGuard({ children }: { children: React.ReactNode }) {
   const { isAuthReady } = useConvexAuth();
@@ -73,7 +74,7 @@ export default function DashboardLayout({
       <AuthReadyGuard>
         <UserProvider>
           <AppSidebar />
-          <SidebarInset>
+          <SidebarInset className="h-screen">
             {!hideHeader && (
               <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
                 <div className="flex items-center gap-2 px-4">
@@ -92,9 +93,14 @@ export default function DashboardLayout({
                 </div>
               </header>
             )}
-            <main className={`flex flex-1 flex-col ${hideHeader ? "" : "gap-4 p-4 pt-0"}`}>
+            <div
+              className={cn(
+                "flex flex-1 flex-col min-h-0",
+                !hideHeader && "gap-4 p-4 pt-0"
+              )}
+            >
               {children}
-            </main>
+            </div>
           </SidebarInset>
         </UserProvider>
       </AuthReadyGuard>

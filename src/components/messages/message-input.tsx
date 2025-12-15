@@ -49,19 +49,19 @@ export function MessageInput({ onSend }: MessageInputProps) {
   };
 
   return (
-    <div className="border-t border-neutral-200 p-2 bg-white">
+    <div className="border-t border-border p-2 bg-background">
       {/* Attachment previews */}
       {attachments.length > 0 && (
         <div className="flex flex-wrap gap-2 px-4 py-2">
           {attachments.map((file, index) => (
             <div
               key={index}
-              className="flex items-center gap-2 bg-neutral-100 rounded-lg px-3 py-1 text-sm"
+              className="flex items-center gap-2 bg-muted rounded-lg px-3 py-1 text-sm"
             >
               <span className="truncate max-w-[150px]">{file.name}</span>
               <button
                 onClick={() => removeAttachment(index)}
-                className="text-neutral-500 hover:text-neutral-700"
+                className="text-muted-foreground hover:text-muted-foreground"
               >
                 <X className="size-4" />
               </button>
@@ -97,7 +97,7 @@ export function MessageInput({ onSend }: MessageInputProps) {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="bg-neutral-50 border-none h-9 rounded-xl"
+            className="bg-muted/50 border-none h-9 rounded-xl"
             disabled={isSending}
           />
         </div>
@@ -112,7 +112,7 @@ export function MessageInput({ onSend }: MessageInputProps) {
             <Loader2 className="size-4 animate-spin" />
           ) : (
             <>
-              <Send className="size-4 mr-2" />
+              <Send className="size-4" data-icon="inline-start" />
               Send
             </>
           )}

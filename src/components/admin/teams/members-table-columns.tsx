@@ -71,13 +71,13 @@ export function getColumns(options: ColumnOptions): ColumnDef<MemberRow>[] {
                     ? "bg-green-500"
                     : member.status === "away"
                     ? "bg-yellow-500"
-                    : "bg-neutral-300"
+                    : "bg-muted"
                 }`}
               />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-medium text-neutral-900">{member.name}</span>
+                <span className="font-medium text-foreground">{member.name}</span>
                 {member.isLead && (
                   <Badge variant="secondary" className="text-xs">
                     <Crown className="size-3 mr-1" />
@@ -85,7 +85,7 @@ export function getColumns(options: ColumnOptions): ColumnDef<MemberRow>[] {
                   </Badge>
                 )}
               </div>
-              <span className="text-sm text-neutral-500">{member.email}</span>
+              <span className="text-sm text-muted-foreground">{member.email}</span>
             </div>
           </div>
         );
@@ -120,10 +120,10 @@ export function getColumns(options: ColumnOptions): ColumnDef<MemberRow>[] {
                   ? "bg-green-500"
                   : status === "away"
                   ? "bg-yellow-500"
-                  : "bg-neutral-300"
+                  : "bg-muted"
               }`}
             />
-            <span className="text-neutral-600 capitalize">{status}</span>
+            <span className="text-muted-foreground capitalize">{status}</span>
           </div>
         );
       },
@@ -136,7 +136,7 @@ export function getColumns(options: ColumnOptions): ColumnDef<MemberRow>[] {
       cell: ({ row }) => {
         const joinedAt = row.getValue("joinedAt") as number;
         return (
-          <span className="text-neutral-500">
+          <span className="text-muted-foreground">
             {format(new Date(joinedAt), "MMM d, yyyy")}
           </span>
         );
@@ -151,16 +151,14 @@ export function getColumns(options: ColumnOptions): ColumnDef<MemberRow>[] {
 
         return (
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="size-8">
-                <MoreHorizontal className="size-4" />
-                <span className="sr-only">Open menu</span>
-              </Button>
+            <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8" />}>
+              <MoreHorizontal className="size-4" />
+              <span className="sr-only">Open menu</span>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {!member.isLead && (
                 <DropdownMenuItem onClick={() => options.onSetLead(member._id)}>
-                  <UserCheck className="size-4 mr-2" />
+                  <UserCheck className="size-4" data-icon="inline-start" />
                   Make Team Lead
                 </DropdownMenuItem>
               )}
@@ -168,14 +166,9 @@ export function getColumns(options: ColumnOptions): ColumnDef<MemberRow>[] {
               {!member.isLead && <DropdownMenuSeparator />}
 
               <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <DropdownMenuItem
-                    onSelect={(e) => e.preventDefault()}
-                    className="text-red-600"
-                  >
-                    <Trash2 className="size-4 mr-2" />
-                    Remove from Team
-                  </DropdownMenuItem>
+                <AlertDialogTrigger render={<DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600" />}>
+                  <Trash2 className="size-4" data-icon="inline-start" />
+                  Remove from Team
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>

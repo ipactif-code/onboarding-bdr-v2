@@ -74,7 +74,7 @@ export function ChatView({ conversationId }: ChatViewProps) {
   }));
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-background">
       {/* Header */}
       <ChatHeader
         name={headerData.name}
@@ -95,8 +95,8 @@ export function ChatView({ conversationId }: ChatViewProps) {
 
 function ChatViewSkeleton() {
   return (
-    <div className="flex flex-col h-full bg-white">
-      <div className="p-4 border-b border-neutral-200">
+    <div className="flex flex-col h-full bg-background">
+      <div className="p-4 border-b border-border">
         <div className="flex items-center gap-3">
           <Skeleton className="size-10 rounded-full" />
           <div className="space-y-1">
@@ -110,7 +110,7 @@ function ChatViewSkeleton() {
         <Skeleton className="h-12 w-64" />
         <Skeleton className="h-12 w-56 ml-auto" />
       </div>
-      <div className="p-4 border-t border-neutral-200">
+      <div className="p-4 border-t border-border">
         <Skeleton className="h-9 w-full" />
       </div>
     </div>

@@ -29,11 +29,11 @@ export function ContinueWatching({ items }: ContinueWatchingProps) {
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-neutral-950">
+        <h2 className="text-xl font-semibold text-foreground">
           Continue watching
         </h2>
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/courses">View all</Link>
+        <Button variant="ghost" size="sm" render={<Link href="/courses" />}>
+          View all
         </Button>
       </div>
 
@@ -44,7 +44,7 @@ export function ContinueWatching({ items }: ContinueWatchingProps) {
             href={`/courses/${item.courseId}/lessons/${item.lessonId}`}
           >
             <Card className="group overflow-hidden hover:shadow-md transition-shadow">
-              <div className="relative aspect-video bg-neutral-100">
+              <div className="relative aspect-video bg-muted">
                 {item.coverImage ? (
                   <Image
                     src={item.coverImage}
@@ -58,8 +58,8 @@ export function ContinueWatching({ items }: ContinueWatchingProps) {
 
                 {/* Play overlay */}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <div className="size-12 rounded-full bg-white/90 flex items-center justify-center">
-                    <Play className="size-6 text-neutral-900 ml-1" />
+                  <div className="size-12 rounded-full bg-background/90 flex items-center justify-center">
+                    <Play className="size-6 text-foreground ml-1" />
                   </div>
                 </div>
 
@@ -70,14 +70,14 @@ export function ContinueWatching({ items }: ContinueWatchingProps) {
               </div>
 
               <CardContent className="p-3">
-                <h3 className="font-medium text-sm text-neutral-950 line-clamp-1">
+                <h3 className="font-medium text-sm text-foreground line-clamp-1">
                   {item.lessonTitle}
                 </h3>
-                <p className="text-xs text-neutral-500 line-clamp-1">
+                <p className="text-xs text-muted-foreground line-clamp-1">
                   {item.courseTitle}
                 </p>
                 {item.timeLeft && (
-                  <p className="text-xs text-neutral-400 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     {item.timeLeft} left
                   </p>
                 )}

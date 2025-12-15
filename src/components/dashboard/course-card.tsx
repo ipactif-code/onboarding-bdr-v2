@@ -31,7 +31,7 @@ export function CourseCard({
     <Link href={`/courses/${id}`}>
       <Card className="group overflow-hidden hover:shadow-md transition-shadow">
         {/* Cover Image */}
-        <div className="relative aspect-video bg-neutral-100 overflow-hidden rounded-t-xl">
+        <div className="relative aspect-video bg-muted overflow-hidden rounded-t-xl">
           {coverImage ? (
             <Image
               src={coverImage}
@@ -46,11 +46,11 @@ export function CourseCard({
 
         {/* Content */}
         <CardContent className="p-4 space-y-2">
-          <h3 className="font-semibold text-sm text-neutral-950 line-clamp-1">
+          <h3 className="font-semibold text-sm text-foreground line-clamp-1">
             {title}
           </h3>
           {description && (
-            <p className="text-xs text-neutral-500 line-clamp-2">
+            <p className="text-xs text-muted-foreground line-clamp-2">
               {description}
             </p>
           )}
@@ -59,12 +59,12 @@ export function CourseCard({
           {progress !== undefined ? (
             <div className="flex items-center gap-2">
               <Progress value={progress} className="h-2 flex-1" />
-              <span className="text-xs text-neutral-500 whitespace-nowrap">
+              <span className="text-xs text-muted-foreground whitespace-nowrap">
                 {progress}% complete
               </span>
             </div>
           ) : (
-            <div className="flex items-center gap-2 text-xs text-neutral-500">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
               {category && <span>{category}</span>}
               {category && lessonCount && <span>•</span>}
               {lessonCount && <span>{lessonCount} lessons</span>}

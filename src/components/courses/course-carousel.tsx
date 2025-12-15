@@ -1,7 +1,6 @@
 "use client";
 
 import { forwardRef } from "react";
-import Link from "next/link";
 import { Id } from "../../../convex/_generated/dataModel";
 import { CourseCard } from "./course-card";
 
@@ -30,18 +29,15 @@ export const CourseCarousel = forwardRef<HTMLDivElement, CourseCarouselProps>(
         }}
       >
         {courses.map((course) => (
-          <Link
-            key={course._id}
-            href={`/courses/${course._id}`}
-            className="shrink-0"
-          >
+          <div key={course._id} className="shrink-0 w-80">
             <CourseCard
+              id={course._id}
               title={course.title}
               coverImage={course.coverImage}
               progress={showProgress ? course.progress : undefined}
               lessonsCount={course.lessonsCount}
             />
-          </Link>
+          </div>
         ))}
       </div>
     );

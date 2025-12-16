@@ -41,7 +41,7 @@ export function CourseSection({
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 min-w-0">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-semibold text-foreground tracking-tight">

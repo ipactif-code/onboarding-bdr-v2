@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Play, BookOpen } from "lucide-react";
@@ -11,54 +12,84 @@ import {
 } from "@/components/ui/progress";
 
 interface CourseCardProps {
+  /** Course ID for navigation */
   id: string;
+  /** Course title (max 2 lines displayed) */
   title: string;
+  /** Cover image URL from Convex storage */
   coverImage?: string;
+  /** Progress percentage 0-100, shows progress bar when provided */
   progress?: number;
+  /** Number of lessons in the course */
   lessonsCount?: number;
+  /** Enable fixed height for grid alignment (default: true) */
+  fixedHeight?: boolean;
+  /** Additional CSS classes */
+  className?: string;
 }
 
-export function CourseCard({
-  id,
-  title,
-  coverImage,
-  progress,
-  lessonsCount,
-}: CourseCardProps) {
-  const hasProgress = progress !== undefined;
-
-  return (
-    <Link href={`/courses/${id}`}>
-      <div
+const CourseCard = React.forwardRef<HTMLAnchorElement, CourseCardProps>(
+  (
+    {
+      id,
+      title,
+      coverImage,
+      progress,
+      lessonsCount,
+      fixedHeight = true,
+      className,
+    },
+    ref
+  ) => {
+    return (
+      <Link
+        ref={ref}
+        href={`/courses/${id}`}
         className={cn(
-          "flex flex-col w-full group cursor-pointer",
+          // Layout
+          "flex flex-col w-full",
+          fixedHeight && "h-[320px]",
+          // Visual
           "rounded-xl overflow-hidden",
           "bg-card border border-border",
+          // Interaction
+          "group cursor-pointer",
           "hover:border-primary/50 hover:shadow-xl",
-          "transition-all duration-300"
+          "transition-all duration-300",
+          // Accessibility - focus visible
+          "focus-visible:outline-none focus-visible:ring-2",
+          "focus-visible:ring-ring focus-visible:ring-offset-2",
+          className
         )}
       >
-        {/* Cover Image - 16:9 ratio */}
-        <div className="aspect-video relative overflow-hidden bg-muted">
-          {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent z-10" />
+        {/* Cover Image - fixed aspect ratio, never shrinks */}
+        <div className="aspect-video relative overflow-hidden bg-muted shrink-0">
+          {/* Gradient overlay for text readability */}
+          <div
+            className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent z-10"
+            aria-hidden="true"
+          />
 
           {coverImage ? (
             <Image
               src={coverImage}
-              alt={title}
+              alt="" // Decorative - title provides context
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-105"
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-muted">
-              <BookOpen className="size-12 text-muted-foreground/40" />
+            <div className="w-full h-full flex items-center justify-center">
+              <BookOpen
+                className="size-12 text-muted-foreground/40"
+                aria-hidden="true"
+              />
             </div>
           )}
 
-          {/* Play button overlay on hover */}
+          {/* Play button overlay - purely decorative */}
           <div
+            aria-hidden="true"
             className={cn(
               "absolute inset-0 z-20",
               "flex items-center justify-center",
@@ -66,26 +97,25 @@ export function CourseCard({
               "transition-opacity duration-300"
             )}
           >
-            <div
-              className={cn(
-                "size-14 rounded-full",
-                "bg-background/90 backdrop-blur-sm",
-                "flex items-center justify-center",
-                "shadow-lg"
-              )}
-            >
+            <div className="size-14 rounded-full bg-background/90 backdrop-blur-sm flex items-center justify-center shadow-lg">
               <Play className="size-6 fill-foreground text-foreground ml-1" />
             </div>
           </div>
         </div>
 
-        {/* Content - overlapping gradient */}
-        <div className="relative z-20 -mt-6 p-5 pt-0">
-          {/* Title */}
+        {/* Content - flexible height with bottom-aligned metadata */}
+        <div
+          className={cn(
+            "relative z-20 -mt-6 p-4 pt-0 flex flex-col",
+            fixedHeight && "flex-1"
+          )}
+        >
+          {/* Title - fixed min-height reserves space for 2 lines */}
           <h3
             className={cn(
               "text-base font-bold text-foreground",
-              "leading-tight line-clamp-2 mb-3",
+              "leading-tight line-clamp-2",
+              fixedHeight && "min-h-[2.75rem]",
               "group-hover:text-primary",
               "transition-colors duration-200"
             )}
@@ -93,25 +123,30 @@ export function CourseCard({
             {title}
           </h3>
 
-          {/* Meta info */}
-          {lessonsCount !== undefined && lessonsCount > 0 && (
-            <div className="flex items-center gap-3 text-muted-foreground text-xs mb-4">
-              <span className="flex items-center gap-1.5">
-                <BookOpen className="size-3.5" />
-                {lessonsCount} {lessonsCount === 1 ? "Lesson" : "Lessons"}
-              </span>
-            </div>
-          )}
+          {/* Metadata - pushed to bottom via mt-auto */}
+          <div className="mt-auto space-y-3">
+            {/* Lessons count */}
+            {lessonsCount !== undefined && lessonsCount > 0 && (
+              <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
+                <BookOpen className="size-3.5" aria-hidden="true" />
+                <span>
+                  {lessonsCount} {lessonsCount === 1 ? "Lesson" : "Lessons"}
+                </span>
+              </div>
+            )}
 
-          {/* Progress Bar with Label */}
-          {hasProgress && (
-            <Progress value={progress}>
+            {/* Progress bar */}
+            <Progress value={progress ?? 0}>
               <ProgressLabel className="text-xs">Progress</ProgressLabel>
               <ProgressValue className="text-xs" />
             </Progress>
-          )}
+          </div>
         </div>
-      </div>
-    </Link>
-  );
-}
+      </Link>
+    );
+  }
+);
+
+CourseCard.displayName = "CourseCard";
+
+export { CourseCard, type CourseCardProps };

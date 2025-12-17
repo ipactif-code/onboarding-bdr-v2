@@ -46,9 +46,9 @@ export function CourseSidebar({ course, selectedLessonId }: CourseSidebarProps) 
   };
 
   return (
-    <div className="flex flex-col h-full border-l border-border bg-background">
+    <div className="flex flex-col h-full overflow-hidden border-l border-border bg-background">
       {/* Tabs Header */}
-      <Tabs defaultValue="summary" className="flex flex-col h-full">
+      <Tabs defaultValue="summary" className="flex flex-col h-full min-h-0">
         <div className="border-b border-border px-3">
           <TabsList className="bg-transparent h-auto p-0 gap-2">
             <TabsTrigger
@@ -73,7 +73,7 @@ export function CourseSidebar({ course, selectedLessonId }: CourseSidebarProps) 
         </div>
 
         {/* Summary Tab Content */}
-        <TabsContent value="summary" className="flex-1 flex flex-col m-0">
+        <TabsContent value="summary" className="flex-1 flex flex-col m-0 min-h-0">
           {/* Progress Card */}
           <div className="p-4 space-y-4 border-b border-border">
             <div className="space-y-2">

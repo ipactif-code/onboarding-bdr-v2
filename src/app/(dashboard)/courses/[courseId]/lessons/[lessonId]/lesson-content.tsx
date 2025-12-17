@@ -74,6 +74,9 @@ export function LessonContent({ lesson }: LessonContentProps) {
               <p className="text-muted-foreground">No video configured for this lesson.</p>
             </div>
           )}
+          {lesson.content && lesson.content.length > 0 && (
+            <ContentRenderer value={lesson.content} className="prose prose-neutral max-w-none" />
+          )}
         </div>
       );
 

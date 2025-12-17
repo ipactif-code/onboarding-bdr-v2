@@ -107,7 +107,7 @@ const CourseCard = React.forwardRef<HTMLAnchorElement, CourseCardProps>(
         <div
           className={cn(
             "relative z-20 -mt-6 p-4 pt-0 flex flex-col",
-            fixedHeight && "flex-1"
+            fixedHeight && "flex-1 justify-end"
           )}
         >
           {/* Title - fixed min-height reserves space for 2 lines */}
@@ -124,7 +124,7 @@ const CourseCard = React.forwardRef<HTMLAnchorElement, CourseCardProps>(
           </h3>
 
           {/* Metadata - pushed to bottom via mt-auto */}
-          <div className="mt-auto space-y-3">
+          <div className="mt-3 space-y-3">
             {/* Lessons count */}
             {lessonsCount !== undefined && lessonsCount > 0 && (
               <div className="flex items-center gap-1.5 text-muted-foreground text-xs">

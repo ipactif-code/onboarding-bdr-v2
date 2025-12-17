@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
@@ -24,7 +25,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 export interface UserRow {
@@ -50,6 +50,81 @@ function getInitials(name: string) {
     .join("")
     .toUpperCase()
     .slice(0, 2);
+}
+
+// Extracted Actions Cell Component to enable useState for controlled AlertDialog
+interface UserActionsCellProps {
+  user: UserRow;
+  currentClerkId: string;
+  onDelete: (id: Id<"users">, clerkId: string) => void;
+}
+
+function UserActionsCell({
+  user,
+  currentClerkId,
+  onDelete,
+}: UserActionsCellProps) {
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  // User cannot delete themselves
+  const canDelete = user.clerkId !== currentClerkId;
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button variant="ghost" size="icon" className="size-8" />
+          }
+        >
+          <MoreHorizontal className="size-4" />
+          <span className="sr-only">Open menu</span>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem>
+            <Pencil className="size-4" data-icon="inline-start" />
+            Edit
+          </DropdownMenuItem>
+
+          {canDelete && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => setShowDeleteDialog(true)}
+                className="text-red-600"
+              >
+                <Trash2 className="size-4" data-icon="inline-start" />
+                Delete
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {canDelete && (
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete user?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete &quot;{user.name}&quot; and remove
+                all team associations. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => onDelete(user._id, user.clerkId)}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+    </>
+  );
 }
 
 export function getColumns(options: ColumnOptions): ColumnDef<UserRow>[] {
@@ -145,57 +220,16 @@ export function getColumns(options: ColumnOptions): ColumnDef<UserRow>[] {
       },
     },
 
-    // Actions column
+    // Actions column - using extracted component for controlled AlertDialog
     {
       id: "actions",
-      cell: ({ row }) => {
-        const user = row.original;
-
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8" />}>
-              <MoreHorizontal className="size-4" />
-              <span className="sr-only">Open menu</span>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>
-                <Pencil className="size-4" data-icon="inline-start" />
-                Edit
-              </DropdownMenuItem>
-
-              {user.clerkId !== options.currentClerkId && (
-                <>
-                  <DropdownMenuSeparator />
-                  <AlertDialog>
-                    <AlertDialogTrigger render={<DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600" />}>
-                      <Trash2 className="size-4" data-icon="inline-start" />
-                      Delete
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete user?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will permanently delete &quot;{user.name}&quot; and
-                          remove all team associations. This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => options.onDelete(user._id, user.clerkId)}
-                          className="bg-red-600 hover:bg-red-700"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        );
-      },
+      cell: ({ row }) => (
+        <UserActionsCell
+          user={row.original}
+          currentClerkId={options.currentClerkId}
+          onDelete={options.onDelete}
+        />
+      ),
       size: 64,
     },
   ];

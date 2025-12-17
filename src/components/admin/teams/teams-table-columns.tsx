@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Id } from "../../../../convex/_generated/dataModel";
 import Link from "next/link";
@@ -22,7 +23,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 export interface TeamRow {
@@ -36,6 +36,70 @@ export interface TeamRow {
 
 interface ColumnOptions {
   onDelete: (id: Id<"teams">) => void;
+}
+
+// Extracted Actions Cell Component to enable useState for controlled AlertDialog
+interface TeamActionsCellProps {
+  team: TeamRow;
+  onDelete: (id: Id<"teams">) => void;
+}
+
+function TeamActionsCell({ team, onDelete }: TeamActionsCellProps) {
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button variant="ghost" size="icon" className="size-8" />
+          }
+        >
+          <MoreHorizontal className="size-4" />
+          <span className="sr-only">Open menu</span>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            render={<Link href={`/admin/teams/${team._id}`} />}
+          >
+            <Pencil className="size-4" data-icon="inline-start" />
+            Edit
+          </DropdownMenuItem>
+
+          <DropdownMenuSeparator />
+
+          <DropdownMenuItem
+            onClick={() => setShowDeleteDialog(true)}
+            className="text-red-600"
+          >
+            <Trash2 className="size-4" data-icon="inline-start" />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete team?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete &quot;{team.name}&quot; and remove
+              all member associations. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => onDelete(team._id)}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
 }
 
 export function getColumns(options: ColumnOptions): ColumnDef<TeamRow>[] {
@@ -112,54 +176,12 @@ export function getColumns(options: ColumnOptions): ColumnDef<TeamRow>[] {
       ),
     },
 
-    // Actions column
+    // Actions column - using extracted component for controlled AlertDialog
     {
       id: "actions",
-      cell: ({ row }) => {
-        const team = row.original;
-
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8" />}>
-              <MoreHorizontal className="size-4" />
-              <span className="sr-only">Open menu</span>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem render={<Link href={`/admin/teams/${team._id}`} />}>
-                <Pencil className="size-4" data-icon="inline-start" />
-                Edit
-              </DropdownMenuItem>
-
-              <DropdownMenuSeparator />
-
-              <AlertDialog>
-                <AlertDialogTrigger render={<DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600" />}>
-                  <Trash2 className="size-4" data-icon="inline-start" />
-                  Delete
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete team?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will permanently delete &quot;{team.name}&quot; and
-                      remove all member associations. This action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => options.onDelete(team._id)}
-                      className="bg-red-600 hover:bg-red-700"
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        );
-      },
+      cell: ({ row }) => (
+        <TeamActionsCell team={row.original} onDelete={options.onDelete} />
+      ),
       size: 64,
     },
   ];

@@ -1,8 +1,7 @@
 "use client";
 
-import { PanelLeft, ChevronRight } from "lucide-react";
-import { useSidebar } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
+import { Fragment } from "react";
+import Link from "next/link";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -12,57 +11,59 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useBreadcrumbs } from "@/hooks/use-breadcrumbs";
 
-interface BreadcrumbItemData {
-  label: string;
-  href?: string;
-}
-
-interface AppHeaderProps {
-  breadcrumbs?: BreadcrumbItemData[];
-}
-
-export function AppHeader({ breadcrumbs }: AppHeaderProps) {
-  const { toggleSidebar } = useSidebar();
-
-  // Default breadcrumbs if none provided
-  const items = breadcrumbs || [
-    { label: "Dashboard", href: "/" },
-  ];
+/**
+ * Application header with dynamic breadcrumb navigation.
+ *
+ * Features:
+ * - Automatic breadcrumb generation based on URL
+ * - Real names for courses/lessons via Convex query
+ * - Loading skeletons while fetching dynamic data
+ * - Proper link handling (last item is not a link)
+ * - `/admin` prefix is never shown in breadcrumb
+ */
+export function AppHeader() {
+  const breadcrumbs = useBreadcrumbs();
 
   return (
-    <header className="h-16 border-b border-border bg-background shrink-0">
-      <div className="flex items-center h-full px-4 gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-8"
-          onClick={toggleSidebar}
-          aria-label="Toggle sidebar"
-        >
-          <PanelLeft className="size-4" />
-        </Button>
-
-        <Separator orientation="vertical" className="h-4" />
-
+    <header className="flex h-16 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+      <div className="flex items-center gap-2 px-4">
+        <SidebarTrigger className="-ml-1" aria-label="Toggle sidebar" />
+        <Separator
+          orientation="vertical"
+          className="mr-2 data-[orientation=vertical]:h-4"
+        />
         <Breadcrumb>
           <BreadcrumbList>
-            {items.map((item, index) => (
-              <BreadcrumbItem key={index}>
-                {index > 0 && (
-                  <BreadcrumbSeparator>
-                    <ChevronRight className="size-4" />
-                  </BreadcrumbSeparator>
-                )}
-                {item.href && index < items.length - 1 ? (
-                  <BreadcrumbLink href={item.href}>
-                    {item.label}
-                  </BreadcrumbLink>
-                ) : (
-                  <BreadcrumbPage>{item.label}</BreadcrumbPage>
-                )}
-              </BreadcrumbItem>
-            ))}
+            {breadcrumbs.map((item, index) => {
+              const isLast = index === breadcrumbs.length - 1;
+              const isFirst = index === 0;
+
+              return (
+                <Fragment key={`${item.label}-${index}`}>
+                  {/* Separator OUTSIDE BreadcrumbItem to avoid nested <li> */}
+                  {!isFirst && <BreadcrumbSeparator />}
+
+                  <BreadcrumbItem>
+                    {/* Loading state */}
+                    {item.isLoading ? (
+                      <Skeleton className="h-4 w-24" />
+                    ) : item.href && !isLast ? (
+                      /* Link for non-last items with href */
+                      <BreadcrumbLink render={<Link href={item.href} />}>
+                        {item.label}
+                      </BreadcrumbLink>
+                    ) : (
+                      /* Current page (last item) or item without href */
+                      <BreadcrumbPage>{item.label}</BreadcrumbPage>
+                    )}
+                  </BreadcrumbItem>
+                </Fragment>
+              );
+            })}
           </BreadcrumbList>
         </Breadcrumb>
       </div>

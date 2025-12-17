@@ -2,18 +2,8 @@
 
 import { usePathname } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { AppHeader } from "@/components/layout/app-header";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserProvider } from "@/contexts/user-context";
 import { useConvexAuth } from "@/components/providers/convex-provider";
@@ -26,30 +16,32 @@ function AuthReadyGuard({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex min-h-screen w-full">
         {/* Sidebar skeleton */}
-        <div className="w-64 border-r bg-background p-4 space-y-4">
-          <Skeleton className="h-10 w-full" />
+        <div className="w-16 border-r bg-background p-4 space-y-4">
+          <Skeleton className="h-8 w-8 rounded-lg" />
           <div className="space-y-2">
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-8 rounded-lg" />
+            <Skeleton className="h-8 w-8 rounded-lg" />
+            <Skeleton className="h-8 w-8 rounded-lg" />
+            <Skeleton className="h-8 w-8 rounded-lg" />
           </div>
         </div>
         {/* Main content skeleton */}
-        <div className="flex-1 p-4 space-y-4">
-          <Skeleton className="h-8 w-48" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Skeleton className="h-32 rounded-xl" />
-            <Skeleton className="h-32 rounded-xl" />
-            <Skeleton className="h-32 rounded-xl" />
-            <Skeleton className="h-32 rounded-xl" />
+        <div className="flex-1 flex flex-col">
+          {/* Header skeleton */}
+          <div className="h-16 border-b px-4 flex items-center gap-4">
+            <Skeleton className="h-8 w-8" />
+            <Skeleton className="h-4 w-px" />
+            <Skeleton className="h-4 w-32" />
           </div>
-          <Skeleton className="h-8 w-64" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <Skeleton className="h-64 rounded-xl" />
-            <Skeleton className="h-64 rounded-xl" />
-            <Skeleton className="h-64 rounded-xl" />
-            <Skeleton className="h-64 rounded-xl" />
+          {/* Content skeleton */}
+          <div className="flex-1 p-6 space-y-4">
+            <Skeleton className="h-8 w-48" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Skeleton className="h-32 rounded-xl" />
+              <Skeleton className="h-32 rounded-xl" />
+              <Skeleton className="h-32 rounded-xl" />
+              <Skeleton className="h-32 rounded-xl" />
+            </div>
           </div>
         </div>
       </div>
@@ -66,8 +58,9 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
 
-  // Hide header on messages page
-  const hideHeader = pathname === "/messages" || pathname.startsWith("/messages/");
+  // Hide header on messages page (full-height chat interface)
+  const hideHeader =
+    pathname === "/messages" || pathname.startsWith("/messages/");
 
   return (
     <SidebarProvider defaultOpen={false}>
@@ -75,24 +68,7 @@ export default function DashboardLayout({
         <UserProvider>
           <AppSidebar />
           <SidebarInset className="h-screen min-w-0">
-            {!hideHeader && (
-              <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-                <div className="flex items-center gap-2 px-4">
-                  <SidebarTrigger className="-ml-1" />
-                  <Separator
-                    orientation="vertical"
-                    className="mr-2 data-[orientation=vertical]:h-4"
-                  />
-                  <Breadcrumb>
-                    <BreadcrumbList>
-                      <BreadcrumbItem>
-                        <BreadcrumbPage>Dashboard</BreadcrumbPage>
-                      </BreadcrumbItem>
-                    </BreadcrumbList>
-                  </Breadcrumb>
-                </div>
-              </header>
-            )}
+            {!hideHeader && <AppHeader />}
             <div
               className={cn(
                 "flex flex-1 flex-col min-h-0 min-w-0",

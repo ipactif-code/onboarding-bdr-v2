@@ -38,7 +38,7 @@ export function CourseContent({ course }: CourseContentProps) {
     <div className="flex flex-col h-full overflow-hidden">
       {/* Scrollable Content */}
       <ScrollArea className="h-0 flex-1">
-        <div className="p-6 space-y-8">
+        <div className="p-6 space-y-6">
           {/* Cover Image */}
           <div className="relative aspect-video w-full max-w-4xl rounded-xl overflow-hidden bg-muted">
             {course.coverImageUrl ? (

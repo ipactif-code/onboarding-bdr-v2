@@ -94,6 +94,7 @@ export function RecentUsersTable({ users }: RecentUsersTableProps) {
                   <DropdownMenu>
                     <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8" />}>
                       <MoreHorizontal className="size-4" />
+                      <span className="sr-only">Open menu</span>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem>View profile</DropdownMenuItem>

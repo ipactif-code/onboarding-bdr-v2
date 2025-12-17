@@ -2,18 +2,14 @@
 
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import {
-  CheckCircle,
-  BookOpen,
-  Target,
-  Trophy,
-} from "lucide-react";
+import { CheckCircle, BookOpen, Target, Trophy } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatsCard } from "./stats-card";
 import { CourseSection } from "@/components/courses/course-section";
 
 export function UserDashboard() {
   const courses = useQuery(api.courses.listForUser);
+  const stats = useQuery(api.analytics.getUserDashboardStats);
 
   const completedCourses =
     courses?.filter((c) => c.progress.percentage === 100).length ?? 0;
@@ -44,9 +40,19 @@ export function UserDashboard() {
         lessonsCount: course.progress.totalLessons,
       })) ?? [];
 
-  if (courses === undefined) {
+  if (courses === undefined || stats === undefined) {
     return <UserDashboardSkeleton />;
   }
+
+  // Format trend for display
+  const formatTrend = (value: number): { value: string; positive: boolean } => {
+    if (value === 0) return { value: "0", positive: true };
+    const isPositive = value > 0;
+    return {
+      value: `${isPositive ? "+" : ""}${value}`,
+      positive: isPositive,
+    };
+  };
 
   return (
     <div className="space-y-6">
@@ -58,31 +64,35 @@ export function UserDashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard
-          title="Completed Courses"
-          value={completedCourses}
+          title="Lessons Completed"
+          value={stats.lessonsCompleted}
           icon={CheckCircle}
-          trend={{ value: "20.1%", positive: true }}
+          trend={formatTrend(stats.lessonsCompletedTrend)}
           description="from last month"
         />
         <StatsCard
           title="Courses to Complete"
           value={totalCourses - completedCourses}
           icon={BookOpen}
-          trend={{ value: "5", positive: true }}
-          description="new this month"
+          description={`${completedCourses} completed`}
         />
         <StatsCard
           title="Quiz Success Rate"
-          value="94%"
+          value={`${stats.quizSuccessRate}%`}
           icon={Target}
-          trend={{ value: "19%", positive: true }}
+          trend={formatTrend(stats.quizSuccessRateTrend)}
           description="from last month"
         />
         <StatsCard
-          title="Quiz Ranking"
-          value="5/30"
+          title="Global Ranking"
+          value={`${stats.globalRanking}/${stats.totalRankedUsers}`}
           icon={Trophy}
-          description="in your team"
+          trend={
+            stats.rankingTrend !== 0
+              ? formatTrend(-stats.rankingTrend)
+              : undefined
+          }
+          description={`${stats.totalPoints} total points`}
         />
       </div>
 
@@ -97,10 +107,7 @@ export function UserDashboard() {
 
       {/* Latest courses */}
       {latestCourses.length > 0 && (
-        <CourseSection
-          title="Latest courses"
-          courses={latestCourses}
-        />
+        <CourseSection title="Latest courses" courses={latestCourses} />
       )}
     </div>
   );

@@ -913,3 +913,197 @@ export const logActivityFromModule = mutation({
     return null;
   },
 });
+
+/**
+ * Get user dashboard statistics for the learner view.
+ * Shows quiz success rate, ranking, lessons completed, and trends.
+ */
+export const getUserDashboardStats = query({
+  args: {},
+  returns: v.object({
+    quizSuccessRate: v.number(),
+    quizSuccessRateTrend: v.number(),
+    totalPoints: v.number(),
+    totalPointsTrend: v.number(),
+    globalRanking: v.number(),
+    totalRankedUsers: v.number(),
+    rankingTrend: v.number(),
+    lessonsCompleted: v.number(),
+    lessonsCompletedTrend: v.number(),
+    coursesProgress: v.array(
+      v.object({
+        courseId: v.id("courses"),
+        title: v.string(),
+        progress: v.number(),
+        lessonsCompleted: v.number(),
+        totalLessons: v.number(),
+      })
+    ),
+  }),
+  handler: async (ctx) => {
+    const user = await requireAuth(ctx);
+
+    const now = Date.now();
+    const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+    const sixtyDaysAgo = now - 60 * 24 * 60 * 60 * 1000;
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Quiz Statistics
+    // ─────────────────────────────────────────────────────────────────────────
+    const userAttempts = await ctx.db
+      .query("quizAttempts")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    // Current period (last 30 days)
+    const currentAttempts = userAttempts.filter(
+      (a) => a.submittedAt >= thirtyDaysAgo
+    );
+    const currentPassed = currentAttempts.filter((a) => a.passed).length;
+    const quizSuccessRate =
+      currentAttempts.length > 0
+        ? Math.round((currentPassed / currentAttempts.length) * 100)
+        : 0;
+
+    // Previous period (30-60 days ago)
+    const previousAttempts = userAttempts.filter(
+      (a) => a.submittedAt >= sixtyDaysAgo && a.submittedAt < thirtyDaysAgo
+    );
+    const previousPassed = previousAttempts.filter((a) => a.passed).length;
+    const previousSuccessRate =
+      previousAttempts.length > 0
+        ? Math.round((previousPassed / previousAttempts.length) * 100)
+        : 0;
+
+    const quizSuccessRateTrend = quizSuccessRate - previousSuccessRate;
+
+    // Total points from quiz scores
+    const totalPoints = userAttempts.reduce((sum, a) => sum + a.score, 0);
+    const previousPoints = userAttempts
+      .filter((a) => a.submittedAt < thirtyDaysAgo)
+      .reduce((sum, a) => sum + a.score, 0);
+    const currentPeriodPoints = totalPoints - previousPoints;
+    const totalPointsTrend = currentPeriodPoints;
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Global Ranking
+    // ─────────────────────────────────────────────────────────────────────────
+    const allUsers = await ctx.db.query("users").collect();
+    const allAttempts = await ctx.db.query("quizAttempts").collect();
+
+    // Calculate points for each user
+    const userPoints = new Map<string, number>();
+    for (const attempt of allAttempts) {
+      const key = attempt.userId.toString();
+      userPoints.set(key, (userPoints.get(key) ?? 0) + attempt.score);
+    }
+
+    // Sort users by points
+    const sortedUsers = Array.from(userPoints.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([userId]) => userId);
+
+    const userRank =
+      sortedUsers.indexOf(user._id.toString()) + 1 || sortedUsers.length + 1;
+    const totalRankedUsers = allUsers.length;
+
+    // Trend: compare to previous period ranking (simplified)
+    const rankingTrend = 0; // Would require historical tracking
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Lessons Completed
+    // ─────────────────────────────────────────────────────────────────────────
+    const userProgress = await ctx.db
+      .query("progress")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    const completedLessons = userProgress.filter(
+      (p) => p.status === "completed"
+    );
+    const lessonsCompleted = completedLessons.length;
+
+    // Lessons completed in current period
+    const currentPeriodCompleted = completedLessons.filter(
+      (p) => p.completedAt && p.completedAt >= thirtyDaysAgo
+    ).length;
+
+    // Lessons completed in previous period
+    const previousPeriodCompleted = completedLessons.filter(
+      (p) =>
+        p.completedAt &&
+        p.completedAt >= sixtyDaysAgo &&
+        p.completedAt < thirtyDaysAgo
+    ).length;
+
+    const lessonsCompletedTrend =
+      currentPeriodCompleted - previousPeriodCompleted;
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Courses Progress
+    // ─────────────────────────────────────────────────────────────────────────
+    const courses = await ctx.db
+      .query("courses")
+      .withIndex("by_status", (q) => q.eq("status", "published"))
+      .collect();
+
+    const coursesProgress = await Promise.all(
+      courses.map(async (course) => {
+        // Get all sections for this course
+        const sections = await ctx.db
+          .query("sections")
+          .withIndex("by_course", (q) => q.eq("courseId", course._id))
+          .collect();
+
+        // Get all lessons for this course
+        let totalLessons = 0;
+        const lessonIds: Id<"lessons">[] = [];
+
+        for (const section of sections) {
+          const lessons = await ctx.db
+            .query("lessons")
+            .withIndex("by_section", (q) => q.eq("sectionId", section._id))
+            .collect();
+          totalLessons += lessons.length;
+          lessonIds.push(...lessons.map((l) => l._id));
+        }
+
+        // Count user's completed lessons in this course
+        const lessonIdSet = new Set(lessonIds.map((id) => id.toString()));
+        const courseCompleted = userProgress.filter(
+          (p) =>
+            p.status === "completed" && lessonIdSet.has(p.lessonId.toString())
+        ).length;
+
+        const progress =
+          totalLessons > 0
+            ? Math.round((courseCompleted / totalLessons) * 100)
+            : 0;
+
+        return {
+          courseId: course._id,
+          title: course.title,
+          progress,
+          lessonsCompleted: courseCompleted,
+          totalLessons,
+        };
+      })
+    );
+
+    // Filter to only courses user has started (has any progress)
+    const activeCourses = coursesProgress.filter((c) => c.lessonsCompleted > 0);
+
+    return {
+      quizSuccessRate,
+      quizSuccessRateTrend,
+      totalPoints,
+      totalPointsTrend,
+      globalRanking: userRank,
+      totalRankedUsers,
+      rankingTrend,
+      lessonsCompleted,
+      lessonsCompletedTrend,
+      coursesProgress: activeCourses,
+    };
+  },
+});

@@ -65,7 +65,9 @@ export function TeamsList() {
       setNewTeamOpen(false);
       toast.success("Team created");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to create team");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create team"
+      );
     } finally {
       setIsCreating(false);
     }
@@ -77,7 +79,9 @@ export function TeamsList() {
       await removeTeam({ teamId });
       toast.success("Team deleted");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to delete team");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete team"
+      );
     }
   };
 
@@ -98,90 +102,105 @@ export function TeamsList() {
 
       toast.success("User deleted successfully");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to delete user");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete user"
+      );
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-foreground">Teams & Users</h1>
-        {activeTab === "teams" ? (
-          <Dialog open={newTeamOpen} onOpenChange={setNewTeamOpen}>
-            <DialogTrigger render={<Button />}>
-              <Plus className="size-4" data-icon="inline-start" />
-              New Team
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Create Team</DialogTitle>
-                <DialogDescription>
-                  Create a new team to organize your users.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="team-name">Team Name</Label>
-                  <Input
-                    id="team-name"
-                    value={newTeamName}
-                    onChange={(e) => setNewTeamName(e.target.value)}
-                    placeholder="e.g., Sales Team"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="team-description">Description (optional)</Label>
-                  <Textarea
-                    id="team-description"
-                    value={newTeamDescription}
-                    onChange={(e) => setNewTeamDescription(e.target.value)}
-                    placeholder="What is this team about?"
-                    rows={3}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setNewTeamOpen(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleCreateTeam}
-                  disabled={isCreating || !newTeamName.trim()}
-                >
-                  {isCreating ? "Creating..." : "Create Team"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        ) : (
-          <Button onClick={() => setInviteModalOpen(true)}>
-            <UserPlus className="size-4" data-icon="inline-start" />
-            Invite User
-          </Button>
-        )}
-      </div>
+      {/* Header - Title only */}
+      <h1 className="text-2xl font-semibold text-foreground">Members</h1>
 
-      {/* Tabs */}
+      {/* Single Tabs wrapper for proper state management */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="teams">Teams</TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
-        </TabsList>
+        {/* Filters Row - Tabs + Search + Action Button */}
+        <div className="flex items-center justify-between gap-4">
+          {/* TabsList inline in filters row */}
+          <TabsList>
+            <TabsTrigger value="teams">Teams</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
+          </TabsList>
 
-        {/* Search */}
-        <div className="relative w-[373px] mt-4">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <Input
-            placeholder={activeTab === "teams" ? "Search teams..." : "Search users..."}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
+          {/* Search + Action Button */}
+          <div className="flex items-center gap-3">
+            <div className="relative w-[300px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Input
+                placeholder={
+                  activeTab === "teams" ? "Search teams..." : "Search users..."
+                }
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            {/* Contextual Action Button based on active tab */}
+            {activeTab === "teams" ? (
+              <Dialog open={newTeamOpen} onOpenChange={setNewTeamOpen}>
+                <DialogTrigger render={<Button />}>
+                  <Plus className="size-4" data-icon="inline-start" />
+                  New Team
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Create Team</DialogTitle>
+                    <DialogDescription>
+                      Create a new team to organize users and assign courses.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="team-name">Team Name</Label>
+                      <Input
+                        id="team-name"
+                        value={newTeamName}
+                        onChange={(e) => setNewTeamName(e.target.value)}
+                        placeholder="e.g., Sales Team"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="team-description">
+                        Description (optional)
+                      </Label>
+                      <Textarea
+                        id="team-description"
+                        value={newTeamDescription}
+                        onChange={(e) => setNewTeamDescription(e.target.value)}
+                        placeholder="What is this team for?"
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setNewTeamOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleCreateTeam}
+                      disabled={isCreating || !newTeamName.trim()}
+                    >
+                      {isCreating ? "Creating..." : "Create Team"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            ) : (
+              <Button onClick={() => setInviteModalOpen(true)}>
+                <UserPlus className="size-4" data-icon="inline-start" />
+                Invite User
+              </Button>
+            )}
+          </div>
         </div>
 
-        {/* Teams Tab Content */}
-        <TabsContent value="teams" className="mt-4">
+        {/* Tab Contents */}
+        <TabsContent value="teams" className="mt-6">
           {teams === undefined ? (
             <TableSkeleton />
           ) : (
@@ -189,8 +208,7 @@ export function TeamsList() {
           )}
         </TabsContent>
 
-        {/* Users Tab Content */}
-        <TabsContent value="users" className="mt-4">
+        <TabsContent value="users" className="mt-6">
           {usersResult === undefined ? (
             <TableSkeleton />
           ) : (

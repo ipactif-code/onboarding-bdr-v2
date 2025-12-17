@@ -65,6 +65,7 @@ export const STATIC_ROUTES: Record<string, string> = {
   "/settings": "Settings",
   // Admin routes (without "admin" prefix in label)
   "/admin/courses": "Courses",
+  "/admin/courses/new": "New Course",
   "/admin/teams": "Teams",
   "/admin/analytics": "Analytics",
   "/admin/users": "Users",
@@ -183,6 +184,13 @@ export const DYNAMIC_ROUTE_PATTERNS: DynamicRouteConfig[] = [
  * Extract IDs from a pathname
  */
 export function extractIdsFromPath(pathname: string): ExtractedIds | null {
+  // Check static routes FIRST - they don't need ID extraction
+  // This prevents "new" from being captured as a courseId
+  if (STATIC_ROUTES[pathname]) {
+    return null;
+  }
+
+  // Then check dynamic patterns
   for (const route of DYNAMIC_ROUTE_PATTERNS) {
     const matches = pathname.match(route.pattern);
     if (matches) {

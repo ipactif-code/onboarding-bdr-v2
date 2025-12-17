@@ -66,16 +66,10 @@ export function CoursesList() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-foreground">Courses</h1>
-        <Button render={<Link href="/admin/courses/new" />}>
-          <Plus className="size-4" data-icon="inline-start" />
-          New
-        </Button>
-      </div>
+      {/* Header - Title only */}
+      <h1 className="text-2xl font-semibold text-foreground">Courses</h1>
 
-      {/* Filters Row */}
+      {/* Filters Row - Tabs + Search + Action Button */}
       <div className="flex items-center justify-between gap-4">
         {/* Status Tabs */}
         <Tabs
@@ -91,21 +85,27 @@ export function CoursesList() {
           </TabsList>
         </Tabs>
 
-        {/* Search */}
-        <div className="relative w-[373px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <Input
-            placeholder="Search courses..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
+        {/* Search + Action Button */}
+        <div className="flex items-center gap-3">
+          <div className="relative w-[300px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Input
+              placeholder="Search courses..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Button nativeButton={false} render={<Link href="/admin/courses/new" />}>
+            <Plus className="size-4" data-icon="inline-start" />
+            New
+          </Button>
         </div>
       </div>
 
       {/* Table */}
       {courses === undefined ? (
-        <CoursesTableSkeleton />
+        <TableSkeleton />
       ) : (
         <CoursesTable
           courses={courses}
@@ -118,7 +118,7 @@ export function CoursesList() {
   );
 }
 
-function CoursesTableSkeleton() {
+function TableSkeleton() {
   return (
     <div className="space-y-4">
       <Skeleton className="h-10 w-full" />

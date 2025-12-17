@@ -47,8 +47,11 @@ const CourseCard = React.forwardRef<HTMLAnchorElement, CourseCardProps>(
         href={`/courses/${id}`}
         className={cn(
           // Layout
+          // FIX: Changed from h-[320px] to min-h-[320px]
+          // This allows the card to grow if content requires more space
+          // while maintaining consistent minimum height for grid alignment
           "flex flex-col w-full",
-          fixedHeight && "h-[320px]",
+          fixedHeight && "min-h-[320px]",
           // Visual
           "rounded-xl overflow-hidden",
           "bg-card border border-border",
@@ -62,8 +65,18 @@ const CourseCard = React.forwardRef<HTMLAnchorElement, CourseCardProps>(
           className
         )}
       >
-        {/* Cover Image - fixed aspect ratio, never shrinks */}
-        <div className="aspect-video relative overflow-hidden bg-muted shrink-0">
+        {/* Cover Image
+            FIX: Changed from aspect-video to h-[180px]
+
+            The aspect-video class calculates height dynamically based on width (16:9 ratio).
+            When card width exceeds ~500px, the image height exceeds available space,
+            pushing content out of the visible area.
+
+            Fixed pixel height ensures predictable behavior across all breakpoints:
+            - 180px image + ~140px content = 320px minimum total
+            - Works reliably from 320px mobile to 1920px+ desktop
+        */}
+        <div className="h-[180px] relative overflow-hidden bg-muted shrink-0">
           {/* Gradient overlay for text readability */}
           <div
             className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent z-10"
@@ -103,11 +116,17 @@ const CourseCard = React.forwardRef<HTMLAnchorElement, CourseCardProps>(
           </div>
         </div>
 
-        {/* Content - flexible height with bottom-aligned metadata */}
+        {/* Content section
+            FIX: Removed -mt-6 negative margin and pt-0
+
+            The negative margin was creating overlap with the image area,
+            which combined with overflow-hidden caused content clipping.
+            Now content has guaranteed space below the fixed-height image.
+        */}
         <div
           className={cn(
-            "relative z-20 -mt-6 p-4 pt-0 flex flex-col",
-            fixedHeight && "flex-1 justify-end"
+            "relative z-20 p-4 flex flex-col",
+            fixedHeight && "flex-1"
           )}
         >
           {/* Title - fixed min-height reserves space for 2 lines */}
@@ -123,8 +142,14 @@ const CourseCard = React.forwardRef<HTMLAnchorElement, CourseCardProps>(
             {title}
           </h3>
 
-          {/* Metadata - pushed to bottom via mt-auto */}
-          <div className="mt-3 space-y-3">
+          {/* Metadata - pushed to bottom via mt-auto
+              FIX: Changed from mt-3 space-y-3 to mt-auto pt-3 space-y-2
+
+              mt-auto pushes this section to the bottom of the flex container,
+              ensuring consistent vertical alignment across cards with varying
+              title lengths. Reduced space-y for more compact layout.
+          */}
+          <div className="mt-auto pt-3 space-y-2">
             {/* Lessons count */}
             {lessonsCount !== undefined && lessonsCount > 0 && (
               <div className="flex items-center gap-1.5 text-muted-foreground text-xs">

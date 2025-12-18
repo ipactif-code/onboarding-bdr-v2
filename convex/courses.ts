@@ -63,6 +63,159 @@ async function getCoverImageUrl(
   return url ?? undefined;
 }
 
+/**
+ * Build course list response with progress data.
+ * Extracted to avoid duplication between admin and user paths.
+ */
+async function buildCourseListResponse(
+  ctx: QueryCtx,
+  courses: Doc<"courses">[],
+  user: Doc<"users">
+): Promise<
+  {
+    _id: Id<"courses">;
+    title: string;
+    description: string | undefined;
+    coverImageUrl: string | undefined;
+    displayOrder: number;
+    tags: { _id: Id<"tags">; name: string }[];
+    progress: {
+      completedLessons: number;
+      totalLessons: number;
+      percentage: number;
+      lastAccessedLessonId: Id<"lessons"> | undefined;
+      lastAccessedAt: number | undefined;
+    };
+  }[]
+> {
+  // Pre-fetch all data needed for all courses to avoid N+1 queries
+  const courseIds = courses.map((c) => c._id);
+
+  // Fetch all course tags, sections, and user progress in parallel
+  const [allCourseTags, allTags, allSections, userProgress] = await Promise.all(
+    [
+      ctx.db.query("courseTags").collect(),
+      ctx.db.query("tags").collect(),
+      ctx.db.query("sections").collect(),
+      ctx.db
+        .query("progress")
+        .withIndex("by_user", (q) => q.eq("userId", user._id))
+        .collect(),
+    ]
+  );
+
+  // Fetch all lessons for relevant sections
+  const relevantSectionIds = new Set(
+    allSections
+      .filter((s) => courseIds.some((cId) => cId === s.courseId))
+      .map((s) => s._id.toString())
+  );
+
+  const allLessons = await ctx.db.query("lessons").collect();
+  const relevantLessons = allLessons.filter((l) =>
+    relevantSectionIds.has(l.sectionId.toString())
+  );
+
+  // Build lookup maps
+  const tagsById = new Map(allTags.map((t) => [t._id.toString(), t]));
+  const courseTagsByCourse = new Map<string, typeof allCourseTags>();
+  for (const ct of allCourseTags) {
+    const key = ct.courseId.toString();
+    if (!courseTagsByCourse.has(key)) {
+      courseTagsByCourse.set(key, []);
+    }
+    courseTagsByCourse.get(key)!.push(ct);
+  }
+
+  const sectionsByCourse = new Map<string, typeof allSections>();
+  for (const section of allSections) {
+    const key = section.courseId.toString();
+    if (!sectionsByCourse.has(key)) {
+      sectionsByCourse.set(key, []);
+    }
+    sectionsByCourse.get(key)!.push(section);
+  }
+
+  const lessonsBySection = new Map<string, typeof relevantLessons>();
+  for (const lesson of relevantLessons) {
+    const key = lesson.sectionId.toString();
+    if (!lessonsBySection.has(key)) {
+      lessonsBySection.set(key, []);
+    }
+    lessonsBySection.get(key)!.push(lesson);
+  }
+
+  const progressByLesson = new Map(
+    userProgress.map((p) => [p.lessonId.toString(), p])
+  );
+
+  // Build response for each course
+  return Promise.all(
+    courses.map(async (course) => {
+      const coverImageUrl = await getCoverImageUrl(ctx, course.coverImageId);
+
+      // Get tags from pre-fetched data
+      const courseTags = courseTagsByCourse.get(course._id.toString()) ?? [];
+      const tags = courseTags
+        .map((ct) => {
+          const tag = tagsById.get(ct.tagId.toString());
+          return tag ? { _id: tag._id, name: tag.name } : null;
+        })
+        .filter((t): t is { _id: Id<"tags">; name: string } => t !== null);
+
+      // Get sections and lessons from pre-fetched data
+      const sections = sectionsByCourse.get(course._id.toString()) ?? [];
+      let totalLessons = 0;
+      const allLessonIds: Id<"lessons">[] = [];
+
+      for (const section of sections) {
+        const lessons = lessonsBySection.get(section._id.toString()) ?? [];
+        totalLessons += lessons.length;
+        allLessonIds.push(...lessons.map((l) => l._id));
+      }
+
+      // Calculate progress from pre-fetched data
+      let completedLessons = 0;
+      let lastAccessedLessonId: Id<"lessons"> | undefined;
+      let lastAccessedAt: number | undefined;
+
+      for (const lessonId of allLessonIds) {
+        const progress = progressByLesson.get(lessonId.toString());
+        if (progress) {
+          if (progress.status === "completed") {
+            completedLessons++;
+          }
+          if (!lastAccessedAt || progress.lastAccessedAt > lastAccessedAt) {
+            lastAccessedAt = progress.lastAccessedAt;
+            lastAccessedLessonId = lessonId;
+          }
+        }
+      }
+
+      const percentage =
+        totalLessons > 0
+          ? Math.round((completedLessons / totalLessons) * 100)
+          : 0;
+
+      return {
+        _id: course._id,
+        title: course.title,
+        description: course.description,
+        coverImageUrl,
+        displayOrder: course.displayOrder,
+        tags,
+        progress: {
+          completedLessons,
+          totalLessons,
+          percentage,
+          lastAccessedLessonId,
+          lastAccessedAt,
+        },
+      };
+    })
+  );
+}
+
 // ============================================================================
 // Queries
 // ============================================================================
@@ -98,112 +251,64 @@ export const listForUser = query({
   handler: async (ctx, _args) => {
     const user = await requireAuth(ctx);
 
-    // Get all published courses
-    const allCourses = await ctx.db
-      .query("courses")
-      .withIndex("by_status", (q) => q.eq("status", "published"))
-      .collect();
+    // Admins can access all published courses
+    if (user.role === "admin") {
+      const allCourses = await ctx.db
+        .query("courses")
+        .withIndex("by_status", (q) => q.eq("status", "published"))
+        .collect();
 
-    // Filter by access
-    const accessibleCourses: Doc<"courses">[] = [];
-    for (const course of allCourses) {
-      const hasAccess = await checkCourseAccess(ctx, course._id, user);
-      if (hasAccess) {
-        accessibleCourses.push(course);
-      }
+      // Sort and continue with allCourses as accessibleCourses
+      const accessibleCourses = allCourses.sort(
+        (a, b) => a.displayOrder - b.displayOrder
+      );
+      return buildCourseListResponse(ctx, accessibleCourses, user);
     }
+
+    // For non-admins, pre-fetch all required data to avoid N+1 queries
+    const [allCourses, userTeams, allAssignments] = await Promise.all([
+      ctx.db
+        .query("courses")
+        .withIndex("by_status", (q) => q.eq("status", "published"))
+        .collect(),
+      ctx.db
+        .query("teamMembers")
+        .withIndex("by_user", (q) => q.eq("userId", user._id))
+        .collect(),
+      ctx.db.query("courseAssignments").collect(),
+    ]);
+
+    // Build lookup structures for O(1) access checks
+    const userTeamIds = new Set(userTeams.map((t) => t.teamId.toString()));
+    const assignmentsByCourse = new Map<string, typeof allAssignments>();
+    for (const assignment of allAssignments) {
+      const key = assignment.courseId.toString();
+      if (!assignmentsByCourse.has(key)) {
+        assignmentsByCourse.set(key, []);
+      }
+      assignmentsByCourse.get(key)!.push(assignment);
+    }
+
+    // Filter courses by access in memory
+    const accessibleCourses = allCourses.filter((course) => {
+      // All teams visibility - everyone has access
+      if (course.visibility === "all_teams") return true;
+
+      const assignments = assignmentsByCourse.get(course._id.toString()) ?? [];
+
+      // Check direct user assignment
+      if (assignments.some((a) => a.userId === user._id)) return true;
+
+      // Check team assignment
+      return assignments.some(
+        (a) => a.teamId && userTeamIds.has(a.teamId.toString())
+      );
+    });
 
     // Sort by display order
     accessibleCourses.sort((a, b) => a.displayOrder - b.displayOrder);
 
-    // Build response with progress for each course
-    const result = await Promise.all(
-      accessibleCourses.map(async (course) => {
-        // Get cover image URL
-        const coverImageUrl = await getCoverImageUrl(ctx, course.coverImageId);
-
-        // Get tags
-        const courseTags = await ctx.db
-          .query("courseTags")
-          .withIndex("by_course", (q) => q.eq("courseId", course._id))
-          .collect();
-
-        const tags = await Promise.all(
-          courseTags.map(async (ct) => {
-            const tag = await ctx.db.get(ct.tagId);
-            return tag ? { _id: tag._id, name: tag.name } : null;
-          })
-        );
-
-        // Get all sections and lessons for this course
-        const sections = await ctx.db
-          .query("sections")
-          .withIndex("by_course", (q) => q.eq("courseId", course._id))
-          .collect();
-
-        let totalLessons = 0;
-        const allLessonIds: Id<"lessons">[] = [];
-
-        for (const section of sections) {
-          const lessons = await ctx.db
-            .query("lessons")
-            .withIndex("by_section", (q) => q.eq("sectionId", section._id))
-            .collect();
-          totalLessons += lessons.length;
-          allLessonIds.push(...lessons.map((l) => l._id));
-        }
-
-        // Get user progress for these lessons
-        const userProgress = await ctx.db
-          .query("progress")
-          .withIndex("by_user", (q) => q.eq("userId", user._id))
-          .collect();
-
-        const lessonProgressMap = new Map(
-          userProgress.map((p) => [p.lessonId.toString(), p])
-        );
-
-        let completedLessons = 0;
-        let lastAccessedLessonId: Id<"lessons"> | undefined;
-        let lastAccessedAt: number | undefined;
-
-        for (const lessonId of allLessonIds) {
-          const progress = lessonProgressMap.get(lessonId.toString());
-          if (progress) {
-            if (progress.status === "completed") {
-              completedLessons++;
-            }
-            if (!lastAccessedAt || progress.lastAccessedAt > lastAccessedAt) {
-              lastAccessedAt = progress.lastAccessedAt;
-              lastAccessedLessonId = lessonId;
-            }
-          }
-        }
-
-        const percentage =
-          totalLessons > 0
-            ? Math.round((completedLessons / totalLessons) * 100)
-            : 0;
-
-        return {
-          _id: course._id,
-          title: course.title,
-          description: course.description,
-          coverImageUrl,
-          displayOrder: course.displayOrder,
-          tags: tags.filter((t): t is { _id: Id<"tags">; name: string } => t !== null),
-          progress: {
-            completedLessons,
-            totalLessons,
-            percentage,
-            lastAccessedLessonId,
-            lastAccessedAt,
-          },
-        };
-      })
-    );
-
-    return result;
+    return buildCourseListResponse(ctx, accessibleCourses, user);
   },
 });
 

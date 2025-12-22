@@ -222,7 +222,8 @@ export const getMembers = query({
       status: v.union(
         v.literal("online"),
         v.literal("offline"),
-        v.literal("away")
+        v.literal("away"),
+        v.literal("dnd")
       ),
       isLead: v.boolean(),
       joinedAt: v.number(),

@@ -16,7 +16,7 @@ export const listConversations = query({
   returns: v.array(
     v.object({
       _id: v.id("conversations"),
-      type: v.union(v.literal("direct"), v.literal("broadcast")),
+      type: v.union(v.literal("direct"), v.literal("group"), v.literal("broadcast")),
       updatedAt: v.number(),
       participants: v.array(
         v.object({
@@ -26,7 +26,8 @@ export const listConversations = query({
           status: v.union(
             v.literal("online"),
             v.literal("offline"),
-            v.literal("away")
+            v.literal("away"),
+            v.literal("dnd")
           ),
         })
       ),
@@ -163,7 +164,7 @@ export const getConversation = query({
     conversation: v.union(
       v.object({
         _id: v.id("conversations"),
-        type: v.union(v.literal("direct"), v.literal("broadcast")),
+        type: v.union(v.literal("direct"), v.literal("group"), v.literal("broadcast")),
         participants: v.array(
           v.object({
             _id: v.id("users"),
@@ -172,7 +173,8 @@ export const getConversation = query({
             status: v.union(
               v.literal("online"),
               v.literal("offline"),
-              v.literal("away")
+              v.literal("away"),
+              v.literal("dnd")
             ),
           })
         ),
@@ -424,7 +426,7 @@ export const search = query({
   returns: v.array(
     v.object({
       _id: v.id("messages"),
-      conversationId: v.id("conversations"),
+      conversationId: v.optional(v.id("conversations")),
       senderId: v.id("users"),
       senderName: v.string(),
       content: v.string(),
@@ -464,7 +466,7 @@ export const search = query({
     const matchingMessages = allMessages
       .filter(
         (m) =>
-          conversationIds.has(m.conversationId.toString()) &&
+          m.conversationId && conversationIds.has(m.conversationId.toString()) &&
           m.content.toLowerCase().includes(searchLower)
       )
       .sort((a, b) => b.createdAt - a.createdAt)
@@ -474,17 +476,17 @@ export const search = query({
     const result = await Promise.all(
       matchingMessages.map(async (msg) => {
         const sender = await ctx.db.get(msg.senderId);
-        const conversation = await ctx.db.get(msg.conversationId);
+        const conversation = msg.conversationId ? await ctx.db.get(msg.conversationId) : null;
 
         let otherParticipant:
           | { _id: Id<"users">; name: string; avatarUrl?: string }
           | undefined;
 
-        if (conversation?.type === "direct") {
+        if (conversation?.type === "direct" && msg.conversationId) {
           const participants = await ctx.db
             .query("conversationParticipants")
             .withIndex("by_conversation", (q) =>
-              q.eq("conversationId", msg.conversationId)
+              q.eq("conversationId", msg.conversationId!)
             )
             .collect();
 

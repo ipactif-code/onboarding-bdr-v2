@@ -16,6 +16,21 @@ import { DiscussionKit } from './plugins/discussion-kit';
 import { FixedToolbarKit } from './plugins/fixed-toolbar-kit';
 import { FloatingToolbarKit } from './plugins/floating-toolbar-kit';
 
+/**
+ * Default editor value to prevent "Cannot resolve a Slate node from DOM node" errors.
+ * Plate.js requires at least one paragraph node with text content for proper DOM-to-Slate mapping.
+ */
+const DEFAULT_EDITOR_VALUE = [
+  { type: 'p', children: [{ text: '' }] },
+] as const;
+
+/**
+ * Returns a valid editor value, falling back to default if undefined or empty.
+ */
+function getEditorValue(value: unknown[] | undefined): unknown[] {
+  return value && value.length > 0 ? value : [...DEFAULT_EDITOR_VALUE];
+}
+
 // Combine all plugins
 const plugins = [
   ...BaseEditorKit,
@@ -68,7 +83,7 @@ export function PlateEditor({
 }: PlateEditorProps): React.ReactElement {
   const editor = usePlateEditor({
     plugins: showFixedToolbar ? plugins : pluginsWithoutFixedToolbar,
-    value: value as NonNullable<Parameters<typeof usePlateEditor>[0]>['value'],
+    value: getEditorValue(value) as NonNullable<Parameters<typeof usePlateEditor>[0]>['value'],
     override: {
       components: {},
     },
@@ -104,7 +119,7 @@ export function SimpleEditor({
 }: Omit<PlateEditorProps, 'readOnly' | 'autoFocus' | 'showFixedToolbar'>): React.ReactElement {
   const editor = usePlateEditor({
     plugins: [...BasicMarksKit, ...AutoformatKit, ...FloatingToolbarKit],
-    value: value as NonNullable<Parameters<typeof usePlateEditor>[0]>['value'],
+    value: getEditorValue(value) as NonNullable<Parameters<typeof usePlateEditor>[0]>['value'],
   });
 
   return (
@@ -136,7 +151,7 @@ export function ContentRenderer({
 }): React.ReactElement {
   const editor = usePlateEditor({
     plugins: pluginsWithoutFixedToolbar,
-    value: value as NonNullable<Parameters<typeof usePlateEditor>[0]>['value'],
+    value: getEditorValue(value) as NonNullable<Parameters<typeof usePlateEditor>[0]>['value'],
   });
 
   return (

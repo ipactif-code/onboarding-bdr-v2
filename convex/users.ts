@@ -27,7 +27,7 @@ export const list = query({
         name: v.string(),
         avatarUrl: v.optional(v.string()),
         role: v.union(v.literal("user"), v.literal("admin")),
-        status: v.union(v.literal("online"), v.literal("offline"), v.literal("away")),
+        status: v.union(v.literal("online"), v.literal("offline"), v.literal("away"), v.literal("dnd")),
         lastActiveAt: v.optional(v.number()),
         teamCount: v.number(),
         overallProgress: v.number(),
@@ -182,7 +182,7 @@ export const get = query({
       name: v.string(),
       avatarUrl: v.optional(v.string()),
       role: v.union(v.literal("user"), v.literal("admin")),
-      status: v.union(v.literal("online"), v.literal("offline"), v.literal("away")),
+      status: v.union(v.literal("online"), v.literal("offline"), v.literal("away"), v.literal("dnd")),
       lastActiveAt: v.optional(v.number()),
       teams: v.array(
         v.object({
@@ -304,7 +304,7 @@ export const getByClerkId = query({
       name: v.string(),
       avatarUrl: v.optional(v.string()),
       role: v.union(v.literal("user"), v.literal("admin")),
-      status: v.union(v.literal("online"), v.literal("offline"), v.literal("away")),
+      status: v.union(v.literal("online"), v.literal("offline"), v.literal("away"), v.literal("dnd")),
     }),
     v.null()
   ),
@@ -343,7 +343,7 @@ export const me = query({
       name: v.string(),
       avatarUrl: v.optional(v.string()),
       role: v.union(v.literal("user"), v.literal("admin")),
-      status: v.union(v.literal("online"), v.literal("offline"), v.literal("away")),
+      status: v.union(v.literal("online"), v.literal("offline"), v.literal("away"), v.literal("dnd")),
     }),
     v.null()
   ),
@@ -428,7 +428,7 @@ export const getOnlineUsers = query({
       _id: v.id("users"),
       name: v.string(),
       avatarUrl: v.optional(v.string()),
-      status: v.union(v.literal("online"), v.literal("offline"), v.literal("away")),
+      status: v.union(v.literal("online"), v.literal("offline"), v.literal("away"), v.literal("dnd")),
       lastActiveAt: v.optional(v.number()),
     })
   ),
@@ -515,7 +515,7 @@ export const updateRole = mutation({
  */
 export const updateStatus = mutation({
   args: {
-    status: v.union(v.literal("online"), v.literal("offline"), v.literal("away")),
+    status: v.union(v.literal("online"), v.literal("offline"), v.literal("away"), v.literal("dnd")),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -616,7 +616,7 @@ export const ensureCurrentUser = mutation({
       name: v.string(),
       avatarUrl: v.optional(v.string()),
       role: v.union(v.literal("user"), v.literal("admin")),
-      status: v.union(v.literal("online"), v.literal("offline"), v.literal("away")),
+      status: v.union(v.literal("online"), v.literal("offline"), v.literal("away"), v.literal("dnd")),
     }),
     v.null()
   ),

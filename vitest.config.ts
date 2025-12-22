@@ -18,6 +18,13 @@ export default defineConfig({
         "*.config.*",
       ],
     },
+    server: {
+      deps: {
+        inline: ["convex-test"],
+        fallbackCJS: true,
+      },
+    },
+    pool: "forks",
   },
   resolve: {
     alias: {

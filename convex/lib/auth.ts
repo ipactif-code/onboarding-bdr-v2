@@ -1,5 +1,6 @@
 import { QueryCtx, MutationCtx } from "../_generated/server";
-import { Doc } from "../_generated/dataModel";
+import { Doc, Id } from "../_generated/dataModel";
+import { isChannelMember, hasChannelRole } from "./permissions";
 
 /**
  * Get the current authenticated user from the context.
@@ -101,5 +102,64 @@ export async function requireSelfOrAdmin(
   if (user._id !== targetUserId && user.role !== "admin") {
     throw new Error("Forbidden: You can only access your own data");
   }
+  return user;
+}
+
+/**
+ * Require the current user to be an active member of a channel.
+ * Use this in functions that require channel membership (e.g., sending messages,
+ * viewing private channel content).
+ *
+ * Throws if:
+ * - User is not authenticated
+ * - User is not an active member of the channel (left or banned)
+ *
+ * @param ctx - Query or mutation context
+ * @param channelId - The channel to check membership for
+ * @returns The authenticated user document
+ */
+export async function requireChannelMember(
+  ctx: QueryCtx | MutationCtx,
+  channelId: Id<"channels">
+): Promise<Doc<"users">> {
+  const user = await requireAuth(ctx);
+
+  const isMember = await isChannelMember(ctx, channelId, user._id);
+  if (!isMember) {
+    throw new Error("Forbidden: Channel membership required");
+  }
+
+  return user;
+}
+
+/**
+ * Require the current user to have admin role or higher in a channel.
+ * Use this in functions that require channel administration privileges
+ * (e.g., managing members, updating channel settings, deleting messages).
+ *
+ * Admin access is granted if:
+ * - User is a global admin (user.role === "admin")
+ * - User has admin or owner role in the channel
+ * - User has admin privileges via channelAdmins table
+ *
+ * Throws if:
+ * - User is not authenticated
+ * - User doesn't have admin-level access to the channel
+ *
+ * @param ctx - Query or mutation context
+ * @param channelId - The channel to check admin access for
+ * @returns The authenticated user document
+ */
+export async function requireChannelAdmin(
+  ctx: QueryCtx | MutationCtx,
+  channelId: Id<"channels">
+): Promise<Doc<"users">> {
+  const user = await requireAuth(ctx);
+
+  const isAdmin = await hasChannelRole(ctx, channelId, user._id, "admin");
+  if (!isAdmin) {
+    throw new Error("Forbidden: Channel admin access required");
+  }
+
   return user;
 }

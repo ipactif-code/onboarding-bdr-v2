@@ -32,7 +32,7 @@ export interface MemberRow {
   email: string;
   avatarUrl?: string;
   role: "user" | "admin";
-  status: "online" | "offline" | "away";
+  status: "online" | "offline" | "away" | "dnd";
   joinedAt: number;
   isLead: boolean;
 }
@@ -143,7 +143,9 @@ export function getColumns(options: ColumnOptions): ColumnDef<MemberRow>[] {
                     ? "bg-green-500"
                     : member.status === "away"
                       ? "bg-yellow-500"
-                      : "bg-muted"
+                      : member.status === "dnd"
+                        ? "bg-red-500"
+                        : "bg-muted"
                 }`}
               />
             </div>
@@ -196,10 +198,14 @@ export function getColumns(options: ColumnOptions): ColumnDef<MemberRow>[] {
                   ? "bg-green-500"
                   : status === "away"
                     ? "bg-yellow-500"
-                    : "bg-muted"
+                    : status === "dnd"
+                      ? "bg-red-500"
+                      : "bg-muted"
               }`}
             />
-            <span className="text-muted-foreground capitalize">{status}</span>
+            <span className="text-muted-foreground capitalize">
+              {status === "dnd" ? "Do Not Disturb" : status}
+            </span>
           </div>
         );
       },

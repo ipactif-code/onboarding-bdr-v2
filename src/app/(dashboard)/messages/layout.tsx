@@ -1,14 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { ChannelList } from "@/components/messaging/channel-list";
+import { MessagingSidebar } from "@/components/messaging/messaging-sidebar";
 
 /**
  * Messages layout component for the messaging feature.
  *
  * This layout provides a two-column layout with:
- * - Left sidebar: ChannelList with real-time updates
- * - Right main area: Channel content (messages) or placeholder
+ * - Left sidebar: Slack-like navigation with collapsible sections
+ * - Right main area: Channel/conversation content or placeholder
  *
  * The parent dashboard layout already:
  * - Handles authentication checks
@@ -22,12 +22,12 @@ export default function MessagesLayout({
 }): React.ReactElement {
   return (
     <div className="flex h-full w-full overflow-hidden">
-      {/* Sidebar with ChannelList - persists across navigation */}
+      {/* Sidebar with Slack-like collapsible sections */}
       <aside className="w-64 shrink-0 border-r bg-muted/30">
-        <ChannelList />
+        <MessagingSidebar />
       </aside>
 
-      {/* Main content area for channel views */}
+      {/* Main content area for channel/conversation views */}
       <main className="flex flex-1 flex-col overflow-hidden" aria-label="Messages">
         {children}
       </main>

@@ -235,11 +235,14 @@ export default defineSchema({
     ),
     // For group DMs - who added this user
     addedBy: v.optional(v.id("users")),
+    // Favorites
+    isFavorite: v.optional(v.boolean()), // User has starred this conversation
   })
     .index("by_conversation", ["conversationId"])
     .index("by_user", ["userId"])
     .index("by_user_conversation", ["userId", "conversationId"])
-    .index("by_user_active", ["userId", "leftAt"]),
+    .index("by_user_active", ["userId", "leftAt"])
+    .index("by_user_favorite", ["userId", "isFavorite"]),
 
   // Messages - works for both channels and DMs
   messages: defineTable({
@@ -420,11 +423,14 @@ export default defineSchema({
     isMuted: v.boolean(), // Cannot send messages
     mutedUntil: v.optional(v.number()),
     isBanned: v.boolean(), // Cannot access channel
+    // Favorites
+    isFavorite: v.optional(v.boolean()), // User has starred this channel
   })
     .index("by_channel", ["channelId"])
     .index("by_user", ["userId"])
     .index("by_channel_user", ["channelId", "userId"])
-    .index("by_user_active", ["userId", "leftAt"]),
+    .index("by_user_active", ["userId", "leftAt"])
+    .index("by_user_favorite", ["userId", "isFavorite"]),
 
   // Additional admin access for course channels (instructors)
   channelAdmins: defineTable({

@@ -514,55 +514,55 @@ Before sending ANY delegation prompt, verify:
 
 ## Rule #2: Routing Table by Task Type
 
-| Task Type | Primary Agent | Support Agents | Context7 Libraries |
-|-----------|---------------|----------------|-------------------|
-| React Component | `frontend-engineer` | `design-system-expert` | react, next.js |
-| Next.js Page/Route | `frontend-engineer` | `typescript-expert` | next.js, react |
-| Convex Schema | `schema-architect` | `backend-engineer` | convex |
-| Convex Query/Mutation | `backend-engineer` | `typescript-expert` | convex |
-| Convex Action (External API) | `backend-engineer` | `ai-engineer` | convex |
-| Unit Tests | `test-architect` | — | vitest |
-| E2E Tests | `e2e-specialist` | — | playwright |
-| Code Review | `code-reviewer` | `security-auditor`, `accessibility-expert` | — |
-| Performance Audit | `performance-engineer` | `frontend-engineer`, `backend-engineer` | — |
-| Security Review | `security-auditor` | — | clerk |
-| Accessibility Audit | `accessibility-expert` | — | radix-ui |
-| UI Component (shadcn/Base UI) | `design-system-expert` | `accessibility-expert` | shadcn-ui, radix-ui, tailwindcss |
-| Architecture Decision | `system-architect` | — | — |
-| API Design | `api-architect` | `backend-engineer` | convex |
-| Bug Investigation | `debugger-investigator` | Domain agent | (depends on bug) |
-| TypeScript Types | `typescript-expert` | — | typescript, zod |
-| AI/LLM Integration | `ai-engineer` | `backend-engineer` | — |
-| Deployment | `vercel-expert` | — | next.js |
-| CI/CD Pipeline | `ci-cd-architect` | — | — |
-| GDPR/Compliance | `compliance-officer` | `security-auditor` | — |
-| UX Patterns | `ui-ux-designer` | `accessibility-expert` | — |
-| Plate.js Editor | `frontend-engineer` | `design-system-expert` | platejs |
-| Forms | `frontend-engineer` | — | react-hook-form, zod |
+| Task Type | Primary Agent | Support Agents | Context7 Libraries | Required Skills |
+|-----------|---------------|----------------|-------------------|-----------------|
+| React Component | `frontend-engineer` | `design-system-expert` | react, next.js | react-nextjs, ui-components |
+| Next.js Page/Route | `frontend-engineer` | `typescript-expert` | next.js, react | react-nextjs, typescript |
+| Convex Schema | `schema-architect` | `backend-engineer` | convex | convex, typescript |
+| Convex Query/Mutation | `backend-engineer` | `typescript-expert` | convex | convex, security |
+| Convex Action (External API) | `backend-engineer` | `ai-engineer` | convex | convex, security |
+| Unit Tests | `test-architect` | — | vitest | testing, convex |
+| E2E Tests | `e2e-specialist` | — | playwright | testing, react-nextjs |
+| Code Review | `code-reviewer` | `security-auditor`, `accessibility-expert` | — | (all relevant) |
+| Performance Audit | `performance-engineer` | `frontend-engineer`, `backend-engineer` | — | performance, convex |
+| Security Review | `security-auditor` | — | clerk | security, convex |
+| Accessibility Audit | `accessibility-expert` | — | radix-ui | ui-components, testing |
+| UI Component (shadcn/Base UI) | `design-system-expert` | `accessibility-expert` | shadcn-ui, radix-ui, tailwindcss | ui-components, react-nextjs |
+| Architecture Decision | `system-architect` | — | — | convex, react-nextjs, security |
+| API Design | `api-architect` | `backend-engineer` | convex | convex, security, typescript |
+| Bug Investigation | `debugger-investigator` | Domain agent | (depends on bug) | (depends on domain) |
+| TypeScript Types | `typescript-expert` | — | typescript, zod | typescript, convex |
+| AI/LLM Integration | `ai-engineer` | `backend-engineer` | — | convex, security |
+| Deployment | `vercel-expert` | — | next.js | react-nextjs, performance |
+| CI/CD Pipeline | `ci-cd-architect` | — | — | testing |
+| GDPR/Compliance | `compliance-officer` | `security-auditor` | — | security, convex |
+| UX Patterns | `ui-ux-designer` | `accessibility-expert` | — | ui-components, react-nextjs |
+| Plate.js Editor | `frontend-engineer` | `design-system-expert` | platejs | ui-components, react-nextjs |
+| Forms | `frontend-engineer` | — | react-hook-form, zod | react-nextjs, ui-components |
 
 ---
 
 ## Rule #3: Routing Table by File Pattern
 
-| File Pattern | Agent | Context7 Libraries |
-|--------------|-------|-------------------|
-| `src/app/**/*.tsx` | `frontend-engineer` | next.js, react |
-| `src/components/[feature]/**/*.tsx` | `frontend-engineer` | react |
-| `src/components/ui/**/*.tsx` | `design-system-expert` | shadcn-ui, radix-ui |
-| `src/components/ui-nova/**/*.tsx` | `design-system-expert` | radix-ui |
-| `src/components/ui-plate/**/*.tsx` | `design-system-expert` | platejs |
-| `src/hooks/**/*.ts` | `frontend-engineer` | react |
-| `convex/schema.ts` | `schema-architect` | convex |
-| `convex/**/*.ts` | `backend-engineer` | convex |
-| `convex/lib/auth.ts` | `security-auditor` | convex, clerk |
-| `convex/actions/**/*.ts` | `backend-engineer` or `ai-engineer` | convex |
-| `tests/**/*.test.ts` | `test-architect` | vitest |
-| `tests/**/*.spec.ts` | `e2e-specialist` | playwright |
-| `src/middleware.ts` | `security-auditor` | next.js, clerk |
-| `src/lib/validators/**/*.ts` | `security-auditor` | zod |
-| `.github/workflows/**` | `ci-cd-architect` | — |
-| `vercel.json`, `next.config.ts` | `vercel-expert` | next.js |
-| `*.md` (docs) | Direct response or `system-architect` | — |
+| File Pattern | Agent | Context7 Libraries | Required Skills |
+|--------------|-------|-------------------|-----------------|
+| `src/app/**/*.tsx` | `frontend-engineer` | next.js, react | react-nextjs, typescript |
+| `src/components/[feature]/**/*.tsx` | `frontend-engineer` | react | react-nextjs, ui-components |
+| `src/components/ui/**/*.tsx` | `design-system-expert` | shadcn-ui, radix-ui | ui-components, typescript |
+| `src/components/ui-nova/**/*.tsx` | `design-system-expert` | radix-ui | ui-components |
+| `src/components/ui-plate/**/*.tsx` | `design-system-expert` | platejs | ui-components |
+| `src/hooks/**/*.ts` | `frontend-engineer` | react | react-nextjs, convex |
+| `convex/schema.ts` | `schema-architect` | convex | convex, typescript |
+| `convex/**/*.ts` | `backend-engineer` | convex | convex, security |
+| `convex/lib/auth.ts` | `security-auditor` | convex, clerk | security, convex |
+| `convex/actions/**/*.ts` | `backend-engineer` or `ai-engineer` | convex | convex, security |
+| `tests/**/*.test.ts` | `test-architect` | vitest | testing, convex |
+| `tests/**/*.spec.ts` | `e2e-specialist` | playwright | testing, react-nextjs |
+| `src/middleware.ts` | `security-auditor` | next.js, clerk | security, react-nextjs |
+| `src/lib/validators/**/*.ts` | `security-auditor` | zod | security, typescript |
+| `.github/workflows/**` | `ci-cd-architect` | — | testing |
+| `vercel.json`, `next.config.ts` | `vercel-expert` | next.js | react-nextjs, performance |
+| `*.md` (docs) | Direct response or `system-architect` | — | — |
 
 ---
 

@@ -1,5 +1,5 @@
 import { convexTest } from "convex-test";
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { api } from "../../../convex/_generated/api";
 import schema from "../../../convex/schema";
 import { Id } from "../../../convex/_generated/dataModel";
@@ -9,8 +9,10 @@ describe("messages.ts - Channel Messaging", () => {
     it("should return empty array when channel has no messages", async () => {
       const t = convexTest(schema);
 
+      let channelId: Id<"channels">;
+
+      // Arrange - Setup database
       await t.run(async (ctx) => {
-        // Arrange
         const userId = await ctx.db.insert("users", {
           clerkId: "test-clerk-123",
           email: "test@example.com",
@@ -19,7 +21,7 @@ describe("messages.ts - Channel Messaging", () => {
           status: "online",
         });
 
-        const channelId = await ctx.db.insert("channels", {
+        channelId = await ctx.db.insert("channels", {
           name: "general",
           type: "public",
           creatorId: userId,
@@ -37,21 +39,29 @@ describe("messages.ts - Channel Messaging", () => {
           isMuted: false,
           isBanned: false,
         });
-
-        // Act
-        const result = await t.query(api.messages.listByChannel, { channelId });
-
-        // Assert
-        expect(result.messages).toEqual([]);
-        expect(result.hasMore).toBe(false);
       });
+
+      // Create authenticated identity
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
+
+      // Act
+      const result = await asUser.query(api.messages.listByChannel, { channelId: channelId! });
+
+      // Assert
+      expect(result.messages).toEqual([]);
+      expect(result.hasMore).toBe(false);
     });
 
     it("should return messages in reverse chronological order (newest first)", async () => {
       const t = convexTest(schema);
 
+      let channelId!: Id<"channels">;
+      let msg1Id!: Id<"messages">;
+      let msg2Id!: Id<"messages">;
+      let msg3Id!: Id<"messages">;
+
+      // Arrange - Setup database
       await t.run(async (ctx) => {
-        // Arrange
         const userId = await ctx.db.insert("users", {
           clerkId: "test-clerk-123",
           email: "test@example.com",
@@ -60,7 +70,7 @@ describe("messages.ts - Channel Messaging", () => {
           status: "online",
         });
 
-        const channelId = await ctx.db.insert("channels", {
+        channelId = await ctx.db.insert("channels", {
           name: "general",
           type: "public",
           creatorId: userId,
@@ -80,45 +90,51 @@ describe("messages.ts - Channel Messaging", () => {
         });
 
         // Create messages with different timestamps
-        const msg1Id = await ctx.db.insert("messages", {
+        msg1Id = await ctx.db.insert("messages", {
           channelId,
           senderId: userId,
           content: "First message",
           createdAt: Date.now() - 3000,
         });
 
-        const msg2Id = await ctx.db.insert("messages", {
+        msg2Id = await ctx.db.insert("messages", {
           channelId,
           senderId: userId,
           content: "Second message",
           createdAt: Date.now() - 2000,
         });
 
-        const msg3Id = await ctx.db.insert("messages", {
+        msg3Id = await ctx.db.insert("messages", {
           channelId,
           senderId: userId,
           content: "Third message",
           createdAt: Date.now() - 1000,
         });
-
-        // Act
-        const result = await t.query(api.messages.listByChannel, { channelId });
-
-        // Assert
-        expect(result.messages).toHaveLength(3);
-        // Newest first (descending order)
-        expect(result.messages[0]._id).toEqual(msg3Id);
-        expect(result.messages[1]._id).toEqual(msg2Id);
-        expect(result.messages[2]._id).toEqual(msg1Id);
       });
+
+      // Create authenticated identity
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
+
+      // Act
+      const result = await asUser.query(api.messages.listByChannel, { channelId: channelId! });
+
+      // Assert
+      expect(result.messages).toHaveLength(3);
+      // Newest first (descending order)
+      expect(result.messages[0]!._id).toEqual(msg3Id);
+      expect(result.messages[1]!._id).toEqual(msg2Id);
+      expect(result.messages[2]!._id).toEqual(msg1Id);
     });
 
     it("should include sender information with each message", async () => {
       const t = convexTest(schema);
 
+      let userId!: Id<"users">;
+      let channelId!: Id<"channels">;
+
+      // Arrange - Setup database
       await t.run(async (ctx) => {
-        // Arrange
-        const userId = await ctx.db.insert("users", {
+        userId = await ctx.db.insert("users", {
           clerkId: "test-clerk-123",
           email: "test@example.com",
           name: "Test User",
@@ -127,7 +143,7 @@ describe("messages.ts - Channel Messaging", () => {
           status: "online",
         });
 
-        const channelId = await ctx.db.insert("channels", {
+        channelId = await ctx.db.insert("channels", {
           name: "general",
           type: "public",
           creatorId: userId,
@@ -152,22 +168,27 @@ describe("messages.ts - Channel Messaging", () => {
           content: "Test message",
           createdAt: Date.now(),
         });
+      });
 
-        // Act
-        const result = await t.query(api.messages.listByChannel, { channelId });
+      // Create authenticated identity
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
 
-        // Assert
-        expect(result.messages[0].sender).toEqual({
-          _id: userId,
-          name: "Test User",
-          avatarUrl: "https://example.com/avatar.jpg",
-          status: "online",
-        });
+      // Act
+      const result = await asUser.query(api.messages.listByChannel, { channelId: channelId! });
+
+      // Assert
+      expect(result.messages[0]!.sender).toEqual({
+        _id: userId,
+        name: "Test User",
+        avatarUrl: "https://example.com/avatar.jpg",
+        status: "online",
       });
     });
 
     it("should respect limit parameter", async () => {
       const t = convexTest(schema);
+
+      let channelId: Id<"channels">;
 
       await t.run(async (ctx) => {
         // Arrange
@@ -179,7 +200,7 @@ describe("messages.ts - Channel Messaging", () => {
           status: "online",
         });
 
-        const channelId = await ctx.db.insert("channels", {
+        channelId = await ctx.db.insert("channels", {
           name: "general",
           type: "public",
           creatorId: userId,
@@ -207,21 +228,25 @@ describe("messages.ts - Channel Messaging", () => {
             createdAt: Date.now() + i,
           });
         }
-
-        // Act
-        const result = await t.query(api.messages.listByChannel, {
-          channelId,
-          limit: 3,
-        });
-
-        // Assert
-        expect(result.messages).toHaveLength(3);
-        expect(result.hasMore).toBe(true);
       });
+
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
+
+      // Act
+      const result = await asUser.query(api.messages.listByChannel, {
+        channelId: channelId!,
+        limit: 3,
+      });
+
+      // Assert
+      expect(result.messages).toHaveLength(3);
+      expect(result.hasMore).toBe(true);
     });
 
     it("should support pagination with before cursor", async () => {
       const t = convexTest(schema);
+
+      let channelId: Id<"channels">;
 
       await t.run(async (ctx) => {
         // Arrange
@@ -233,7 +258,7 @@ describe("messages.ts - Channel Messaging", () => {
           status: "online",
         });
 
-        const channelId = await ctx.db.insert("channels", {
+        channelId = await ctx.db.insert("channels", {
           name: "general",
           type: "public",
           creatorId: userId,
@@ -253,12 +278,10 @@ describe("messages.ts - Channel Messaging", () => {
         });
 
         const baseTime = Date.now();
-        const timestamps: number[] = [];
 
         // Create 5 messages
         for (let i = 0; i < 5; i++) {
           const timestamp = baseTime + i * 1000;
-          timestamps.push(timestamp);
           await ctx.db.insert("messages", {
             channelId,
             senderId: userId,
@@ -266,30 +289,33 @@ describe("messages.ts - Channel Messaging", () => {
             createdAt: timestamp,
           });
         }
-
-        // Act - get first page
-        const page1 = await t.query(api.messages.listByChannel, {
-          channelId,
-          limit: 3,
-        });
-
-        // Get second page using cursor
-        const cursorTime = timestamps[1]; // Before the 3rd newest message
-        const page2 = await t.query(api.messages.listByChannel, {
-          channelId,
-          limit: 3,
-          before: cursorTime,
-        });
-
-        // Assert
-        expect(page1.messages).toHaveLength(3);
-        expect(page2.messages).toHaveLength(1); // Only messages before cursor
-        expect(page2.messages[0].content).toBe("Message 0");
       });
+
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
+
+      // Act - get first page
+      const page1 = await asUser.query(api.messages.listByChannel, {
+        channelId: channelId!,
+        limit: 3,
+      });
+
+      // Get second page using cursor
+      const cursorTime = page1.messages[2]!.createdAt;
+      const page2 = await asUser.query(api.messages.listByChannel, {
+        channelId: channelId!,
+        limit: 3,
+        before: cursorTime,
+      });
+
+      // Assert
+      expect(page1.messages).toHaveLength(3);
+      expect(page2.messages).toHaveLength(2); // Remaining messages
     });
 
     it("should throw error for non-member trying to access channel", async () => {
       const t = convexTest(schema);
+
+      let channelId: Id<"channels">;
 
       await t.run(async (ctx) => {
         // Arrange
@@ -309,7 +335,7 @@ describe("messages.ts - Channel Messaging", () => {
           status: "online",
         });
 
-        const channelId = await ctx.db.insert("channels", {
+        channelId = await ctx.db.insert("channels", {
           name: "private-channel",
           type: "private",
           creatorId: adminId,
@@ -327,12 +353,14 @@ describe("messages.ts - Channel Messaging", () => {
           isMuted: false,
           isBanned: false,
         });
-
-        // Act & Assert
-        await expect(
-          t.query(api.messages.listByChannel, { channelId })
-        ).rejects.toThrow("Forbidden");
       });
+
+      const asUser = t.withIdentity({ subject: "user-clerk" });
+
+      // Act & Assert
+      await expect(
+        asUser.query(api.messages.listByChannel, { channelId: channelId! })
+      ).rejects.toThrow("Forbidden");
     });
   });
 
@@ -340,9 +368,12 @@ describe("messages.ts - Channel Messaging", () => {
     it("should send a text message to a channel", async () => {
       const t = convexTest(schema);
 
+      let userId: Id<"users">;
+      let channelId: Id<"channels">;
+
       await t.run(async (ctx) => {
         // Arrange
-        const userId = await ctx.db.insert("users", {
+        userId = await ctx.db.insert("users", {
           clerkId: "test-clerk-123",
           email: "test@example.com",
           name: "Test User",
@@ -350,7 +381,7 @@ describe("messages.ts - Channel Messaging", () => {
           status: "online",
         });
 
-        const channelId = await ctx.db.insert("channels", {
+        channelId = await ctx.db.insert("channels", {
           name: "general",
           type: "public",
           creatorId: userId,
@@ -368,16 +399,19 @@ describe("messages.ts - Channel Messaging", () => {
           isMuted: false,
           isBanned: false,
         });
+      });
 
-        const beforeTime = Date.now();
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
+      const beforeTime = Date.now();
 
-        // Act
-        const messageId = await t.mutation(api.messages.sendToChannel, {
-          channelId,
-          content: "Hello, world!",
-        });
+      // Act
+      const messageId = await asUser.mutation(api.messages.sendToChannel, {
+        channelId: channelId!,
+        content: "Hello, world!",
+      });
 
-        // Assert
+      // Assert
+      await t.run(async (ctx) => {
         const message = await ctx.db.get(messageId);
         expect(message).toBeDefined();
         expect(message?.content).toBe("Hello, world!");
@@ -396,6 +430,8 @@ describe("messages.ts - Channel Messaging", () => {
     it("should enforce rate limit (30 messages per minute)", async () => {
       const t = convexTest(schema);
 
+      let channelId: Id<"channels">;
+
       await t.run(async (ctx) => {
         // Arrange
         const userId = await ctx.db.insert("users", {
@@ -406,7 +442,7 @@ describe("messages.ts - Channel Messaging", () => {
           status: "online",
         });
 
-        const channelId = await ctx.db.insert("channels", {
+        channelId = await ctx.db.insert("channels", {
           name: "general",
           type: "public",
           creatorId: userId,
@@ -433,20 +469,24 @@ describe("messages.ts - Channel Messaging", () => {
           windowStart: now,
           count: 30, // At the limit
         });
-
-        // Act & Assert
-        await expect(
-          t.mutation(api.messages.sendToChannel, {
-            channelId,
-            content: "This should fail",
-          })
-        ).rejects.toThrow("Rate limit exceeded");
       });
+
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
+
+      // Act & Assert
+      await expect(
+        asUser.mutation(api.messages.sendToChannel, {
+          channelId: channelId!,
+          content: "This should fail",
+        })
+      ).rejects.toThrow("Rate limit exceeded");
     });
 
     it("should validate message content length (max 4000 chars)", async () => {
       const t = convexTest(schema);
 
+      let channelId: Id<"channels">;
+
       await t.run(async (ctx) => {
         // Arrange
         const userId = await ctx.db.insert("users", {
@@ -457,7 +497,7 @@ describe("messages.ts - Channel Messaging", () => {
           status: "online",
         });
 
-        const channelId = await ctx.db.insert("channels", {
+        channelId = await ctx.db.insert("channels", {
           name: "general",
           type: "public",
           creatorId: userId,
@@ -475,20 +515,24 @@ describe("messages.ts - Channel Messaging", () => {
           isMuted: false,
           isBanned: false,
         });
-
-        // Act & Assert
-        await expect(
-          t.mutation(api.messages.sendToChannel, {
-            channelId,
-            content: "a".repeat(4001), // Exceeds limit
-          })
-        ).rejects.toThrow("maximum length");
       });
+
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
+
+      // Act & Assert
+      await expect(
+        asUser.mutation(api.messages.sendToChannel, {
+          channelId: channelId!,
+          content: "a".repeat(4001), // Exceeds limit
+        })
+      ).rejects.toThrow("maximum length");
     });
 
     it("should prevent empty messages", async () => {
       const t = convexTest(schema);
 
+      let channelId: Id<"channels">;
+
       await t.run(async (ctx) => {
         // Arrange
         const userId = await ctx.db.insert("users", {
@@ -499,7 +543,7 @@ describe("messages.ts - Channel Messaging", () => {
           status: "online",
         });
 
-        const channelId = await ctx.db.insert("channels", {
+        channelId = await ctx.db.insert("channels", {
           name: "general",
           type: "public",
           creatorId: userId,
@@ -517,19 +561,23 @@ describe("messages.ts - Channel Messaging", () => {
           isMuted: false,
           isBanned: false,
         });
-
-        // Act & Assert
-        await expect(
-          t.mutation(api.messages.sendToChannel, {
-            channelId,
-            content: "",
-          })
-        ).rejects.toThrow("cannot be empty");
       });
+
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
+
+      // Act & Assert
+      await expect(
+        asUser.mutation(api.messages.sendToChannel, {
+          channelId: channelId!,
+          content: "",
+        })
+      ).rejects.toThrow("cannot be empty");
     });
 
     it("should prevent sending to archived channel", async () => {
       const t = convexTest(schema);
+
+      let channelId: Id<"channels">;
 
       await t.run(async (ctx) => {
         // Arrange
@@ -541,7 +589,7 @@ describe("messages.ts - Channel Messaging", () => {
           status: "online",
         });
 
-        const channelId = await ctx.db.insert("channels", {
+        channelId = await ctx.db.insert("channels", {
           name: "archived-channel",
           type: "public",
           creatorId: userId,
@@ -561,19 +609,23 @@ describe("messages.ts - Channel Messaging", () => {
           isMuted: false,
           isBanned: false,
         });
-
-        // Act & Assert
-        await expect(
-          t.mutation(api.messages.sendToChannel, {
-            channelId,
-            content: "This should fail",
-          })
-        ).rejects.toThrow("archived");
       });
+
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
+
+      // Act & Assert
+      await expect(
+        asUser.mutation(api.messages.sendToChannel, {
+          channelId: channelId!,
+          content: "This should fail",
+        })
+      ).rejects.toThrow("archived");
     });
 
     it("should prevent muted users from sending messages", async () => {
       const t = convexTest(schema);
+
+      let channelId: Id<"channels">;
 
       await t.run(async (ctx) => {
         // Arrange
@@ -585,7 +637,7 @@ describe("messages.ts - Channel Messaging", () => {
           status: "online",
         });
 
-        const channelId = await ctx.db.insert("channels", {
+        channelId = await ctx.db.insert("channels", {
           name: "general",
           type: "public",
           creatorId: userId,
@@ -603,19 +655,24 @@ describe("messages.ts - Channel Messaging", () => {
           isMuted: true,
           isBanned: false,
         });
-
-        // Act & Assert
-        await expect(
-          t.mutation(api.messages.sendToChannel, {
-            channelId,
-            content: "This should fail",
-          })
-        ).rejects.toThrow("muted");
       });
+
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
+
+      // Act & Assert
+      await expect(
+        asUser.mutation(api.messages.sendToChannel, {
+          channelId: channelId!,
+          content: "This should fail",
+        })
+      ).rejects.toThrow("muted");
     });
 
     it("should update thread reply count when sending a reply", async () => {
       const t = convexTest(schema);
+
+      let parentId: Id<"messages">;
+      let channelId: Id<"channels">;
 
       await t.run(async (ctx) => {
         // Arrange
@@ -627,7 +684,7 @@ describe("messages.ts - Channel Messaging", () => {
           status: "online",
         });
 
-        const channelId = await ctx.db.insert("channels", {
+        channelId = await ctx.db.insert("channels", {
           name: "general",
           type: "public",
           creatorId: userId,
@@ -647,22 +704,26 @@ describe("messages.ts - Channel Messaging", () => {
         });
 
         // Create parent message
-        const parentId = await ctx.db.insert("messages", {
+        parentId = await ctx.db.insert("messages", {
           channelId,
           senderId: userId,
           content: "Parent message",
           createdAt: Date.now(),
           threadReplyCount: 0,
         });
+      });
 
-        // Act - send reply
-        await t.mutation(api.messages.sendToChannel, {
-          channelId,
-          content: "Reply message",
-          parentId,
-        });
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
 
-        // Assert
+      // Act - send reply
+      await asUser.mutation(api.messages.sendToChannel, {
+        channelId: channelId!,
+        content: "Reply message",
+        parentId: parentId!,
+      });
+
+      // Assert
+      await t.run(async (ctx) => {
         const parent = await ctx.db.get(parentId);
         expect(parent?.threadReplyCount).toBe(1);
         expect(parent?.threadLastReplyAt).toBeDefined();
@@ -674,6 +735,8 @@ describe("messages.ts - Channel Messaging", () => {
     it("should allow sender to edit their own message", async () => {
       const t = convexTest(schema);
 
+      let messageId: Id<"messages">;
+
       await t.run(async (ctx) => {
         // Arrange
         const userId = await ctx.db.insert("users", {
@@ -684,20 +747,29 @@ describe("messages.ts - Channel Messaging", () => {
           status: "online",
         });
 
-        const messageId = await ctx.db.insert("messages", {
-          conversationId: "kg2e35v6yb5w9eqgwdzxyzqn4n74wvjr" as Id<"conversations">,
+        const conversationId = await ctx.db.insert("conversations", {
+          type: "direct",
+          updatedAt: Date.now(),
+        });
+
+        messageId = await ctx.db.insert("messages", {
+          conversationId,
           senderId: userId,
           content: "Original content",
           createdAt: Date.now(),
         });
+      });
 
-        // Act
-        await t.mutation(api.messages.editChannelMessage, {
-          messageId,
-          content: "Edited content",
-        });
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
 
-        // Assert
+      // Act
+      await asUser.mutation(api.messages.editChannelMessage, {
+        messageId: messageId!,
+        content: "Edited content",
+      });
+
+      // Assert
+      await t.run(async (ctx) => {
         const message = await ctx.db.get(messageId);
         expect(message?.content).toBe("Edited content");
         expect(message?.isEdited).toBe(true);
@@ -708,6 +780,8 @@ describe("messages.ts - Channel Messaging", () => {
     it("should store edit history", async () => {
       const t = convexTest(schema);
 
+      let messageId: Id<"messages">;
+
       await t.run(async (ctx) => {
         // Arrange
         const userId = await ctx.db.insert("users", {
@@ -718,29 +792,40 @@ describe("messages.ts - Channel Messaging", () => {
           status: "online",
         });
 
-        const messageId = await ctx.db.insert("messages", {
-          conversationId: "kg2e35v6yb5w9eqgwdzxyzqn4n74wvjr" as Id<"conversations">,
+        const conversationId = await ctx.db.insert("conversations", {
+          type: "direct",
+          updatedAt: Date.now(),
+        });
+
+        messageId = await ctx.db.insert("messages", {
+          conversationId,
           senderId: userId,
           content: "Original content",
           createdAt: Date.now(),
         });
+      });
 
-        // Act
-        await t.mutation(api.messages.editChannelMessage, {
-          messageId,
-          content: "Edited content",
-        });
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
 
-        // Assert
+      // Act
+      await asUser.mutation(api.messages.editChannelMessage, {
+        messageId: messageId!,
+        content: "Edited content",
+      });
+
+      // Assert
+      await t.run(async (ctx) => {
         const message = await ctx.db.get(messageId);
         expect(message?.editHistory).toHaveLength(1);
-        expect(message?.editHistory?.[0].content).toBe("Original content");
-        expect(message?.editHistory?.[0].editedAt).toBeDefined();
+        expect(message?.editHistory?.[0]!.content).toBe("Original content");
+        expect(message?.editHistory?.[0]!.editedAt).toBeDefined();
       });
     });
 
     it("should prevent editing other users' messages", async () => {
       const t = convexTest(schema);
+
+      let messageId: Id<"messages">;
 
       await t.run(async (ctx) => {
         // Arrange
@@ -760,26 +845,35 @@ describe("messages.ts - Channel Messaging", () => {
           status: "online",
         });
 
-        const messageId = await ctx.db.insert("messages", {
-          conversationId: "kg2e35v6yb5w9eqgwdzxyzqn4n74wvjr" as Id<"conversations">,
+        const conversationId = await ctx.db.insert("conversations", {
+          type: "direct",
+          updatedAt: Date.now(),
+        });
+
+        messageId = await ctx.db.insert("messages", {
+          conversationId,
           senderId: user1Id,
           content: "User 1's message",
           createdAt: Date.now(),
         });
-
-        // Act & Assert - user2 trying to edit user1's message
-        await expect(
-          t.mutation(api.messages.editChannelMessage, {
-            messageId,
-            content: "Edited by user 2",
-          })
-        ).rejects.toThrow("your own messages");
       });
+
+      const asUser2 = t.withIdentity({ subject: "user2-clerk" });
+
+      // Act & Assert - user2 trying to edit user1's message
+      await expect(
+        asUser2.mutation(api.messages.editChannelMessage, {
+          messageId: messageId!,
+          content: "Edited by user 2",
+        })
+      ).rejects.toThrow("your own messages");
     });
 
     it("should enforce edit time window (15 minutes)", async () => {
       const t = convexTest(schema);
 
+      let messageId: Id<"messages">;
+
       await t.run(async (ctx) => {
         // Arrange
         const userId = await ctx.db.insert("users", {
@@ -790,26 +884,35 @@ describe("messages.ts - Channel Messaging", () => {
           status: "online",
         });
 
-        const messageId = await ctx.db.insert("messages", {
-          conversationId: "kg2e35v6yb5w9eqgwdzxyzqn4n74wvjr" as Id<"conversations">,
+        const conversationId = await ctx.db.insert("conversations", {
+          type: "direct",
+          updatedAt: Date.now(),
+        });
+
+        messageId = await ctx.db.insert("messages", {
+          conversationId,
           senderId: userId,
           content: "Old message",
           createdAt: Date.now() - 16 * 60 * 1000, // 16 minutes ago
         });
-
-        // Act & Assert
-        await expect(
-          t.mutation(api.messages.editChannelMessage, {
-            messageId,
-            content: "Trying to edit old message",
-          })
-        ).rejects.toThrow("Edit window has expired");
       });
+
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
+
+      // Act & Assert
+      await expect(
+        asUser.mutation(api.messages.editChannelMessage, {
+          messageId: messageId!,
+          content: "Trying to edit old message",
+        })
+      ).rejects.toThrow("Edit window has expired");
     });
 
     it("should prevent editing deleted messages", async () => {
       const t = convexTest(schema);
 
+      let messageId: Id<"messages">;
+
       await t.run(async (ctx) => {
         // Arrange
         const userId = await ctx.db.insert("users", {
@@ -820,22 +923,29 @@ describe("messages.ts - Channel Messaging", () => {
           status: "online",
         });
 
-        const messageId = await ctx.db.insert("messages", {
-          conversationId: "kg2e35v6yb5w9eqgwdzxyzqn4n74wvjr" as Id<"conversations">,
+        const conversationId = await ctx.db.insert("conversations", {
+          type: "direct",
+          updatedAt: Date.now(),
+        });
+
+        messageId = await ctx.db.insert("messages", {
+          conversationId,
           senderId: userId,
           content: "Deleted message",
           createdAt: Date.now(),
           deletedAt: Date.now(),
         });
-
-        // Act & Assert
-        await expect(
-          t.mutation(api.messages.editChannelMessage, {
-            messageId,
-            content: "Trying to edit deleted message",
-          })
-        ).rejects.toThrow("deleted message");
       });
+
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
+
+      // Act & Assert
+      await expect(
+        asUser.mutation(api.messages.editChannelMessage, {
+          messageId: messageId!,
+          content: "Trying to edit deleted message",
+        })
+      ).rejects.toThrow("deleted message");
     });
   });
 
@@ -843,9 +953,12 @@ describe("messages.ts - Channel Messaging", () => {
     it("should allow sender to delete their own message", async () => {
       const t = convexTest(schema);
 
+      let messageId: Id<"messages">;
+      let userId: Id<"users">;
+
       await t.run(async (ctx) => {
         // Arrange
-        const userId = await ctx.db.insert("users", {
+        userId = await ctx.db.insert("users", {
           clerkId: "test-clerk-123",
           email: "test@example.com",
           name: "Test User",
@@ -853,17 +966,26 @@ describe("messages.ts - Channel Messaging", () => {
           status: "online",
         });
 
-        const messageId = await ctx.db.insert("messages", {
-          conversationId: "kg2e35v6yb5w9eqgwdzxyzqn4n74wvjr" as Id<"conversations">,
+        const conversationId = await ctx.db.insert("conversations", {
+          type: "direct",
+          updatedAt: Date.now(),
+        });
+
+        messageId = await ctx.db.insert("messages", {
+          conversationId,
           senderId: userId,
           content: "Message to delete",
           createdAt: Date.now(),
         });
+      });
 
-        // Act
-        await t.mutation(api.messages.deleteChannelMessage, { messageId });
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
 
-        // Assert (soft delete)
+      // Act
+      await asUser.mutation(api.messages.deleteChannelMessage, { messageId: messageId! });
+
+      // Assert (soft delete)
+      await t.run(async (ctx) => {
         const message = await ctx.db.get(messageId);
         expect(message?.deletedAt).toBeDefined();
         expect(message?.deletedBy).toEqual(userId);
@@ -872,6 +994,8 @@ describe("messages.ts - Channel Messaging", () => {
 
     it("should allow global admin to delete any message", async () => {
       const t = convexTest(schema);
+
+      let messageId: Id<"messages">;
 
       await t.run(async (ctx) => {
         // Arrange
@@ -883,7 +1007,7 @@ describe("messages.ts - Channel Messaging", () => {
           status: "online",
         });
 
-        const adminId = await ctx.db.insert("users", {
+        await ctx.db.insert("users", {
           clerkId: "admin-clerk",
           email: "admin@example.com",
           name: "Admin",
@@ -891,17 +1015,26 @@ describe("messages.ts - Channel Messaging", () => {
           status: "online",
         });
 
-        const messageId = await ctx.db.insert("messages", {
-          conversationId: "kg2e35v6yb5w9eqgwdzxyzqn4n74wvjr" as Id<"conversations">,
+        const conversationId = await ctx.db.insert("conversations", {
+          type: "direct",
+          updatedAt: Date.now(),
+        });
+
+        messageId = await ctx.db.insert("messages", {
+          conversationId,
           senderId: userId,
           content: "User's message",
           createdAt: Date.now(),
         });
+      });
 
-        // Act - admin deletes user's message
-        await t.mutation(api.messages.deleteChannelMessage, { messageId });
+      const asAdmin = t.withIdentity({ subject: "admin-clerk" });
 
-        // Assert
+      // Act - admin deletes user's message
+      await asAdmin.mutation(api.messages.deleteChannelMessage, { messageId: messageId! });
+
+      // Assert
+      await t.run(async (ctx) => {
         const message = await ctx.db.get(messageId);
         expect(message?.deletedAt).toBeDefined();
       });
@@ -909,6 +1042,8 @@ describe("messages.ts - Channel Messaging", () => {
 
     it("should allow channel moderator to delete messages in their channel", async () => {
       const t = convexTest(schema);
+
+      let messageId: Id<"messages">;
 
       await t.run(async (ctx) => {
         // Arrange
@@ -948,17 +1083,21 @@ describe("messages.ts - Channel Messaging", () => {
           isBanned: false,
         });
 
-        const messageId = await ctx.db.insert("messages", {
+        messageId = await ctx.db.insert("messages", {
           channelId,
           senderId: userId,
           content: "User's message",
           createdAt: Date.now(),
         });
+      });
 
-        // Act - moderator deletes message
-        await t.mutation(api.messages.deleteChannelMessage, { messageId });
+      const asMod = t.withIdentity({ subject: "mod-clerk" });
 
-        // Assert
+      // Act - moderator deletes message
+      await asMod.mutation(api.messages.deleteChannelMessage, { messageId: messageId! });
+
+      // Assert
+      await t.run(async (ctx) => {
         const message = await ctx.db.get(messageId);
         expect(message?.deletedAt).toBeDefined();
       });
@@ -966,6 +1105,8 @@ describe("messages.ts - Channel Messaging", () => {
 
     it("should prevent already deleted message from being deleted again", async () => {
       const t = convexTest(schema);
+
+      let messageId: Id<"messages">;
 
       await t.run(async (ctx) => {
         // Arrange
@@ -977,23 +1118,32 @@ describe("messages.ts - Channel Messaging", () => {
           status: "online",
         });
 
-        const messageId = await ctx.db.insert("messages", {
-          conversationId: "kg2e35v6yb5w9eqgwdzxyzqn4n74wvjr" as Id<"conversations">,
+        const conversationId = await ctx.db.insert("conversations", {
+          type: "direct",
+          updatedAt: Date.now(),
+        });
+
+        messageId = await ctx.db.insert("messages", {
+          conversationId,
           senderId: userId,
           content: "Already deleted",
           createdAt: Date.now(),
           deletedAt: Date.now(),
         });
-
-        // Act & Assert
-        await expect(
-          t.mutation(api.messages.deleteChannelMessage, { messageId })
-        ).rejects.toThrow("already deleted");
       });
+
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
+
+      // Act & Assert
+      await expect(
+        asUser.mutation(api.messages.deleteChannelMessage, { messageId: messageId! })
+      ).rejects.toThrow("already deleted");
     });
 
     it("should prevent non-authorized users from deleting messages", async () => {
       const t = convexTest(schema);
+
+      let messageId: Id<"messages">;
 
       await t.run(async (ctx) => {
         // Arrange
@@ -1013,24 +1163,34 @@ describe("messages.ts - Channel Messaging", () => {
           status: "online",
         });
 
-        const messageId = await ctx.db.insert("messages", {
-          conversationId: "kg2e35v6yb5w9eqgwdzxyzqn4n74wvjr" as Id<"conversations">,
+        const conversationId = await ctx.db.insert("conversations", {
+          type: "direct",
+          updatedAt: Date.now(),
+        });
+
+        messageId = await ctx.db.insert("messages", {
+          conversationId,
           senderId: user1Id,
           content: "User 1's message",
           createdAt: Date.now(),
         });
-
-        // Act & Assert - user2 trying to delete user1's message
-        await expect(
-          t.mutation(api.messages.deleteChannelMessage, { messageId })
-        ).rejects.toThrow("Forbidden");
       });
+
+      const asUser2 = t.withIdentity({ subject: "user2-clerk" });
+
+      // Act & Assert - user2 trying to delete user1's message
+      await expect(
+        asUser2.mutation(api.messages.deleteChannelMessage, { messageId: messageId! })
+      ).rejects.toThrow("Forbidden");
     });
   });
 
   describe("messages.markChannelAsRead mutation", () => {
     it("should mark channel as read for member", async () => {
       const t = convexTest(schema);
+
+      let channelId: Id<"channels">;
+      let membershipId: Id<"channelMembers">;
 
       await t.run(async (ctx) => {
         // Arrange
@@ -1042,7 +1202,7 @@ describe("messages.ts - Channel Messaging", () => {
           status: "online",
         });
 
-        const channelId = await ctx.db.insert("channels", {
+        channelId = await ctx.db.insert("channels", {
           name: "general",
           type: "public",
           creatorId: userId,
@@ -1051,7 +1211,7 @@ describe("messages.ts - Channel Messaging", () => {
           memberCount: 1,
         });
 
-        const membershipId = await ctx.db.insert("channelMembers", {
+        membershipId = await ctx.db.insert("channelMembers", {
           channelId,
           userId,
           role: "owner",
@@ -1060,13 +1220,16 @@ describe("messages.ts - Channel Messaging", () => {
           isMuted: false,
           isBanned: false,
         });
+      });
 
-        const beforeTime = Date.now();
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
+      const beforeTime = Date.now();
 
-        // Act
-        await t.mutation(api.messages.markChannelAsRead, { channelId });
+      // Act
+      await asUser.mutation(api.messages.markChannelAsRead, { channelId: channelId! });
 
-        // Assert
+      // Assert
+      await t.run(async (ctx) => {
         const membership = await ctx.db.get(membershipId);
         expect(membership?.lastReadAt).toBeGreaterThanOrEqual(beforeTime);
       });
@@ -1075,6 +1238,9 @@ describe("messages.ts - Channel Messaging", () => {
     it("should allow specifying custom readAt timestamp", async () => {
       const t = convexTest(schema);
 
+      let channelId: Id<"channels">;
+      let membershipId: Id<"channelMembers">;
+
       await t.run(async (ctx) => {
         // Arrange
         const userId = await ctx.db.insert("users", {
@@ -1085,7 +1251,7 @@ describe("messages.ts - Channel Messaging", () => {
           status: "online",
         });
 
-        const channelId = await ctx.db.insert("channels", {
+        channelId = await ctx.db.insert("channels", {
           name: "general",
           type: "public",
           creatorId: userId,
@@ -1094,7 +1260,7 @@ describe("messages.ts - Channel Messaging", () => {
           memberCount: 1,
         });
 
-        const membershipId = await ctx.db.insert("channelMembers", {
+        membershipId = await ctx.db.insert("channelMembers", {
           channelId,
           userId,
           role: "owner",
@@ -1103,16 +1269,19 @@ describe("messages.ts - Channel Messaging", () => {
           isMuted: false,
           isBanned: false,
         });
+      });
 
-        const customTime = Date.now() - 5000;
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
+      const customTime = Date.now() - 5000;
 
-        // Act
-        await t.mutation(api.messages.markChannelAsRead, {
-          channelId,
-          readAt: customTime,
-        });
+      // Act
+      await asUser.mutation(api.messages.markChannelAsRead, {
+        channelId: channelId!,
+        readAt: customTime,
+      });
 
-        // Assert
+      // Assert
+      await t.run(async (ctx) => {
         const membership = await ctx.db.get(membershipId);
         expect(membership?.lastReadAt).toBe(customTime);
       });
@@ -1120,6 +1289,8 @@ describe("messages.ts - Channel Messaging", () => {
 
     it("should throw error for non-member", async () => {
       const t = convexTest(schema);
+
+      let channelId: Id<"channels">;
 
       await t.run(async (ctx) => {
         // Arrange
@@ -1139,7 +1310,7 @@ describe("messages.ts - Channel Messaging", () => {
           status: "online",
         });
 
-        const channelId = await ctx.db.insert("channels", {
+        channelId = await ctx.db.insert("channels", {
           name: "general",
           type: "public",
           creatorId: adminId,
@@ -1147,16 +1318,20 @@ describe("messages.ts - Channel Messaging", () => {
           isArchived: false,
           memberCount: 1,
         });
-
-        // Act & Assert
-        await expect(
-          t.mutation(api.messages.markChannelAsRead, { channelId })
-        ).rejects.toThrow("not a member");
       });
+
+      const asUser = t.withIdentity({ subject: "user-clerk" });
+
+      // Act & Assert
+      await expect(
+        asUser.mutation(api.messages.markChannelAsRead, { channelId: channelId! })
+      ).rejects.toThrow("not a member");
     });
 
     it("should throw error for banned member", async () => {
       const t = convexTest(schema);
+
+      let channelId: Id<"channels">;
 
       await t.run(async (ctx) => {
         // Arrange
@@ -1168,7 +1343,7 @@ describe("messages.ts - Channel Messaging", () => {
           status: "online",
         });
 
-        const channelId = await ctx.db.insert("channels", {
+        channelId = await ctx.db.insert("channels", {
           name: "general",
           type: "public",
           creatorId: userId,
@@ -1186,12 +1361,14 @@ describe("messages.ts - Channel Messaging", () => {
           isMuted: false,
           isBanned: true,
         });
-
-        // Act & Assert
-        await expect(
-          t.mutation(api.messages.markChannelAsRead, { channelId })
-        ).rejects.toThrow("not an active member");
       });
+
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
+
+      // Act & Assert
+      await expect(
+        asUser.mutation(api.messages.markChannelAsRead, { channelId: channelId! })
+      ).rejects.toThrow("not an active member");
     });
   });
 });

@@ -9,8 +9,8 @@ describe("channels.ts - Channel Management", () => {
     it("should return empty array when no channels exist", async () => {
       const t = convexTest(schema);
 
+      // Arrange - Setup database ONLY
       await t.run(async (ctx) => {
-        // Arrange
         await ctx.db.insert("users", {
           clerkId: "test-clerk-123",
           email: "test@example.com",
@@ -18,20 +18,23 @@ describe("channels.ts - Channel Management", () => {
           role: "user",
           status: "online",
         });
-
-        // Act
-        const channels = await t.query(api.channels.list, {});
-
-        // Assert
-        expect(channels).toEqual([]);
       });
+
+      // Create authenticated identity (OUTSIDE t.run)
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
+
+      // Act - Call query OUTSIDE t.run()
+      const channels = await asUser.query(api.channels.list, {});
+
+      // Assert
+      expect(channels).toEqual([]);
     });
 
     it("should return public channels the user has access to", async () => {
       const t = convexTest(schema);
 
+      // Arrange - Setup database ONLY
       await t.run(async (ctx) => {
-        // Arrange
         const userId = await ctx.db.insert("users", {
           clerkId: "test-clerk-123",
           email: "test@example.com",
@@ -58,24 +61,27 @@ describe("channels.ts - Channel Management", () => {
           isMuted: false,
           isBanned: false,
         });
-
-        // Act
-        const channels = await t.query(api.channels.list, {});
-
-        // Assert
-        expect(channels).toHaveLength(1);
-        expect(channels[0].name).toBe("general");
-        expect(channels[0].type).toBe("public");
-        expect(channels[0].membership).not.toBeNull();
-        expect(channels[0].membership?.role).toBe("owner");
       });
+
+      // Create authenticated identity (OUTSIDE t.run)
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
+
+      // Act - Call query OUTSIDE t.run()
+      const channels = await asUser.query(api.channels.list, {});
+
+      // Assert
+      expect(channels).toHaveLength(1);
+      expect(channels[0]!.name).toBe("general");
+      expect(channels[0]!.type).toBe("public");
+      expect(channels[0]!.membership).not.toBeNull();
+      expect(channels[0]!.membership?.role).toBe("owner");
     });
 
     it("should filter channels by type when specified", async () => {
       const t = convexTest(schema);
 
+      // Arrange
       await t.run(async (ctx) => {
-        // Arrange
         const userId = await ctx.db.insert("users", {
           clerkId: "test-clerk-123",
           email: "test@example.com",
@@ -121,21 +127,23 @@ describe("channels.ts - Channel Management", () => {
           isMuted: false,
           isBanned: false,
         });
-
-        // Act
-        const publicChannels = await t.query(api.channels.list, { type: "public" });
-
-        // Assert
-        expect(publicChannels).toHaveLength(1);
-        expect(publicChannels[0].type).toBe("public");
       });
+
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
+
+      // Act
+      const publicChannels = await asUser.query(api.channels.list, { type: "public" });
+
+      // Assert
+      expect(publicChannels).toHaveLength(1);
+      expect(publicChannels[0]!.type).toBe("public");
     });
 
     it("should exclude archived channels by default", async () => {
       const t = convexTest(schema);
 
+      // Arrange
       await t.run(async (ctx) => {
-        // Arrange
         const userId = await ctx.db.insert("users", {
           clerkId: "test-clerk-123",
           email: "test@example.com",
@@ -164,20 +172,22 @@ describe("channels.ts - Channel Management", () => {
           isMuted: false,
           isBanned: false,
         });
-
-        // Act
-        const channels = await t.query(api.channels.list, {});
-
-        // Assert
-        expect(channels).toHaveLength(0);
       });
+
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
+
+      // Act
+      const channels = await asUser.query(api.channels.list, {});
+
+      // Assert
+      expect(channels).toHaveLength(0);
     });
 
     it("should include archived channels when requested", async () => {
       const t = convexTest(schema);
 
+      // Arrange
       await t.run(async (ctx) => {
-        // Arrange
         const userId = await ctx.db.insert("users", {
           clerkId: "test-clerk-123",
           email: "test@example.com",
@@ -206,21 +216,23 @@ describe("channels.ts - Channel Management", () => {
           isMuted: false,
           isBanned: false,
         });
-
-        // Act
-        const channels = await t.query(api.channels.list, { includeArchived: true });
-
-        // Assert
-        expect(channels).toHaveLength(1);
-        expect(channels[0].isArchived).toBe(true);
       });
+
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
+
+      // Act
+      const channels = await asUser.query(api.channels.list, { includeArchived: true });
+
+      // Assert
+      expect(channels).toHaveLength(1);
+      expect(channels[0]!.isArchived).toBe(true);
     });
 
     it("should calculate unread count correctly", async () => {
       const t = convexTest(schema);
 
+      // Arrange
       await t.run(async (ctx) => {
-        // Arrange
         const userId = await ctx.db.insert("users", {
           clerkId: "test-clerk-123",
           email: "test@example.com",
@@ -229,21 +241,24 @@ describe("channels.ts - Channel Management", () => {
           status: "online",
         });
 
+        const now = Date.now();
+        const lastReadAt = now - 10000; // 10 seconds ago
+
         const channelId = await ctx.db.insert("channels", {
           name: "general",
           type: "public",
           creatorId: userId,
-          createdAt: Date.now(),
+          createdAt: now,
           isArchived: false,
           memberCount: 1,
+          lastMessageAt: now, // Must be set for unread calculation
         });
 
-        const lastReadAt = Date.now() - 10000; // 10 seconds ago
         await ctx.db.insert("channelMembers", {
           channelId,
           userId,
           role: "owner",
-          joinedAt: Date.now(),
+          joinedAt: now,
           notificationLevel: "all",
           isMuted: false,
           isBanned: false,
@@ -255,30 +270,32 @@ describe("channels.ts - Channel Management", () => {
           channelId,
           senderId: userId,
           content: "New message 1",
-          createdAt: Date.now() - 5000,
+          createdAt: now - 5000,
         });
 
         await ctx.db.insert("messages", {
           channelId,
           senderId: userId,
           content: "New message 2",
-          createdAt: Date.now(),
+          createdAt: now,
         });
-
-        // Act
-        const channels = await t.query(api.channels.list, {});
-
-        // Assert
-        expect(channels).toHaveLength(1);
-        expect(channels[0].membership?.unreadCount).toBe(2);
       });
+
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
+
+      // Act
+      const channels = await asUser.query(api.channels.list, {});
+
+      // Assert
+      expect(channels).toHaveLength(1);
+      expect(channels[0]!.membership?.unreadCount).toBe(2);
     });
 
     it("should not count deleted messages in unread count", async () => {
       const t = convexTest(schema);
 
+      // Arrange
       await t.run(async (ctx) => {
-        // Arrange
         const userId = await ctx.db.insert("users", {
           clerkId: "test-clerk-123",
           email: "test@example.com",
@@ -287,21 +304,24 @@ describe("channels.ts - Channel Management", () => {
           status: "online",
         });
 
+        const now = Date.now();
+        const lastReadAt = now - 10000;
+
         const channelId = await ctx.db.insert("channels", {
           name: "general",
           type: "public",
           creatorId: userId,
-          createdAt: Date.now(),
+          createdAt: now,
           isArchived: false,
           memberCount: 1,
+          lastMessageAt: now, // Must be set for unread calculation
         });
 
-        const lastReadAt = Date.now() - 10000;
         await ctx.db.insert("channelMembers", {
           channelId,
           userId,
           role: "owner",
-          joinedAt: Date.now(),
+          joinedAt: now,
           notificationLevel: "all",
           isMuted: false,
           isBanned: false,
@@ -313,7 +333,7 @@ describe("channels.ts - Channel Management", () => {
           channelId,
           senderId: userId,
           content: "Regular message",
-          createdAt: Date.now() - 5000,
+          createdAt: now - 5000,
         });
 
         // Add deleted message
@@ -321,23 +341,25 @@ describe("channels.ts - Channel Management", () => {
           channelId,
           senderId: userId,
           content: "Deleted message",
-          createdAt: Date.now(),
-          deletedAt: Date.now(),
+          createdAt: now,
+          deletedAt: now,
         });
-
-        // Act
-        const channels = await t.query(api.channels.list, {});
-
-        // Assert
-        expect(channels[0].membership?.unreadCount).toBe(1); // Only the regular message
       });
+
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
+
+      // Act
+      const channels = await asUser.query(api.channels.list, {});
+
+      // Assert
+      expect(channels[0]!.membership?.unreadCount).toBe(1); // Only the regular message
     });
 
     it("should sort channels by lastMessageAt descending", async () => {
       const t = convexTest(schema);
 
+      // Arrange
       await t.run(async (ctx) => {
-        // Arrange
         const userId = await ctx.db.insert("users", {
           clerkId: "test-clerk-123",
           email: "test@example.com",
@@ -385,15 +407,17 @@ describe("channels.ts - Channel Management", () => {
           isMuted: false,
           isBanned: false,
         });
-
-        // Act
-        const channels = await t.query(api.channels.list, {});
-
-        // Assert
-        expect(channels).toHaveLength(2);
-        expect(channels[0].name).toBe("channel-2"); // Most recent first
-        expect(channels[1].name).toBe("channel-1");
       });
+
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
+
+      // Act
+      const channels = await asUser.query(api.channels.list, {});
+
+      // Assert
+      expect(channels).toHaveLength(2);
+      expect(channels[0]!.name).toBe("channel-2"); // Most recent first
+      expect(channels[1]!.name).toBe("channel-1");
     });
   });
 
@@ -401,8 +425,10 @@ describe("channels.ts - Channel Management", () => {
     it("should return null for non-existent channel", async () => {
       const t = convexTest(schema);
 
+      let nonExistentChannelId: Id<"channels">;
+
+      // Arrange
       await t.run(async (ctx) => {
-        // Arrange
         await ctx.db.insert("users", {
           clerkId: "test-clerk-123",
           email: "test@example.com",
@@ -411,21 +437,44 @@ describe("channels.ts - Channel Management", () => {
           status: "online",
         });
 
-        const fakeChannelId = "kg2e35v6yb5w9eqgwdzxyzqn4n74wvjr" as Id<"channels">;
+        // Create a temporary channel to get a valid ID, then delete it
+        const tempUserId = await ctx.db.insert("users", {
+          clerkId: "temp-clerk",
+          email: "temp@example.com",
+          name: "Temp User",
+          role: "user",
+          status: "online",
+        });
 
-        // Act
-        const channel = await t.query(api.channels.get, { channelId: fakeChannelId });
+        nonExistentChannelId = await ctx.db.insert("channels", {
+          name: "temp-channel",
+          type: "public",
+          creatorId: tempUserId,
+          createdAt: Date.now(),
+          isArchived: false,
+          memberCount: 0,
+        });
 
-        // Assert
-        expect(channel).toBeNull();
+        // Delete it immediately
+        await ctx.db.delete(nonExistentChannelId);
       });
+
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
+
+      // Act
+      const channel = await asUser.query(api.channels.get, { channelId: nonExistentChannelId! });
+
+      // Assert
+      expect(channel).toBeNull();
     });
 
     it("should return channel with membership for member", async () => {
       const t = convexTest(schema);
 
+      let channelId: Id<"channels">;
+
+      // Arrange
       await t.run(async (ctx) => {
-        // Arrange
         const userId = await ctx.db.insert("users", {
           clerkId: "test-clerk-123",
           email: "test@example.com",
@@ -434,7 +483,7 @@ describe("channels.ts - Channel Management", () => {
           status: "online",
         });
 
-        const channelId = await ctx.db.insert("channels", {
+        channelId = await ctx.db.insert("channels", {
           name: "general",
           description: "General discussion",
           type: "public",
@@ -453,24 +502,28 @@ describe("channels.ts - Channel Management", () => {
           isMuted: false,
           isBanned: false,
         });
-
-        // Act
-        const channel = await t.query(api.channels.get, { channelId });
-
-        // Assert
-        expect(channel).not.toBeNull();
-        expect(channel?.name).toBe("general");
-        expect(channel?.description).toBe("General discussion");
-        expect(channel?.membership).not.toBeNull();
-        expect(channel?.membership?.role).toBe("owner");
       });
+
+      const asUser = t.withIdentity({ subject: "test-clerk-123" });
+
+      // Act
+      const channel = await asUser.query(api.channels.get, { channelId: channelId! });
+
+      // Assert
+      expect(channel).not.toBeNull();
+      expect(channel?.name).toBe("general");
+      expect(channel?.description).toBe("General discussion");
+      expect(channel?.membership).not.toBeNull();
+      expect(channel?.membership?.role).toBe("owner");
     });
 
     it("should return null for private channel without access", async () => {
       const t = convexTest(schema);
 
+      let channelId: Id<"channels">;
+
+      // Arrange
       await t.run(async (ctx) => {
-        // Arrange
         const adminId = await ctx.db.insert("users", {
           clerkId: "admin-clerk",
           email: "admin@example.com",
@@ -479,7 +532,7 @@ describe("channels.ts - Channel Management", () => {
           status: "online",
         });
 
-        const userId = await ctx.db.insert("users", {
+        await ctx.db.insert("users", {
           clerkId: "user-clerk",
           email: "user@example.com",
           name: "Regular User",
@@ -487,7 +540,7 @@ describe("channels.ts - Channel Management", () => {
           status: "online",
         });
 
-        const channelId = await ctx.db.insert("channels", {
+        channelId = await ctx.db.insert("channels", {
           name: "private-channel",
           type: "private",
           creatorId: adminId,
@@ -505,13 +558,14 @@ describe("channels.ts - Channel Management", () => {
           isMuted: false,
           isBanned: false,
         });
-
-        // Act - query as user (not a member)
-        const channel = await t.query(api.channels.get, { channelId });
-
-        // Assert
-        expect(channel).toBeNull();
       });
+
+      // Act as user (not a member)
+      const asUser = t.withIdentity({ subject: "user-clerk" });
+      const channel = await asUser.query(api.channels.get, { channelId: channelId! });
+
+      // Assert
+      expect(channel).toBeNull();
     });
   });
 
@@ -519,13 +573,27 @@ describe("channels.ts - Channel Management", () => {
     it("should create a public channel as admin", async () => {
       const t = convexTest(schema);
 
-      // Act & Assert
-      const channelId = await t.mutation(api.channels.create, {
+      // Setup admin user
+      await t.run(async (ctx) => {
+        await ctx.db.insert("users", {
+          clerkId: "admin-clerk",
+          email: "admin@example.com",
+          name: "Admin User",
+          role: "admin",
+          status: "online",
+        });
+      });
+
+      const asAdmin = t.withIdentity({ subject: "admin-clerk" });
+
+      // Act
+      const channelId = await asAdmin.mutation(api.channels.create, {
         name: "new-channel",
         description: "A new channel",
         type: "public",
       });
 
+      // Assert
       await t.run(async (ctx) => {
         const channel = await ctx.db.get(channelId);
         expect(channel).toBeDefined();
@@ -549,7 +617,6 @@ describe("channels.ts - Channel Management", () => {
       const t = convexTest(schema);
 
       await t.run(async (ctx) => {
-        // Override auth to return regular user
         await ctx.db.insert("users", {
           clerkId: "user-clerk",
           email: "user@example.com",
@@ -559,9 +626,11 @@ describe("channels.ts - Channel Management", () => {
         });
       });
 
+      const asUser = t.withIdentity({ subject: "user-clerk" });
+
       // Act & Assert
       await expect(
-        t.mutation(api.channels.create, {
+        asUser.mutation(api.channels.create, {
           name: "unauthorized-channel",
           type: "public",
         })
@@ -571,9 +640,21 @@ describe("channels.ts - Channel Management", () => {
     it("should validate name length (min 2 chars)", async () => {
       const t = convexTest(schema);
 
+      await t.run(async (ctx) => {
+        await ctx.db.insert("users", {
+          clerkId: "admin-clerk",
+          email: "admin@example.com",
+          name: "Admin User",
+          role: "admin",
+          status: "online",
+        });
+      });
+
+      const asAdmin = t.withIdentity({ subject: "admin-clerk" });
+
       // Act & Assert
       await expect(
-        t.mutation(api.channels.create, {
+        asAdmin.mutation(api.channels.create, {
           name: "a", // Too short
           type: "public",
         })
@@ -583,9 +664,21 @@ describe("channels.ts - Channel Management", () => {
     it("should validate name length (max 80 chars)", async () => {
       const t = convexTest(schema);
 
+      await t.run(async (ctx) => {
+        await ctx.db.insert("users", {
+          clerkId: "admin-clerk",
+          email: "admin@example.com",
+          name: "Admin User",
+          role: "admin",
+          status: "online",
+        });
+      });
+
+      const asAdmin = t.withIdentity({ subject: "admin-clerk" });
+
       // Act & Assert
       await expect(
-        t.mutation(api.channels.create, {
+        asAdmin.mutation(api.channels.create, {
           name: "a".repeat(81), // Too long
           type: "public",
         })
@@ -595,9 +688,21 @@ describe("channels.ts - Channel Management", () => {
     it("should validate name format (alphanumeric, hyphens, underscores)", async () => {
       const t = convexTest(schema);
 
+      await t.run(async (ctx) => {
+        await ctx.db.insert("users", {
+          clerkId: "admin-clerk",
+          email: "admin@example.com",
+          name: "Admin User",
+          role: "admin",
+          status: "online",
+        });
+      });
+
+      const asAdmin = t.withIdentity({ subject: "admin-clerk" });
+
       // Act & Assert
       await expect(
-        t.mutation(api.channels.create, {
+        asAdmin.mutation(api.channels.create, {
           name: "invalid channel!", // Contains space and special char
           type: "public",
         })
@@ -607,15 +712,27 @@ describe("channels.ts - Channel Management", () => {
     it("should prevent duplicate channel names", async () => {
       const t = convexTest(schema);
 
+      await t.run(async (ctx) => {
+        await ctx.db.insert("users", {
+          clerkId: "admin-clerk",
+          email: "admin@example.com",
+          name: "Admin User",
+          role: "admin",
+          status: "online",
+        });
+      });
+
+      const asAdmin = t.withIdentity({ subject: "admin-clerk" });
+
       // Arrange
-      await t.mutation(api.channels.create, {
+      await asAdmin.mutation(api.channels.create, {
         name: "duplicate-channel",
         type: "public",
       });
 
       // Act & Assert
       await expect(
-        t.mutation(api.channels.create, {
+        asAdmin.mutation(api.channels.create, {
           name: "duplicate-channel",
           type: "public",
         })
@@ -627,8 +744,11 @@ describe("channels.ts - Channel Management", () => {
     it("should allow joining a public channel", async () => {
       const t = convexTest(schema);
 
+      let channelId: Id<"channels">;
+      let userId: Id<"users">;
+
+      // Arrange
       await t.run(async (ctx) => {
-        // Arrange
         const adminId = await ctx.db.insert("users", {
           clerkId: "admin-clerk",
           email: "admin@example.com",
@@ -637,7 +757,7 @@ describe("channels.ts - Channel Management", () => {
           status: "online",
         });
 
-        const userId = await ctx.db.insert("users", {
+        userId = await ctx.db.insert("users", {
           clerkId: "user-clerk",
           email: "user@example.com",
           name: "User",
@@ -645,7 +765,7 @@ describe("channels.ts - Channel Management", () => {
           status: "online",
         });
 
-        const channelId = await ctx.db.insert("channels", {
+        channelId = await ctx.db.insert("channels", {
           name: "public-channel",
           type: "public",
           creatorId: adminId,
@@ -663,11 +783,15 @@ describe("channels.ts - Channel Management", () => {
           isMuted: false,
           isBanned: false,
         });
+      });
 
-        // Act
-        await t.mutation(api.channels.join, { channelId });
+      const asUser = t.withIdentity({ subject: "user-clerk" });
 
-        // Assert
+      // Act
+      await asUser.mutation(api.channels.join, { channelId: channelId! });
+
+      // Assert
+      await t.run(async (ctx) => {
         const membership = await ctx.db
           .query("channelMembers")
           .withIndex("by_channel_user", (q) =>
@@ -687,8 +811,9 @@ describe("channels.ts - Channel Management", () => {
     it("should prevent joining private channel", async () => {
       const t = convexTest(schema);
 
+      let channelId: Id<"channels">;
+
       await t.run(async (ctx) => {
-        // Arrange
         const adminId = await ctx.db.insert("users", {
           clerkId: "admin-clerk",
           email: "admin@example.com",
@@ -697,7 +822,15 @@ describe("channels.ts - Channel Management", () => {
           status: "online",
         });
 
-        const channelId = await ctx.db.insert("channels", {
+        await ctx.db.insert("users", {
+          clerkId: "user-clerk",
+          email: "user@example.com",
+          name: "User",
+          role: "user",
+          status: "online",
+        });
+
+        channelId = await ctx.db.insert("channels", {
           name: "private-channel",
           type: "private",
           creatorId: adminId,
@@ -705,19 +838,22 @@ describe("channels.ts - Channel Management", () => {
           isArchived: false,
           memberCount: 1,
         });
-
-        // Act & Assert
-        await expect(t.mutation(api.channels.join, { channelId })).rejects.toThrow(
-          "private channel"
-        );
       });
+
+      const asUser = t.withIdentity({ subject: "user-clerk" });
+
+      // Act & Assert
+      await expect(asUser.mutation(api.channels.join, { channelId: channelId! })).rejects.toThrow(
+        "private channel"
+      );
     });
 
     it("should prevent joining archived channel", async () => {
       const t = convexTest(schema);
 
+      let channelId: Id<"channels">;
+
       await t.run(async (ctx) => {
-        // Arrange
         const adminId = await ctx.db.insert("users", {
           clerkId: "admin-clerk",
           email: "admin@example.com",
@@ -726,7 +862,15 @@ describe("channels.ts - Channel Management", () => {
           status: "online",
         });
 
-        const channelId = await ctx.db.insert("channels", {
+        await ctx.db.insert("users", {
+          clerkId: "user-clerk",
+          email: "user@example.com",
+          name: "User",
+          role: "user",
+          status: "online",
+        });
+
+        channelId = await ctx.db.insert("channels", {
           name: "archived-channel",
           type: "public",
           creatorId: adminId,
@@ -736,19 +880,23 @@ describe("channels.ts - Channel Management", () => {
           archivedBy: adminId,
           memberCount: 1,
         });
-
-        // Act & Assert
-        await expect(t.mutation(api.channels.join, { channelId })).rejects.toThrow(
-          "archived"
-        );
       });
+
+      const asUser = t.withIdentity({ subject: "user-clerk" });
+
+      // Act & Assert
+      await expect(asUser.mutation(api.channels.join, { channelId: channelId! })).rejects.toThrow(
+        "archived"
+      );
     });
 
     it("should prevent banned users from joining", async () => {
       const t = convexTest(schema);
 
+      let channelId: Id<"channels">;
+      let userId: Id<"users">;
+
       await t.run(async (ctx) => {
-        // Arrange
         const adminId = await ctx.db.insert("users", {
           clerkId: "admin-clerk",
           email: "admin@example.com",
@@ -757,7 +905,7 @@ describe("channels.ts - Channel Management", () => {
           status: "online",
         });
 
-        const userId = await ctx.db.insert("users", {
+        userId = await ctx.db.insert("users", {
           clerkId: "user-clerk",
           email: "user@example.com",
           name: "User",
@@ -765,7 +913,7 @@ describe("channels.ts - Channel Management", () => {
           status: "online",
         });
 
-        const channelId = await ctx.db.insert("channels", {
+        channelId = await ctx.db.insert("channels", {
           name: "public-channel",
           type: "public",
           creatorId: adminId,
@@ -785,19 +933,23 @@ describe("channels.ts - Channel Management", () => {
           isBanned: true,
           leftAt: Date.now(),
         });
-
-        // Act & Assert
-        await expect(t.mutation(api.channels.join, { channelId })).rejects.toThrow(
-          "banned"
-        );
       });
+
+      const asUser = t.withIdentity({ subject: "user-clerk" });
+
+      // Act & Assert
+      await expect(asUser.mutation(api.channels.join, { channelId: channelId! })).rejects.toThrow(
+        "banned"
+      );
     });
 
     it("should allow rejoining after leaving", async () => {
       const t = convexTest(schema);
 
+      let channelId: Id<"channels">;
+      let membershipId: Id<"channelMembers">;
+
       await t.run(async (ctx) => {
-        // Arrange
         const userId = await ctx.db.insert("users", {
           clerkId: "user-clerk",
           email: "user@example.com",
@@ -806,7 +958,7 @@ describe("channels.ts - Channel Management", () => {
           status: "online",
         });
 
-        const channelId = await ctx.db.insert("channels", {
+        channelId = await ctx.db.insert("channels", {
           name: "public-channel",
           type: "public",
           creatorId: userId,
@@ -816,7 +968,7 @@ describe("channels.ts - Channel Management", () => {
         });
 
         // Create left membership
-        const membershipId = await ctx.db.insert("channelMembers", {
+        membershipId = await ctx.db.insert("channelMembers", {
           channelId,
           userId,
           role: "member",
@@ -826,11 +978,15 @@ describe("channels.ts - Channel Management", () => {
           isMuted: false,
           isBanned: false,
         });
+      });
 
-        // Act
-        await t.mutation(api.channels.join, { channelId });
+      const asUser = t.withIdentity({ subject: "user-clerk" });
 
-        // Assert
+      // Act
+      await asUser.mutation(api.channels.join, { channelId: channelId! });
+
+      // Assert
+      await t.run(async (ctx) => {
         const membership = await ctx.db.get(membershipId);
         expect(membership?.leftAt).toBeUndefined(); // Left timestamp cleared
         expect(membership?.joinedAt).toBeGreaterThan(Date.now() - 1000); // New join time
@@ -842,8 +998,10 @@ describe("channels.ts - Channel Management", () => {
     it("should allow member to leave channel", async () => {
       const t = convexTest(schema);
 
+      let channelId: Id<"channels">;
+      let membershipId: Id<"channelMembers">;
+
       await t.run(async (ctx) => {
-        // Arrange
         const userId = await ctx.db.insert("users", {
           clerkId: "user-clerk",
           email: "user@example.com",
@@ -852,7 +1010,7 @@ describe("channels.ts - Channel Management", () => {
           status: "online",
         });
 
-        const channelId = await ctx.db.insert("channels", {
+        channelId = await ctx.db.insert("channels", {
           name: "public-channel",
           type: "public",
           creatorId: userId,
@@ -861,7 +1019,7 @@ describe("channels.ts - Channel Management", () => {
           memberCount: 1,
         });
 
-        const membershipId = await ctx.db.insert("channelMembers", {
+        membershipId = await ctx.db.insert("channelMembers", {
           channelId,
           userId,
           role: "member",
@@ -870,11 +1028,15 @@ describe("channels.ts - Channel Management", () => {
           isMuted: false,
           isBanned: false,
         });
+      });
 
-        // Act
-        await t.mutation(api.channels.leave, { channelId });
+      const asUser = t.withIdentity({ subject: "user-clerk" });
 
-        // Assert
+      // Act
+      await asUser.mutation(api.channels.leave, { channelId: channelId! });
+
+      // Assert
+      await t.run(async (ctx) => {
         const membership = await ctx.db.get(membershipId);
         expect(membership?.leftAt).toBeDefined();
         expect(membership?.leftAt).toBeGreaterThan(0);
@@ -887,8 +1049,9 @@ describe("channels.ts - Channel Management", () => {
     it("should prevent owner from leaving without transferring ownership", async () => {
       const t = convexTest(schema);
 
+      let channelId: Id<"channels">;
+
       await t.run(async (ctx) => {
-        // Arrange
         const userId = await ctx.db.insert("users", {
           clerkId: "user-clerk",
           email: "user@example.com",
@@ -897,7 +1060,7 @@ describe("channels.ts - Channel Management", () => {
           status: "online",
         });
 
-        const channelId = await ctx.db.insert("channels", {
+        channelId = await ctx.db.insert("channels", {
           name: "public-channel",
           type: "public",
           creatorId: userId,
@@ -915,19 +1078,22 @@ describe("channels.ts - Channel Management", () => {
           isMuted: false,
           isBanned: false,
         });
-
-        // Act & Assert
-        await expect(t.mutation(api.channels.leave, { channelId })).rejects.toThrow(
-          "owner cannot leave"
-        );
       });
+
+      const asUser = t.withIdentity({ subject: "user-clerk" });
+
+      // Act & Assert
+      await expect(asUser.mutation(api.channels.leave, { channelId: channelId! })).rejects.toThrow(
+        "owner cannot leave"
+      );
     });
 
     it("should throw error for non-member trying to leave", async () => {
       const t = convexTest(schema);
 
+      let channelId: Id<"channels">;
+
       await t.run(async (ctx) => {
-        // Arrange
         const adminId = await ctx.db.insert("users", {
           clerkId: "admin-clerk",
           email: "admin@example.com",
@@ -944,7 +1110,7 @@ describe("channels.ts - Channel Management", () => {
           status: "online",
         });
 
-        const channelId = await ctx.db.insert("channels", {
+        channelId = await ctx.db.insert("channels", {
           name: "public-channel",
           type: "public",
           creatorId: adminId,
@@ -952,12 +1118,14 @@ describe("channels.ts - Channel Management", () => {
           isArchived: false,
           memberCount: 1,
         });
-
-        // Act & Assert
-        await expect(t.mutation(api.channels.leave, { channelId })).rejects.toThrow(
-          "not a member"
-        );
       });
+
+      const asUser = t.withIdentity({ subject: "user-clerk" });
+
+      // Act & Assert
+      await expect(asUser.mutation(api.channels.leave, { channelId: channelId! })).rejects.toThrow(
+        "not a member"
+      );
     });
   });
 
@@ -965,8 +1133,10 @@ describe("channels.ts - Channel Management", () => {
     it("should mark all channels as read", async () => {
       const t = convexTest(schema);
 
+      let membership1Id: Id<"channelMembers">;
+      let membership2Id: Id<"channelMembers">;
+
       await t.run(async (ctx) => {
-        // Arrange
         const userId = await ctx.db.insert("users", {
           clerkId: "user-clerk",
           email: "user@example.com",
@@ -993,7 +1163,7 @@ describe("channels.ts - Channel Management", () => {
           memberCount: 1,
         });
 
-        const membership1Id = await ctx.db.insert("channelMembers", {
+        membership1Id = await ctx.db.insert("channelMembers", {
           channelId: channel1Id,
           userId,
           role: "member",
@@ -1003,7 +1173,7 @@ describe("channels.ts - Channel Management", () => {
           isBanned: false,
         });
 
-        const membership2Id = await ctx.db.insert("channelMembers", {
+        membership2Id = await ctx.db.insert("channelMembers", {
           channelId: channel2Id,
           userId,
           role: "member",
@@ -1012,13 +1182,16 @@ describe("channels.ts - Channel Management", () => {
           isMuted: false,
           isBanned: false,
         });
+      });
 
-        const beforeTime = Date.now();
+      const asUser = t.withIdentity({ subject: "user-clerk" });
+      const beforeTime = Date.now();
 
-        // Act
-        await t.mutation(api.channels.markAllAsRead, {});
+      // Act
+      await asUser.mutation(api.channels.markAllAsRead, {});
 
-        // Assert
+      // Assert
+      await t.run(async (ctx) => {
         const membership1 = await ctx.db.get(membership1Id);
         const membership2 = await ctx.db.get(membership2Id);
 
@@ -1030,8 +1203,9 @@ describe("channels.ts - Channel Management", () => {
     it("should not update banned or left memberships", async () => {
       const t = convexTest(schema);
 
+      let bannedMembershipId: Id<"channelMembers">;
+
       await t.run(async (ctx) => {
-        // Arrange
         const userId = await ctx.db.insert("users", {
           clerkId: "user-clerk",
           email: "user@example.com",
@@ -1049,7 +1223,7 @@ describe("channels.ts - Channel Management", () => {
           memberCount: 1,
         });
 
-        const bannedMembershipId = await ctx.db.insert("channelMembers", {
+        bannedMembershipId = await ctx.db.insert("channelMembers", {
           channelId,
           userId,
           role: "member",
@@ -1058,14 +1232,224 @@ describe("channels.ts - Channel Management", () => {
           isMuted: false,
           isBanned: true,
         });
+      });
 
-        // Act
-        await t.mutation(api.channels.markAllAsRead, {});
+      const asUser = t.withIdentity({ subject: "user-clerk" });
 
-        // Assert
+      // Act
+      await asUser.mutation(api.channels.markAllAsRead, {});
+
+      // Assert
+      await t.run(async (ctx) => {
         const bannedMembership = await ctx.db.get(bannedMembershipId);
         expect(bannedMembership?.lastReadAt).toBeUndefined();
       });
+    });
+  });
+
+  describe("channels.toggleFavorite mutation", () => {
+    it("should set isFavorite to true when false", async () => {
+      const t = convexTest(schema);
+
+      let channelId: Id<"channels">;
+      let membershipId: Id<"channelMembers">;
+
+      // Arrange
+      await t.run(async (ctx) => {
+        const userId = await ctx.db.insert("users", {
+          clerkId: "test-clerk",
+          email: "test@example.com",
+          name: "Test User",
+          role: "user",
+          status: "online",
+        });
+
+        channelId = await ctx.db.insert("channels", {
+          name: "test-channel",
+          type: "public",
+          creatorId: userId,
+          createdAt: Date.now(),
+          isArchived: false,
+          memberCount: 1,
+        });
+
+        membershipId = await ctx.db.insert("channelMembers", {
+          channelId,
+          userId,
+          role: "member",
+          joinedAt: Date.now(),
+          notificationLevel: "all",
+          isMuted: false,
+          isBanned: false,
+          isFavorite: false, // Initially not favorite
+        });
+      });
+
+      const asUser = t.withIdentity({ subject: "test-clerk" });
+
+      // Act
+      const newState = await asUser.mutation(api.channels.toggleFavorite, {
+        channelId: channelId!,
+      });
+
+      // Assert
+      expect(newState).toBe(true);
+
+      await t.run(async (ctx) => {
+        const membership = await ctx.db.get(membershipId);
+        expect(membership?.isFavorite).toBe(true);
+      });
+    });
+
+    it("should set isFavorite to false when true", async () => {
+      const t = convexTest(schema);
+
+      let channelId: Id<"channels">;
+      let membershipId: Id<"channelMembers">;
+
+      // Arrange
+      await t.run(async (ctx) => {
+        const userId = await ctx.db.insert("users", {
+          clerkId: "test-clerk",
+          email: "test@example.com",
+          name: "Test User",
+          role: "user",
+          status: "online",
+        });
+
+        channelId = await ctx.db.insert("channels", {
+          name: "test-channel",
+          type: "public",
+          creatorId: userId,
+          createdAt: Date.now(),
+          isArchived: false,
+          memberCount: 1,
+        });
+
+        membershipId = await ctx.db.insert("channelMembers", {
+          channelId,
+          userId,
+          role: "member",
+          joinedAt: Date.now(),
+          notificationLevel: "all",
+          isMuted: false,
+          isBanned: false,
+          isFavorite: true, // Initially favorite
+        });
+      });
+
+      const asUser = t.withIdentity({ subject: "test-clerk" });
+
+      // Act
+      const newState = await asUser.mutation(api.channels.toggleFavorite, {
+        channelId: channelId!,
+      });
+
+      // Assert
+      expect(newState).toBe(false);
+
+      await t.run(async (ctx) => {
+        const membership = await ctx.db.get(membershipId);
+        expect(membership?.isFavorite).toBe(false);
+      });
+    });
+
+    it("should throw error for non-members", async () => {
+      const t = convexTest(schema);
+
+      let channelId: Id<"channels">;
+
+      // Arrange
+      await t.run(async (ctx) => {
+        const adminId = await ctx.db.insert("users", {
+          clerkId: "admin-clerk",
+          email: "admin@example.com",
+          name: "Admin",
+          role: "admin",
+          status: "online",
+        });
+
+        await ctx.db.insert("users", {
+          clerkId: "non-member-clerk",
+          email: "nonmember@example.com",
+          name: "Non Member",
+          role: "user",
+          status: "online",
+        });
+
+        channelId = await ctx.db.insert("channels", {
+          name: "test-channel",
+          type: "public",
+          creatorId: adminId,
+          createdAt: Date.now(),
+          isArchived: false,
+          memberCount: 1,
+        });
+
+        await ctx.db.insert("channelMembers", {
+          channelId,
+          userId: adminId,
+          role: "owner",
+          joinedAt: Date.now(),
+          notificationLevel: "all",
+          isMuted: false,
+          isBanned: false,
+        });
+      });
+
+      const asNonMember = t.withIdentity({ subject: "non-member-clerk" });
+
+      // Act & Assert
+      await expect(
+        asNonMember.mutation(api.channels.toggleFavorite, {
+          channelId: channelId!,
+        })
+      ).rejects.toThrow("not a member");
+    });
+
+    it("should throw error for banned users", async () => {
+      const t = convexTest(schema);
+
+      let channelId: Id<"channels">;
+
+      // Arrange
+      await t.run(async (ctx) => {
+        const userId = await ctx.db.insert("users", {
+          clerkId: "banned-clerk",
+          email: "banned@example.com",
+          name: "Banned User",
+          role: "user",
+          status: "online",
+        });
+
+        channelId = await ctx.db.insert("channels", {
+          name: "test-channel",
+          type: "public",
+          creatorId: userId,
+          createdAt: Date.now(),
+          isArchived: false,
+          memberCount: 0,
+        });
+
+        await ctx.db.insert("channelMembers", {
+          channelId,
+          userId,
+          role: "member",
+          joinedAt: Date.now(),
+          notificationLevel: "all",
+          isMuted: false,
+          isBanned: true, // User is banned
+        });
+      });
+
+      const asBannedUser = t.withIdentity({ subject: "banned-clerk" });
+
+      // Act & Assert
+      await expect(
+        asBannedUser.mutation(api.channels.toggleFavorite, {
+          channelId: channelId!,
+        })
+      ).rejects.toThrow("banned");
     });
   });
 });

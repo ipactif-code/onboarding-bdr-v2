@@ -168,7 +168,7 @@ export function MessageItem({
         )}
       </div>
 
-      {/* Action buttons (visible on hover) */}
+      {/* Action buttons (visible on hover) - min 44x44px touch targets for WCAG 2.5.5 */}
       <div
         className={cn(
           "absolute right-4 top-2 flex items-center gap-0.5 rounded-md border border-border bg-background p-0.5 shadow-sm",
@@ -179,11 +179,12 @@ export function MessageItem({
           <TooltipTrigger asChild>
             <Button
               variant="ghost"
-              size="icon-xs"
+              size="icon"
+              className="min-h-11 min-w-11"
               onClick={onReply}
               aria-label="Reply to message"
             >
-              <MessageSquare className="size-3.5" />
+              <MessageSquare className="size-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent>Reply</TooltipContent>
@@ -195,11 +196,12 @@ export function MessageItem({
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
-                  size="icon-xs"
+                  size="icon"
+                  className="min-h-11 min-w-11"
                   onClick={onEdit}
                   aria-label="Edit message"
                 >
-                  <Pencil className="size-3.5" />
+                  <Pencil className="size-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Edit</TooltipContent>
@@ -209,12 +211,12 @@ export function MessageItem({
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
-                  size="icon-xs"
+                  size="icon"
+                  className="min-h-11 min-w-11 text-destructive hover:text-destructive hover:bg-destructive/10"
                   onClick={onDelete}
                   aria-label="Delete message"
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
                 >
-                  <Trash2 className="size-3.5" />
+                  <Trash2 className="size-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Delete</TooltipContent>
@@ -226,10 +228,11 @@ export function MessageItem({
           <TooltipTrigger asChild>
             <Button
               variant="ghost"
-              size="icon-xs"
+              size="icon"
+              className="min-h-11 min-w-11"
               aria-label="More actions"
             >
-              <MoreHorizontal className="size-3.5" />
+              <MoreHorizontal className="size-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent>More</TooltipContent>

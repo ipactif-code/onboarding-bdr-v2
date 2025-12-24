@@ -41,6 +41,7 @@ export interface Conversation {
     createdAt: number;
   };
   unreadCount: number;
+  isFavorite?: boolean;
 }
 
 // ============================================================================

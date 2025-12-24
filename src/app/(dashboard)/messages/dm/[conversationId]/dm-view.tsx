@@ -137,6 +137,7 @@ export function DMView({ conversationId }: DMViewProps): React.ReactElement {
   return (
     <div data-slot="dm-view" className="flex h-full flex-col">
       <DMHeader
+        conversationId={conversationId}
         participants={participants}
         displayName={getDisplayName()}
         conversationType={conversation.type}

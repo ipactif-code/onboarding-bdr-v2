@@ -176,9 +176,13 @@ export function ChannelList({
     return <ChannelListSkeleton className={className} />;
   }
 
-  // Separate channels by membership
-  const memberChannels = channels.filter((c) => c.membership !== null);
-  const otherChannels = channels.filter((c) => c.membership === null);
+  // Filter out favorited channels (they appear in Favorites section)
+  // Then separate remaining channels by membership
+  const nonFavoriteChannels = channels.filter(
+    (c) => !c.membership?.isFavorite
+  );
+  const memberChannels = nonFavoriteChannels.filter((c) => c.membership !== null);
+  const otherChannels = nonFavoriteChannels.filter((c) => c.membership === null);
 
   return (
     <nav

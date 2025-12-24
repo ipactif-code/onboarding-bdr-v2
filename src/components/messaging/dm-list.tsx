@@ -79,8 +79,11 @@ export function DMList({
       {/* Conversation list */}
       <ScrollArea className="flex-1">
         <div className="space-y-0.5 p-2">
-          {conversations.length > 0 ? (
-            conversations.map((conversation: Conversation) => (
+          {/* Filter out favorited DMs - they appear in Favorites section */}
+          {conversations.filter((c: Conversation) => !c.isFavorite).length > 0 ? (
+            conversations
+              .filter((c: Conversation) => !c.isFavorite)
+              .map((conversation: Conversation) => (
               <ConversationItem
                 key={conversation._id}
                 conversation={conversation}

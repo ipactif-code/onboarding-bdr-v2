@@ -40,6 +40,7 @@ export const listConversations = query({
         })
       ),
       unreadCount: v.number(),
+      isFavorite: v.optional(v.boolean()),
     })
   ),
   handler: async (ctx) => {
@@ -139,6 +140,7 @@ export const listConversations = query({
           ),
           lastMessage,
           unreadCount,
+          isFavorite: participation.isFavorite,
         };
       })
     );

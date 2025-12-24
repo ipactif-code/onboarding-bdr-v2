@@ -24,6 +24,7 @@ interface ChannelMembership {
   isMuted: boolean;
   unreadCount: number;
   lastReadAt?: number;
+  isFavorite?: boolean;
 }
 
 /**

@@ -1,9 +1,40 @@
 "use client";
 
-import { ArrowLeft, Users } from "lucide-react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useMutation } from "convex/react";
+import {
+  ArrowLeft,
+  Users,
+  MoreVertical,
+  Star,
+  BellOff,
+  EyeOff,
+  LogOut,
+} from "lucide-react";
+import { toast } from "sonner";
 
+import { api } from "../../../../../../../convex/_generated/api";
+import { Id } from "../../../../../../../convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 import {
   Avatar,
   AvatarFallback,
@@ -22,6 +53,7 @@ export interface Participant {
 }
 
 export interface DMHeaderProps {
+  conversationId: string;
   participants: Participant[];
   displayName: string;
   conversationType: "direct" | "group" | "broadcast";
@@ -78,76 +110,203 @@ function getStatusColor(status: Participant["status"]): string {
 
 /**
  * Header component for direct message conversations.
- * Displays participant info, avatars, and online status.
+ * Displays participant info, avatars, online status, and action menu.
  */
 export function DMHeader({
+  conversationId,
   participants,
   displayName,
   conversationType,
   onBack,
 }: DMHeaderProps): React.ReactElement {
+  const router = useRouter();
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const [isHiding, setIsHiding] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+
+  const hideConversation = useMutation(api.directMessages.hide);
+  const leaveGroup = useMutation(api.directMessages.leaveGroup);
+  const toggleFavorite = useMutation(api.directMessages.toggleFavorite);
+
   const firstParticipant = participants[0];
   const isGroup = conversationType === "group" || participants.length > 1;
+  const isGroupDM = conversationType === "group" && participants.length >= 2;
+
+  const handleHide = async (): Promise<void> => {
+    try {
+      setIsHiding(true);
+      await hideConversation({
+        conversationId: conversationId as Id<"conversations">,
+      });
+      toast.success("Conversation hidden");
+      router.push("/messages");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to hide conversation"
+      );
+    } finally {
+      setIsHiding(false);
+    }
+  };
+
+  const handleLeaveGroup = async (): Promise<void> => {
+    try {
+      setIsLeaving(true);
+      await leaveGroup({
+        conversationId: conversationId as Id<"conversations">,
+      });
+      setShowLeaveDialog(false);
+      toast.success("You have left the group");
+      router.push("/messages");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to leave group"
+      );
+    } finally {
+      setIsLeaving(false);
+    }
+  };
+
+  const handleToggleFavorite = async (): Promise<void> => {
+    try {
+      const newState = await toggleFavorite({
+        conversationId: conversationId as Id<"conversations">,
+      });
+      toast.success(
+        newState ? "Added to favorites" : "Removed from favorites"
+      );
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update favorite"
+      );
+    }
+  };
 
   return (
-    <div
-      data-slot="dm-header"
-      className="flex h-14 items-center gap-3 border-b px-4"
-    >
-      {/* Back button (mobile-friendly) */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="md:hidden"
-        onClick={onBack}
-        aria-label="Back to messages"
+    <>
+      <div
+        data-slot="dm-header"
+        className="flex h-14 items-center gap-3 border-b px-4"
       >
-        <ArrowLeft className="size-5" />
-      </Button>
+        {/* Back button (mobile-friendly) */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          onClick={onBack}
+          aria-label="Back to messages"
+        >
+          <ArrowLeft className="size-5" aria-hidden="true" />
+        </Button>
 
-      {/* Avatar(s) */}
-      {isGroup ? (
-        <div className="relative flex size-10 items-center justify-center rounded-full bg-muted">
-          <Users className="size-5 text-muted-foreground" />
+        {/* Avatar(s) */}
+        {isGroup ? (
+          <div className="relative flex size-10 items-center justify-center rounded-full bg-muted">
+            <Users className="size-5 text-muted-foreground" aria-hidden="true" />
+          </div>
+        ) : firstParticipant ? (
+          <div className="relative">
+            <Avatar size="default">
+              {firstParticipant.avatarUrl ? (
+                <AvatarImage
+                  src={firstParticipant.avatarUrl}
+                  alt={firstParticipant.name}
+                />
+              ) : null}
+              <AvatarFallback>{getInitials(firstParticipant.name)}</AvatarFallback>
+            </Avatar>
+            {/* Online status indicator */}
+            <span
+              className={cn(
+                "absolute bottom-0 right-0 size-3 rounded-full border-2 border-background",
+                getStatusColor(firstParticipant.status)
+              )}
+              aria-label={`Status: ${firstParticipant.status}`}
+            />
+          </div>
+        ) : null}
+
+        {/* Name and status */}
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <h1 className="truncate text-sm font-semibold">{displayName}</h1>
+          {!isGroup && firstParticipant && (
+            <span className="text-xs text-muted-foreground capitalize">
+              {firstParticipant.status === "dnd"
+                ? "Do not disturb"
+                : firstParticipant.status}
+            </span>
+          )}
+          {isGroup && (
+            <span className="text-xs text-muted-foreground">
+              {participants.length} participants
+            </span>
+          )}
         </div>
-      ) : firstParticipant ? (
-        <div className="relative">
-          <Avatar size="default">
-            {firstParticipant.avatarUrl ? (
-              <AvatarImage
-                src={firstParticipant.avatarUrl}
-                alt={firstParticipant.name}
+
+        {/* Actions dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Conversation options"
               />
-            ) : null}
-            <AvatarFallback>{getInitials(firstParticipant.name)}</AvatarFallback>
-          </Avatar>
-          {/* Online status indicator */}
-          <span
-            className={cn(
-              "absolute bottom-0 right-0 size-3 rounded-full border-2 border-background",
-              getStatusColor(firstParticipant.status)
+            }
+          >
+            <MoreVertical className="size-4" aria-hidden="true" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleToggleFavorite}>
+              <Star className="mr-2 size-4" aria-hidden="true" />
+              Toggle favorite
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled>
+              <BellOff className="mr-2 size-4" aria-hidden="true" />
+              Mute conversation
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            {!isGroupDM && (
+              <DropdownMenuItem onClick={handleHide} disabled={isHiding}>
+                <EyeOff className="mr-2 size-4" aria-hidden="true" />
+                {isHiding ? "Hiding..." : "Hide conversation"}
+              </DropdownMenuItem>
             )}
-            aria-label={`Status: ${firstParticipant.status}`}
-          />
-        </div>
-      ) : null}
-
-      {/* Name and status */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <h1 className="truncate text-sm font-semibold">{displayName}</h1>
-        {!isGroup && firstParticipant && (
-          <span className="text-xs text-muted-foreground capitalize">
-            {firstParticipant.status === "dnd"
-              ? "Do not disturb"
-              : firstParticipant.status}
-          </span>
-        )}
-        {isGroup && (
-          <span className="text-xs text-muted-foreground">
-            {participants.length} participants
-          </span>
-        )}
+            {isGroupDM && (
+              <DropdownMenuItem
+                onClick={() => setShowLeaveDialog(true)}
+                variant="destructive"
+              >
+                <LogOut className="mr-2 size-4" aria-hidden="true" />
+                Leave group
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
-    </div>
+
+      {/* Leave Group Confirmation Dialog */}
+      <AlertDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave Group</AlertDialogTitle>
+            <AlertDialogDescription>
+              You will no longer receive messages from this group. You cannot
+              rejoin unless someone adds you back.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleLeaveGroup}
+              disabled={isLeaving}
+              variant="destructive"
+            >
+              {isLeaving ? "Leaving..." : "Leave Group"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

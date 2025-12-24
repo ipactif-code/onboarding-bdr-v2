@@ -26,6 +26,11 @@ import { FavoritesList } from "./favorites-list";
 import { ChannelListItem } from "./sidebar/channel-list-item";
 import { DMListItem } from "./sidebar/dm-list-item";
 import { OnlineIndicator, type Status } from "./online-indicator";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import { Hash, Lock } from "lucide-react";
 
 // ============================================================================
 // Types
@@ -186,6 +191,255 @@ function NewDMDialog({
 }
 
 // ============================================================================
+// CreateChannelDialog Component
+// ============================================================================
+
+interface CreateChannelDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+/** Regex pattern for valid channel names: alphanumeric, hyphens, underscores */
+const CHANNEL_NAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
+
+function CreateChannelDialog({
+  open,
+  onOpenChange,
+}: CreateChannelDialogProps): React.ReactElement {
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [channelType, setChannelType] = useState<"public" | "private">("public");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
+
+  const createChannel = useMutation(api.channels.create);
+
+  const validateName = useCallback((value: string): string | null => {
+    if (value.length < 2) {
+      return "Channel name must be at least 2 characters";
+    }
+    if (value.length > 80) {
+      return "Channel name must be at most 80 characters";
+    }
+    if (!CHANNEL_NAME_PATTERN.test(value)) {
+      return "Only letters, numbers, hyphens, and underscores allowed";
+    }
+    return null;
+  }, []);
+
+  const handleNameChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setName(value);
+      // Clear error while typing, validate on blur or submit
+      if (nameError && value.length >= 2 && CHANNEL_NAME_PATTERN.test(value)) {
+        setNameError(null);
+      }
+    },
+    [nameError]
+  );
+
+  const handleNameBlur = useCallback(() => {
+    if (name.trim()) {
+      setNameError(validateName(name.trim()));
+    }
+  }, [name, validateName]);
+
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+
+      const trimmedName = name.trim();
+      const validationError = validateName(trimmedName);
+      if (validationError) {
+        setNameError(validationError);
+        return;
+      }
+
+      try {
+        setIsSubmitting(true);
+        await createChannel({
+          name: trimmedName,
+          description: description.trim() || undefined,
+          type: channelType,
+        });
+        toast.success(`Channel #${trimmedName} created successfully`);
+        onOpenChange(false);
+        // Reset form
+        setName("");
+        setDescription("");
+        setChannelType("public");
+        setNameError(null);
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Failed to create channel";
+        toast.error(message);
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [name, description, channelType, createChannel, onOpenChange, validateName]
+  );
+
+  const handleOpenChange = useCallback(
+    (newOpen: boolean) => {
+      onOpenChange(newOpen);
+      if (!newOpen) {
+        // Reset form when closing
+        setName("");
+        setDescription("");
+        setChannelType("public");
+        setNameError(null);
+      }
+    },
+    [onOpenChange]
+  );
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Create a Channel</DialogTitle>
+          <DialogDescription>
+            Channels are where your team communicates. They&apos;re best when
+            organized around a topic.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Channel Name */}
+          <div className="space-y-2">
+            <Label htmlFor="channel-name">
+              Name <span className="text-destructive">*</span>
+            </Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                #
+              </span>
+              <Input
+                id="channel-name"
+                placeholder="e.g., project-alpha"
+                value={name}
+                onChange={handleNameChange}
+                onBlur={handleNameBlur}
+                className={cn("pl-7", nameError && "border-destructive")}
+                disabled={isSubmitting}
+                autoFocus
+                aria-invalid={!!nameError}
+                aria-describedby={nameError ? "channel-name-error" : undefined}
+              />
+            </div>
+            {nameError && (
+              <p
+                id="channel-name-error"
+                className="text-sm text-destructive"
+                role="alert"
+              >
+                {nameError}
+              </p>
+            )}
+          </div>
+
+          {/* Channel Type */}
+          <div className="space-y-3">
+            <Label>Visibility</Label>
+            <RadioGroup
+              value={channelType}
+              onValueChange={(value) =>
+                setChannelType(value as "public" | "private")
+              }
+              disabled={isSubmitting}
+              className="gap-3"
+            >
+              <label
+                htmlFor="channel-type-public"
+                className={cn(
+                  "flex cursor-pointer items-start gap-3 rounded-lg border p-3",
+                  "hover:bg-accent/50 transition-colors",
+                  channelType === "public" && "border-primary bg-accent/30"
+                )}
+              >
+                <RadioGroupItem value="public" id="channel-type-public" />
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center gap-2 font-medium">
+                    <Hash className="size-4 text-muted-foreground" />
+                    Public
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Anyone can find and join this channel
+                  </p>
+                </div>
+              </label>
+
+              <label
+                htmlFor="channel-type-private"
+                className={cn(
+                  "flex cursor-pointer items-start gap-3 rounded-lg border p-3",
+                  "hover:bg-accent/50 transition-colors",
+                  channelType === "private" && "border-primary bg-accent/30"
+                )}
+              >
+                <RadioGroupItem value="private" id="channel-type-private" />
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center gap-2 font-medium">
+                    <Lock className="size-4 text-muted-foreground" />
+                    Private
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Only invited members can access this channel
+                  </p>
+                </div>
+              </label>
+            </RadioGroup>
+          </div>
+
+          {/* Description */}
+          <div className="space-y-2">
+            <Label htmlFor="channel-description">
+              Description{" "}
+              <span className="text-muted-foreground font-normal">
+                (optional)
+              </span>
+            </Label>
+            <Textarea
+              id="channel-description"
+              placeholder="What's this channel about?"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              disabled={isSubmitting}
+              rows={3}
+              className="resize-none"
+            />
+          </div>
+
+          {/* Submit Button */}
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleOpenChange(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting || !name.trim()}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                "Create Channel"
+              )}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ============================================================================
 // MessagingSidebar Component
 // ============================================================================
 
@@ -210,6 +464,7 @@ export function MessagingSidebar({
   className,
 }: MessagingSidebarProps): React.ReactElement {
   const [isNewDMDialogOpen, setIsNewDMDialogOpen] = useState(false);
+  const [isCreateChannelDialogOpen, setIsCreateChannelDialogOpen] = useState(false);
   const pathname = usePathname();
 
   // Fetch channels and conversations
@@ -254,9 +509,7 @@ export function MessagingSidebar({
                 variant="ghost"
                 size="sm"
                 className="size-6 p-0"
-                onClick={() => {
-                  /* TODO: Create channel dialog */
-                }}
+                onClick={() => setIsCreateChannelDialogOpen(true)}
               >
                 <Plus className="size-4" />
                 <span className="sr-only">Create channel</span>
@@ -278,16 +531,18 @@ export function MessagingSidebar({
               </p>
             ) : (
               <div className="space-y-0.5">
-                {channels.map((channel) => (
-                  <ChannelListItem
-                    key={channel._id}
-                    id={channel._id}
-                    name={channel.name}
-                    isPrivate={channel.type === "private"}
-                    unreadCount={channel.membership?.unreadCount ?? 0}
-                    isActive={Boolean(isValidChannelId && activeChannelId === channel._id)}
-                  />
-                ))}
+                {channels
+                  .filter((channel) => !channel.membership?.isFavorite)
+                  .map((channel) => (
+                    <ChannelListItem
+                      key={channel._id}
+                      id={channel._id}
+                      name={channel.name}
+                      isPrivate={channel.type === "private"}
+                      unreadCount={channel.membership?.unreadCount ?? 0}
+                      isActive={Boolean(isValidChannelId && activeChannelId === channel._id)}
+                    />
+                  ))}
               </div>
             )}
           </CollapsibleSection>
@@ -324,20 +579,22 @@ export function MessagingSidebar({
               </p>
             ) : (
               <div className="space-y-0.5">
-                {conversations.map((conversation) => {
-                  // Get the other participant's info (first participant for direct messages)
-                  const otherParticipant = conversation.participants?.[0];
-                  return (
-                    <DMListItem
-                      key={conversation._id}
-                      conversationId={conversation._id}
-                      name={otherParticipant?.name ?? "Unknown"}
-                      avatarUrl={otherParticipant?.avatarUrl}
-                      status={otherParticipant?.status ?? "offline"}
-                      isActive={activeConversationId === conversation._id}
-                    />
-                  );
-                })}
+                {conversations
+                  .filter((conversation) => !conversation.isFavorite)
+                  .map((conversation) => {
+                    // Get the other participant's info (first participant for direct messages)
+                    const otherParticipant = conversation.participants?.[0];
+                    return (
+                      <DMListItem
+                        key={conversation._id}
+                        conversationId={conversation._id}
+                        name={otherParticipant?.name ?? "Unknown"}
+                        avatarUrl={otherParticipant?.avatarUrl}
+                        status={otherParticipant?.status ?? "offline"}
+                        isActive={activeConversationId === conversation._id}
+                      />
+                    );
+                  })}
               </div>
             )}
           </CollapsibleSection>
@@ -348,6 +605,12 @@ export function MessagingSidebar({
       <NewDMDialog
         open={isNewDMDialogOpen}
         onOpenChange={setIsNewDMDialogOpen}
+      />
+
+      {/* Create Channel Dialog */}
+      <CreateChannelDialog
+        open={isCreateChannelDialogOpen}
+        onOpenChange={setIsCreateChannelDialogOpen}
       />
     </div>
   );

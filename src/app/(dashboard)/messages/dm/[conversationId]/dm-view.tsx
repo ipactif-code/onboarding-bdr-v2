@@ -62,7 +62,7 @@ export function DMView({ conversationId }: DMViewProps): React.ReactElement {
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     if (isAtBottom && bottomRef.current) {
-      bottomRef.current.scrollIntoView({ behavior: "smooth" });
+      bottomRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
   }, [conversationData?.messages.length, isAtBottom]);
 
@@ -92,7 +92,7 @@ export function DMView({ conversationId }: DMViewProps): React.ReactElement {
   );
 
   const scrollToBottom = useCallback(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, []);
 
   // Loading state

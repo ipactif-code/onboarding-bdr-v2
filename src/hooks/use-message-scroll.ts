@@ -109,7 +109,7 @@ export function useMessageScroll({
 
       // Auto-scroll if user was at bottom
       if (isAtBottom && bottomRef.current) {
-        bottomRef.current.scrollIntoView({ behavior: "smooth" });
+        bottomRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }
 
       return () => clearTimeout(timer);
@@ -136,7 +136,7 @@ export function useMessageScroll({
   // ========================================================================
 
   const scrollToBottom = useCallback(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, []);
 
   return {

@@ -487,7 +487,7 @@ export function MessagingSidebar({
       data-slot="messaging-sidebar"
       className={cn("flex h-full flex-col", className)}
     >
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 h-0">
         <div className="py-2">
           {/* Quick Navigation - always visible */}
           <QuickNavigation className="mb-2" />

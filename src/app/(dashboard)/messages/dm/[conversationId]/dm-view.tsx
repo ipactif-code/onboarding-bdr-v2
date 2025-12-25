@@ -151,6 +151,7 @@ export function DMView({ conversationId }: DMViewProps): React.ReactElement {
         onScrollToBottom={scrollToBottom}
         scrollAreaRef={scrollAreaRef}
         bottomRef={bottomRef}
+        className="flex-1"
       />
 
       <DMMessageInput

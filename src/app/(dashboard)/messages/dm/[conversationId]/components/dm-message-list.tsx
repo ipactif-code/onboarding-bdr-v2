@@ -28,6 +28,7 @@ export interface DMMessageListProps {
   onScrollToBottom: () => void;
   scrollAreaRef: React.RefObject<HTMLDivElement | null>;
   bottomRef: React.RefObject<HTMLDivElement | null>;
+  className?: string;
 }
 
 /** Generates initials from a display name. */
@@ -143,9 +144,10 @@ export function DMMessageList({
   onScrollToBottom,
   scrollAreaRef,
   bottomRef,
+  className,
 }: DMMessageListProps): React.ReactElement {
   return (
-    <div className="relative flex flex-1 flex-col overflow-hidden">
+    <div className={cn("relative flex flex-1 flex-col overflow-hidden", className)}>
       <div
         ref={scrollAreaRef}
         onScroll={onScroll}

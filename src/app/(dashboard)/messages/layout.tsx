@@ -23,7 +23,7 @@ export default function MessagesLayout({
   return (
     <div className="flex h-full w-full overflow-hidden">
       {/* Sidebar with Slack-like collapsible sections */}
-      <aside className="w-64 shrink-0 border-r bg-muted/30">
+      <aside className="h-full w-64 shrink-0 border-r bg-muted/30">
         <MessagingSidebar />
       </aside>
 

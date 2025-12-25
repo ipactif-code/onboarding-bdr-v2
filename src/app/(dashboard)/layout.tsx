@@ -67,7 +67,7 @@ export default function DashboardLayout({
       <AuthReadyGuard>
         <UserProvider>
           <AppSidebar />
-          <SidebarInset className="h-screen min-w-0">
+          <SidebarInset className="min-w-0">
             {!hideHeader && <AppHeader />}
             <div
               className={cn(

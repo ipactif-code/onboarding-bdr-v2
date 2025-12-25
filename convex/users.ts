@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { query, mutation, internalMutation, QueryCtx } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
+import { internal } from "./_generated/api";
 import { getCurrentUser, requireAuth, requireAdmin, requireSelfOrAdmin, ensureUser } from "./lib/auth";
 
 // ============================================================================
@@ -641,6 +642,8 @@ export const ensureCurrentUser = mutation({
  * Server-side user creation (called from Next.js Server Components).
  * This is used when a user is authenticated via Clerk but not yet in Convex.
  * Unlike ensureCurrentUser, this doesn't require Convex auth context.
+ *
+ * T008: After creating a new user, enrolls them in all "all_teams" course channels.
  */
 export const createFromClerk = mutation({
   args: {
@@ -672,6 +675,13 @@ export const createFromClerk = mutation({
       lastActiveAt: Date.now(),
     });
 
+    // T008: Enroll new user in all "all_teams" course channels
+    await ctx.scheduler.runAfter(
+      0,
+      internal.channels.courseChannelCreation.enrollUserInAllTeamsChannels,
+      { userId }
+    );
+
     return userId;
   },
 });
@@ -682,6 +692,8 @@ export const createFromClerk = mutation({
 
 /**
  * Sync user from Clerk webhook. Creates or updates user.
+ *
+ * T008: When creating a new user, schedules enrollment in all "all_teams" course channels.
  */
 export const syncFromClerk = internalMutation({
   args: {
@@ -706,7 +718,8 @@ export const syncFromClerk = internalMutation({
       return existing._id;
     }
 
-    return await ctx.db.insert("users", {
+    // Create new user
+    const userId = await ctx.db.insert("users", {
       clerkId: args.clerkId,
       email: args.email,
       name: args.name,
@@ -714,6 +727,15 @@ export const syncFromClerk = internalMutation({
       role: "user",
       status: "offline",
     });
+
+    // T008: Enroll new user in all "all_teams" course channels
+    await ctx.scheduler.runAfter(
+      0,
+      internal.channels.courseChannelCreation.enrollUserInAllTeamsChannels,
+      { userId }
+    );
+
+    return userId;
   },
 });
 

@@ -1,12 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, MessageCircle } from "lucide-react";
 
 import { type ChannelMessage } from "@/hooks/use-messages";
+import { useMessageScroll } from "@/hooks/use-message-scroll";
+import { useMessageIntersection } from "@/hooks/use-message-intersection";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { MessageItem, MessageItemSkeleton } from "@/components/messaging/message-item";
+import { MessageItem } from "@/components/messaging/message-item";
+import { MessageListSkeleton } from "@/components/messaging/message-list-skeleton";
 import { Id } from "../../../convex/_generated/dataModel";
 
 // ============================================================================
@@ -14,49 +16,27 @@ import { Id } from "../../../convex/_generated/dataModel";
 // ============================================================================
 
 export interface MessageListProps {
-  /**
-   * Array of messages to display.
-   */
+  /** Array of messages to display. */
   messages: ChannelMessage[];
-  /**
-   * Whether the initial messages are loading.
-   */
+  /** Whether the initial messages are loading. */
   isLoading?: boolean;
-  /**
-   * Whether there are more messages to load.
-   */
+  /** Whether there are more messages to load. */
   hasMore?: boolean;
-  /**
-   * Whether older messages are currently being loaded.
-   */
+  /** Whether older messages are currently being loaded. */
   isLoadingMore?: boolean;
-  /**
-   * Callback to load more (older) messages.
-   */
+  /** Callback to load more (older) messages. */
   onLoadMore?: () => void;
-  /**
-   * Callback when a message becomes visible (for marking as read).
-   */
+  /** Callback when a message becomes visible (for marking as read). */
   onMessageVisible?: (messageId: Id<"messages">, createdAt: number) => void;
-  /**
-   * Callback when user wants to reply to a message.
-   */
+  /** Callback when user wants to reply to a message. */
   onReply?: (messageId: Id<"messages">) => void;
-  /**
-   * Callback when user wants to edit a message.
-   */
+  /** Callback when user wants to edit a message. */
   onEdit?: (messageId: Id<"messages">) => void;
-  /**
-   * Callback when user wants to delete a message.
-   */
+  /** Callback when user wants to delete a message. */
   onDelete?: (messageId: Id<"messages">) => void;
-  /**
-   * The current user's ID for determining message ownership.
-   */
+  /** The current user's ID for determining message ownership. */
   currentUserId?: Id<"users">;
-  /**
-   * Optional className for the container.
-   */
+  /** Optional className for the container. */
   className?: string;
 }
 
@@ -71,21 +51,8 @@ export interface MessageListProps {
  * - Real-time message updates
  * - Infinite scroll to load older messages
  * - Auto-scroll to bottom on new messages (if already at bottom)
- * - IntersectionObserver to detect visible messages (T035)
+ * - IntersectionObserver to detect visible messages
  * - Loading states and skeletons
- *
- * @example
- * ```tsx
- * const { messages, isLoading, hasMore, loadMore } = useChannelMessages({ channelId });
- *
- * <MessageList
- *   messages={messages}
- *   isLoading={isLoading}
- *   hasMore={hasMore}
- *   onLoadMore={loadMore}
- *   onMessageVisible={(id, createdAt) => markAsRead(createdAt)}
- * />
- * ```
  */
 export function MessageList({
   messages,
@@ -100,150 +67,28 @@ export function MessageList({
   currentUserId,
   className,
 }: MessageListProps): React.ReactElement {
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const topRef = useRef<HTMLDivElement>(null);
-  const [isAtBottom, setIsAtBottom] = useState(true);
-  const previousMessagesLengthRef = useRef(messages.length);
+  // Scroll behavior hook
+  const {
+    scrollAreaRef,
+    bottomRef,
+    isAtBottom,
+    handleScroll,
+    scrollToBottom,
+    announcement,
+  } = useMessageScroll({
+    messagesLength: messages.length,
+    isLoadingMore,
+  });
 
-  // Aria-live announcement for new messages (accessibility)
-  const [announcement, setAnnouncement] = useState<string>("");
-
-  // Track the latest visible message for auto-read
-  const latestVisibleMessageRef = useRef<{
-    messageId: Id<"messages">;
-    createdAt: number;
-  } | null>(null);
-
-  // ========================================================================
-  // IntersectionObserver for infinite scroll (load more)
-  // ========================================================================
-
-  useEffect(() => {
-    if (!topRef.current || !hasMore || isLoadingMore) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries;
-        if (entry?.isIntersecting && hasMore && !isLoadingMore) {
-          onLoadMore?.();
-        }
-      },
-      {
-        root: scrollAreaRef.current,
-        rootMargin: "100px 0px 0px 0px", // Trigger 100px before reaching top
-        threshold: 0,
-      }
-    );
-
-    observer.observe(topRef.current);
-
-    return () => observer.disconnect();
-  }, [hasMore, isLoadingMore, onLoadMore]);
-
-  // ========================================================================
-  // IntersectionObserver for marking messages as read (T035)
-  // ========================================================================
-
-  useEffect(() => {
-    if (!scrollAreaRef.current || messages.length === 0) return;
-
-    // Create observer for message visibility
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            const messageId = entry.target.getAttribute("data-message-id");
-            const createdAt = entry.target.getAttribute("data-created-at");
-
-            if (messageId && createdAt) {
-              const createdAtNum = parseInt(createdAt, 10);
-              const currentLatest = latestVisibleMessageRef.current;
-
-              // Only update if this message is newer than the current latest
-              if (!currentLatest || createdAtNum > currentLatest.createdAt) {
-                latestVisibleMessageRef.current = {
-                  messageId: messageId as Id<"messages">,
-                  createdAt: createdAtNum,
-                };
-
-                // Notify parent about the visible message
-                onMessageVisible?.(
-                  messageId as Id<"messages">,
-                  createdAtNum
-                );
-              }
-            }
-          }
-        }
-      },
-      {
-        root: scrollAreaRef.current,
-        rootMargin: "0px",
-        threshold: 0.5, // Message is considered visible when 50% is in view
-      }
-    );
-
-    // Observe all message elements
-    const messageElements = scrollAreaRef.current.querySelectorAll(
-      "[data-slot='message-item']"
-    );
-    messageElements.forEach((el) => observer.observe(el));
-
-    return () => observer.disconnect();
-  }, [messages, onMessageVisible]);
-
-  // ========================================================================
-  // Auto-scroll to bottom on new messages + aria-live announcement
-  // ========================================================================
-
-  useEffect(() => {
-    const previousLength = previousMessagesLengthRef.current;
-    const hasNewMessages = messages.length > previousLength;
-    previousMessagesLengthRef.current = messages.length;
-
-    // Only process if new messages arrived (not during initial load or loadMore)
-    if (hasNewMessages && !isLoadingMore) {
-      const newCount = messages.length - previousLength;
-
-      // Announce new messages for screen readers
-      setAnnouncement(
-        `${newCount} new message${newCount > 1 ? "s" : ""} received`
-      );
-      // Clear announcement after it has been read
-      const timer = setTimeout(() => setAnnouncement(""), 1000);
-
-      // Auto-scroll if user was at bottom
-      if (isAtBottom && bottomRef.current) {
-        bottomRef.current.scrollIntoView({ behavior: "smooth" });
-      }
-
-      return () => clearTimeout(timer);
-    }
-    return undefined;
-  }, [messages.length, isAtBottom, isLoadingMore]);
-
-  // ========================================================================
-  // Track scroll position to determine if at bottom
-  // ========================================================================
-
-  const handleScroll = useCallback((event: React.UIEvent<HTMLDivElement>) => {
-    const target = event.currentTarget;
-    const threshold = 100; // Consider "at bottom" if within 100px
-
-    const isNearBottom =
-      target.scrollHeight - target.scrollTop - target.clientHeight < threshold;
-
-    setIsAtBottom(isNearBottom);
-  }, []);
-
-  // ========================================================================
-  // Scroll to bottom button
-  // ========================================================================
-
-  const scrollToBottom = useCallback(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, []);
+  // Intersection observer hook for load-more and visibility tracking
+  const { topRef } = useMessageIntersection({
+    scrollAreaRef,
+    messages,
+    hasMore,
+    isLoadingMore,
+    onLoadMore,
+    onMessageVisible,
+  });
 
   // ========================================================================
   // Render
@@ -262,7 +107,7 @@ export function MessageList({
           className
         )}
       >
-        <MessageCircle className="mb-4 size-12 text-muted-foreground/50" />
+        <MessageCircle className="mb-4 size-12 text-muted-foreground/50" aria-hidden="true" />
         <h3 className="text-lg font-medium">No messages yet</h3>
         <p className="mt-1 text-sm text-muted-foreground">
           Be the first to send a message in this channel!
@@ -306,7 +151,7 @@ export function MessageList({
           {/* Loading indicator for older messages */}
           {isLoadingMore && (
             <div className="flex items-center justify-center py-4">
-              <Loader2 className="size-5 animate-spin text-muted-foreground" />
+              <Loader2 className="size-5 animate-spin text-muted-foreground" aria-hidden="true" />
               <span className="ml-2 text-sm text-muted-foreground">
                 Loading older messages...
               </span>
@@ -347,6 +192,7 @@ export function MessageList({
                 isEdited={message.isEdited}
                 threadReplyCount={message.threadReplyCount}
                 status={message.status ?? "sent"}
+                lesson={message.lesson}
                 onReply={onReply ? () => onReply(message._id) : undefined}
                 onEdit={
                   onEdit && currentUserId === message.senderId
@@ -379,29 +225,6 @@ export function MessageList({
           New messages
         </Button>
       )}
-    </div>
-  );
-}
-
-// ============================================================================
-// Skeleton
-// ============================================================================
-
-function MessageListSkeleton({
-  className,
-}: {
-  className?: string;
-}): React.ReactElement {
-  return (
-    <div
-      data-slot="message-list-skeleton"
-      className={cn("flex flex-1 flex-col overflow-hidden", className)}
-    >
-      <div className="flex-1 space-y-1 p-4">
-        {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-          <MessageItemSkeleton key={i} />
-        ))}
-      </div>
     </div>
   );
 }

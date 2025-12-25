@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "convex/react";
+import { toast } from "sonner";
 import { api } from "../../../../../convex/_generated/api";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, ChevronRight, Flag, CheckCircle, Loader2 } from "lucide-react";
 import { LessonContent } from "./lessons/[lessonId]/lesson-content";
+import { LessonViewerSkeleton, LessonNotFound } from "./lesson-viewer-skeleton";
 import { CourseWithProgress, LessonFull } from "@/types/course";
 import { Id } from "../../../../../convex/_generated/dataModel";
 
@@ -18,7 +19,7 @@ interface LessonViewerProps {
   isLoading: boolean;
 }
 
-export function LessonViewer({ course, lesson, isLoading }: LessonViewerProps) {
+export function LessonViewer({ course, lesson, isLoading }: LessonViewerProps): React.ReactElement | null {
   const router = useRouter();
   const markStarted = useMutation(api.progress.markStarted);
   const markCompleted = useMutation(api.progress.markCompleted);
@@ -54,19 +55,20 @@ export function LessonViewer({ course, lesson, isLoading }: LessonViewerProps) {
   // Mark lesson as started when it loads
   useEffect(() => {
     if (lesson?._id) {
-      markStarted({ lessonId: lesson._id }).catch((error) => {
-        console.error("Failed to mark lesson as started:", error);
+      markStarted({ lessonId: lesson._id }).catch(() => {
+        // Silently fail - this is a non-critical background operation
+        // The user can still view the lesson even if progress tracking fails
       });
     }
   }, [lesson?._id, markStarted]);
 
   // Navigate to lesson
-  const navigateToLesson = (lessonId: Id<"lessons">) => {
+  const navigateToLesson = (lessonId: Id<"lessons">): void => {
     router.push(`/courses/${course._id}?lesson=${lessonId}`, { scroll: false });
   };
 
   // Mark complete and navigate to next
-  const handleMarkCompleteAndNext = async () => {
+  const handleMarkCompleteAndNext = async (): Promise<void> => {
     if (!lesson) return;
 
     setIsCompleting(true);
@@ -77,8 +79,8 @@ export function LessonViewer({ course, lesson, isLoading }: LessonViewerProps) {
       if (navigation.next) {
         navigateToLesson(navigation.next._id);
       }
-    } catch (error) {
-      console.error("Failed to mark lesson as completed:", error);
+    } catch {
+      toast.error("Failed to mark lesson as completed. Please try again.");
     } finally {
       setIsCompleting(false);
     }
@@ -91,18 +93,7 @@ export function LessonViewer({ course, lesson, isLoading }: LessonViewerProps) {
 
   // Lesson not found
   if (lesson === null) {
-    return (
-      <div className="flex flex-col h-full overflow-hidden">
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-xl font-semibold">Lesson not found</h2>
-            <p className="text-muted-foreground mt-2">
-              This lesson doesn&apos;t exist or you don&apos;t have access.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
+    return <LessonNotFound />;
   }
 
   // No lesson selected (shouldn't happen with auto-select, but fallback)
@@ -138,7 +129,7 @@ export function LessonViewer({ course, lesson, isLoading }: LessonViewerProps) {
       <div className="border-t border-border px-6 py-4 shrink-0">
         <div className="flex items-center justify-between">
           <Button variant="ghost" size="sm" className="text-muted-foreground">
-            <Flag className="size-4" data-icon="inline-start" />
+            <Flag className="size-4" data-icon="inline-start" aria-hidden="true" />
             Report Issue
           </Button>
 
@@ -149,12 +140,12 @@ export function LessonViewer({ course, lesson, isLoading }: LessonViewerProps) {
                 variant="outline"
                 onClick={() => navigateToLesson(navigation.prev!._id)}
               >
-                <ChevronLeft className="size-4" data-icon="inline-start" />
+                <ChevronLeft className="size-4" data-icon="inline-start" aria-hidden="true" />
                 Back
               </Button>
             ) : (
               <Button variant="outline" disabled>
-                <ChevronLeft className="size-4" data-icon="inline-start" />
+                <ChevronLeft className="size-4" data-icon="inline-start" aria-hidden="true" />
                 Back
               </Button>
             )}
@@ -165,11 +156,11 @@ export function LessonViewer({ course, lesson, isLoading }: LessonViewerProps) {
               navigation.next ? (
                 <Button onClick={() => navigateToLesson(navigation.next!._id)}>
                   Next Chapter
-                  <ChevronRight className="size-4" data-icon="inline-end" />
+                  <ChevronRight className="size-4" data-icon="inline-end" aria-hidden="true" />
                 </Button>
               ) : (
                 <Button disabled>
-                  <CheckCircle className="size-4" data-icon="inline-start" />
+                  <CheckCircle className="size-4" data-icon="inline-start" aria-hidden="true" />
                   Course Complete
                 </Button>
               )
@@ -178,55 +169,23 @@ export function LessonViewer({ course, lesson, isLoading }: LessonViewerProps) {
               <Button onClick={handleMarkCompleteAndNext} disabled={isCompleting}>
                 {isCompleting ? (
                   <>
-                    <Loader2 className="size-4 animate-spin" data-icon="inline-start" />
+                    <Loader2 className="size-4 animate-spin" data-icon="inline-start" aria-hidden="true" />
                     Saving...
                   </>
                 ) : navigation.next ? (
                   <>
                     Mark Complete & Continue
-                    <ChevronRight className="size-4" data-icon="inline-end" />
+                    <ChevronRight className="size-4" data-icon="inline-end" aria-hidden="true" />
                   </>
                 ) : (
                   <>
-                    <CheckCircle className="size-4" data-icon="inline-start" />
+                    <CheckCircle className="size-4" data-icon="inline-start" aria-hidden="true" />
                     Mark Complete
                   </>
                 )}
               </Button>
             )}
           </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function LessonViewerSkeleton() {
-  return (
-    <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex-1 p-6 space-y-6">
-        {/* Header skeleton */}
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-48" />
-          <Skeleton className="h-10 w-96" />
-          <Skeleton className="h-4 w-64" />
-        </div>
-        {/* Content skeleton */}
-        <div className="space-y-4">
-          <Skeleton className="h-6 w-full" />
-          <Skeleton className="h-6 w-full" />
-          <Skeleton className="h-6 w-3/4" />
-          <Skeleton className="h-40 w-full rounded-xl" />
-          <Skeleton className="h-6 w-full" />
-          <Skeleton className="h-6 w-2/3" />
-        </div>
-      </div>
-      {/* Footer skeleton */}
-      <div className="border-t px-6 py-4 flex items-center justify-between">
-        <Skeleton className="h-9 w-32" />
-        <div className="flex gap-3">
-          <Skeleton className="h-9 w-24" />
-          <Skeleton className="h-9 w-48" />
         </div>
       </div>
     </div>

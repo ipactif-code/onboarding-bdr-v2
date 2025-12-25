@@ -11,7 +11,11 @@
  */
 
 // Channel messaging queries
-export { listByChannel, getChannelMessage } from "./messages/channelQueries";
+export {
+  listByChannel,
+  getChannelMessage,
+  getLessonDiscussion,
+} from "./messages/channelQueries";
 
 // Channel messaging mutations
 export {

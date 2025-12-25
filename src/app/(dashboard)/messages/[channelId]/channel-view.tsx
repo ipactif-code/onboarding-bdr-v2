@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "convex/react";
 import { toast } from "sonner";
 
@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { ChannelHeader } from "@/components/messaging/channel-header";
 import { MessageList } from "@/components/messaging/message-list";
 import { MessageInput } from "@/components/messaging/message-input";
+import { LessonSelector } from "@/components/messaging/lesson-selector";
 
 // ============================================================================
 // Types
@@ -71,6 +72,9 @@ export function ChannelView({ channelId }: ChannelViewProps): React.ReactElement
   // Ref to track the last read timestamp to debounce markAsRead calls
   const lastReadAtRef = useRef<number>(0);
 
+  // State for selected lesson in course channels (T007)
+  const [selectedLessonId, setSelectedLessonId] = useState<Id<"lessons"> | null>(null);
+
   // ========================================================================
   // Mark as read when messages become visible (T035)
   // ========================================================================
@@ -114,14 +118,19 @@ export function ChannelView({ channelId }: ChannelViewProps): React.ReactElement
   const handleSendMessage = useCallback(
     async (content: string) => {
       try {
-        await sendMessage(content);
+        // Pass lessonId for course channels if a lesson is selected (T007)
+        await sendMessage(content, {
+          lessonId: selectedLessonId ?? undefined,
+        });
+        // Reset lesson selection after sending (optional: keep selection sticky)
+        // Note: We keep the selection sticky for better UX when discussing a lesson
         // Auto-scroll is handled by MessageList
       } catch (error) {
         const message = error instanceof Error ? error.message : "Failed to send message";
         toast.error(message);
       }
     },
-    [sendMessage]
+    [sendMessage, selectedLessonId]
   );
 
   const handleReply = useCallback((_messageId: Id<"messages">) => {
@@ -253,6 +262,16 @@ export function ChannelView({ channelId }: ChannelViewProps): React.ReactElement
       {/* Message input */}
       {!channel.isArchived && (
         <div className="border-t p-4">
+          {/* Lesson selector for course channels (T007) */}
+          {channel.courseId && (
+            <div className="mb-2">
+              <LessonSelector
+                courseId={channel.courseId}
+                selectedLessonId={selectedLessonId}
+                onLessonChange={setSelectedLessonId}
+              />
+            </div>
+          )}
           <MessageInput
             onSend={handleSendMessage}
             placeholder={`Message #${channel.name}`}

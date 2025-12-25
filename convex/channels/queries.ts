@@ -68,13 +68,20 @@ export const list = query({
     }> = [];
 
     for (const channel of filteredChannels) {
+      const membership = membershipMap.get(channel._id.toString());
+
+      // Skip channels where user has explicitly left (via leftAt)
+      // This ensures unassigned course channels don't appear in the list
+      if (membership?.leftAt) {
+        continue;
+      }
+
       // Check if user can access this channel
       const hasAccess = await canAccessChannel(ctx, channel._id, user._id);
       if (!hasAccess) {
         continue;
       }
 
-      const membership = membershipMap.get(channel._id.toString());
       accessibleChannels.push({ channel, membership });
     }
 

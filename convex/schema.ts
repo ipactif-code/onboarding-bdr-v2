@@ -298,6 +298,7 @@ export default defineSchema({
     .index("by_parent", ["parentId"])
     .index("by_parent_time", ["parentId", "createdAt"])
     .index("by_lesson", ["lessonId"])
+    .index("by_lesson_channel", ["lessonId", "channelId"])
     .index("by_sender", ["senderId"])
     .index("by_sender_time", ["senderId", "createdAt"])
     .index("by_deleted", ["deletedAt"])

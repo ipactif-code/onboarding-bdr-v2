@@ -5,6 +5,11 @@ import { api } from "../../../../convex/_generated/api";
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
+// Type workaround: Convex API has deeply nested types that exceed TS depth limit
+// @ts-expect-error - Convex API type instantiation is excessively deep
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const apiRef: any = api;
+
 export async function POST(request: NextRequest) {
   try {
     // 1. Verify authentication
@@ -17,7 +22,9 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Check if current user is admin (getByClerkId is public, no auth required)
-    const currentUser = await convex.query(api.users.getByClerkId, { clerkId: userId });
+    const currentUser = await convex.query(apiRef.users.getByClerkId, { clerkId: userId }) as {
+      role: string;
+    } | null;
     if (!currentUser || currentUser.role !== "admin") {
       return NextResponse.json(
         { error: "Forbidden: Admin access required" },

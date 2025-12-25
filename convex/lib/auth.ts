@@ -1,5 +1,6 @@
 import { QueryCtx, MutationCtx } from "../_generated/server";
 import { Doc, Id } from "../_generated/dataModel";
+import { internal } from "../_generated/api";
 import { isChannelMember, hasChannelRole } from "./permissions";
 
 /**
@@ -24,6 +25,8 @@ export async function getCurrentUser(
  * Ensure the current authenticated user exists in the database.
  * Creates the user if they don't exist (for mutation contexts only).
  * Returns the user or null if not authenticated.
+ *
+ * T008: When creating a new user, schedules enrollment in all "all_teams" course channels.
  */
 export async function ensureUser(
   ctx: MutationCtx
@@ -58,6 +61,13 @@ export async function ensureUser(
     status: "online",
     lastActiveAt: Date.now(),
   });
+
+  // T008: Enroll new user in all "all_teams" course channels
+  await ctx.scheduler.runAfter(
+    0,
+    internal.channels.courseChannelCreation.enrollUserInAllTeamsChannels,
+    { userId }
+  );
 
   return await ctx.db.get(userId);
 }

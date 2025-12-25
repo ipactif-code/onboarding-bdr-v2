@@ -12,6 +12,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { InlineDiscussionContent } from "@/components/messaging/course-discussion/inline-discussion-content";
 import { cn } from "@/lib/utils";
 import { CourseWithProgress } from "@/types/course";
 import { Id } from "../../../../../convex/_generated/dataModel";
@@ -50,7 +51,7 @@ export function CourseSidebar({ course, selectedLessonId }: CourseSidebarProps) 
       {/* Tabs Header */}
       <Tabs defaultValue="summary" className="flex flex-col h-full min-h-0">
         <div className="border-b border-border px-3">
-          <TabsList className="bg-transparent h-auto p-0 gap-2">
+          <TabsList className="bg-transparent h-auto p-0 gap-2" aria-label="Course navigation tabs">
             <TabsTrigger
               value="summary"
               className="data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 data-[state=active]:shadow-none rounded-none px-1 py-2.5 font-semibold text-sm"
@@ -172,11 +173,12 @@ export function CourseSidebar({ course, selectedLessonId }: CourseSidebarProps) 
           </ScrollArea>
         </TabsContent>
 
-        {/* Comments Tab Content */}
-        <TabsContent value="comments" className="flex-1 m-0 p-4">
-          <div className="text-center text-muted-foreground py-8">
-            <p>Comments will be displayed here</p>
-          </div>
+        {/* Comments Tab Content - Discussion Panel */}
+        <TabsContent value="comments" className="flex-1 m-0 min-h-0 flex flex-col">
+          <InlineDiscussionContent
+            courseId={course._id}
+            lessonId={selectedLessonId ? (selectedLessonId as Id<"lessons">) : undefined}
+          />
         </TabsContent>
 
         {/* Files Tab Content */}

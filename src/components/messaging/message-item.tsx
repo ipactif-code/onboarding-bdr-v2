@@ -1,6 +1,5 @@
 "use client";
 
-import { formatDistanceToNow } from "date-fns";
 import { Check, MessageSquare, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 
 import {
@@ -9,13 +8,19 @@ import {
   AvatarImage,
 } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui-plate/tooltip";
 import { cn } from "@/lib/utils";
+import { getInitials, formatTimestamp } from "@/lib/message-utils";
+import { LessonBadge } from "@/components/messaging/lesson-badge";
+import { MessageItemSkeleton } from "@/components/messaging/message-item-skeleton";
+
+// ============================================================================
+// Types
+// ============================================================================
 
 export interface MessageItemProps {
   id: string;
@@ -28,54 +33,18 @@ export interface MessageItemProps {
   isEdited?: boolean;
   threadReplyCount?: number;
   status?: "sending" | "sent" | "failed";
+  /** Lesson information for messages linked to a course lesson. */
+  lesson?: {
+    title: string;
+  };
   onReply?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
 }
 
-/**
- * Generates initials from a display name.
- * Returns up to 2 characters (first letter of first two words).
- */
-function getInitials(name: string): string {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  const firstWord = words[0];
-  const secondWord = words[1];
-
-  if (!firstWord) {
-    return "?";
-  }
-
-  if (!secondWord) {
-    return firstWord.length >= 2
-      ? firstWord.slice(0, 2).toUpperCase()
-      : firstWord.toUpperCase();
-  }
-
-  const first = firstWord[0] ?? "";
-  const second = secondWord[0] ?? "";
-  return (first + second).toUpperCase();
-}
-
-/**
- * Formats a timestamp into a human-readable relative time.
- * For recent messages shows relative time, for older messages shows date.
- */
-function formatTimestamp(timestamp: number): string {
-  const date = new Date(timestamp);
-  const now = new Date();
-  const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-
-  if (diffInDays < 7) {
-    return formatDistanceToNow(date, { addSuffix: true });
-  }
-
-  return date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
-  });
-}
+// ============================================================================
+// MessageItem Component
+// ============================================================================
 
 /**
  * MessageItem component displays a single message in a conversation.
@@ -93,6 +62,7 @@ export function MessageItem({
   isEdited = false,
   threadReplyCount = 0,
   status = "sent",
+  lesson,
   onReply,
   onEdit,
   onDelete,
@@ -136,7 +106,9 @@ export function MessageItem({
           {isOwn && status === "sent" && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <Check className="size-3 text-muted-foreground" />
+                <span tabIndex={0} className="inline-flex" aria-label="Message sent">
+                  <Check className="size-3 text-muted-foreground" aria-hidden="true" />
+                </span>
               </TooltipTrigger>
               <TooltipContent>Sent</TooltipContent>
             </Tooltip>
@@ -148,8 +120,15 @@ export function MessageItem({
           )}
         </div>
 
+        {/* Lesson badge for messages linked to a course lesson */}
+        {lesson && (
+          <div className="mt-1">
+            <LessonBadge lessonTitle={lesson.title} />
+          </div>
+        )}
+
         {/* Message body */}
-        <div className="mt-1 text-sm text-foreground whitespace-pre-wrap break-words">
+        <div className="mt-1 whitespace-pre-wrap break-words text-sm text-foreground">
           {content}
         </div>
 
@@ -159,8 +138,9 @@ export function MessageItem({
             type="button"
             onClick={onReply}
             className="mt-2 flex items-center gap-1.5 text-xs text-primary hover:underline"
+            aria-label={`View ${threadReplyCount} ${threadReplyCount === 1 ? "reply" : "replies"}`}
           >
-            <MessageSquare className="size-3" />
+            <MessageSquare className="size-3" aria-hidden="true" />
             <span>
               {threadReplyCount} {threadReplyCount === 1 ? "reply" : "replies"}
             </span>
@@ -184,7 +164,7 @@ export function MessageItem({
               onClick={onReply}
               aria-label="Reply to message"
             >
-              <MessageSquare className="size-4" />
+              <MessageSquare className="size-4" aria-hidden="true" />
             </Button>
           </TooltipTrigger>
           <TooltipContent>Reply</TooltipContent>
@@ -201,7 +181,7 @@ export function MessageItem({
                   onClick={onEdit}
                   aria-label="Edit message"
                 >
-                  <Pencil className="size-4" />
+                  <Pencil className="size-4" aria-hidden="true" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Edit</TooltipContent>
@@ -212,11 +192,11 @@ export function MessageItem({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="min-h-11 min-w-11 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  className="min-h-11 min-w-11 text-destructive hover:bg-destructive/10 hover:text-destructive"
                   onClick={onDelete}
                   aria-label="Delete message"
                 >
-                  <Trash2 className="size-4" />
+                  <Trash2 className="size-4" aria-hidden="true" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Delete</TooltipContent>
@@ -232,7 +212,7 @@ export function MessageItem({
               className="min-h-11 min-w-11"
               aria-label="More actions"
             >
-              <MoreHorizontal className="size-4" />
+              <MoreHorizontal className="size-4" aria-hidden="true" />
             </Button>
           </TooltipTrigger>
           <TooltipContent>More</TooltipContent>
@@ -242,22 +222,4 @@ export function MessageItem({
   );
 }
 
-/**
- * Skeleton loading state for MessageItem.
- * Displays placeholder UI while message data is loading.
- */
-export function MessageItemSkeleton(): React.ReactElement {
-  return (
-    <div className="flex gap-3 px-4 py-2">
-      <Skeleton className="size-10 rounded-full shrink-0" />
-      <div className="flex-1 space-y-2">
-        <div className="flex items-center gap-2">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-3 w-16" />
-        </div>
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-3/4" />
-      </div>
-    </div>
-  );
-}
+export { MessageItemSkeleton };

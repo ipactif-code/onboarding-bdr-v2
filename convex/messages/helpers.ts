@@ -17,6 +17,7 @@ export const MAX_MESSAGE_LENGTH = 4000;
 
 /**
  * Message with sender information for channel messages.
+ * T001-T002: Includes lesson data when message has lessonId.
  */
 export const channelMessageWithSenderValidator = v.object({
   _id: v.id("messages"),
@@ -47,6 +48,13 @@ export const channelMessageWithSenderValidator = v.object({
   threadReplyCount: v.optional(v.number()),
   threadLastReplyAt: v.optional(v.number()),
   lessonId: v.optional(v.id("lessons")),
+  // T001-T002: Enriched lesson data (fetched when lessonId exists)
+  lesson: v.optional(
+    v.object({
+      _id: v.id("lessons"),
+      title: v.string(),
+    })
+  ),
   createdAt: v.number(),
   updatedAt: v.optional(v.number()),
   isEdited: v.optional(v.boolean()),

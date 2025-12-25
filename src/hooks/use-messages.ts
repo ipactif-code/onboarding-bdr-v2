@@ -35,6 +35,14 @@ interface MessageSender {
 }
 
 /**
+ * Lesson information attached to messages linked to a course lesson.
+ */
+interface MessageLesson {
+  _id: Id<"lessons">;
+  title: string;
+}
+
+/**
  * Channel message with sender information.
  */
 export interface ChannelMessage {
@@ -49,6 +57,7 @@ export interface ChannelMessage {
   threadReplyCount?: number;
   threadLastReplyAt?: number;
   lessonId?: Id<"lessons">;
+  lesson?: MessageLesson;
   createdAt: number;
   updatedAt?: number;
   isEdited?: boolean;

@@ -17,6 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui-plate/dropdown-menu';
+import { filterPlatejsProps } from '@/lib/plate-utils';
 
 import {
   ToolbarButton,
@@ -199,7 +200,7 @@ export function TodoListToolbarButton(
   const { props: buttonProps } = useIndentTodoToolBarButton(state);
 
   return (
-    <ToolbarButton {...props} {...buttonProps} tooltip="Todo">
+    <ToolbarButton {...props} {...filterPlatejsProps(buttonProps)} tooltip="Todo">
       <ListTodoIcon />
     </ToolbarButton>
   );

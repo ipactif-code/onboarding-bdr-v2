@@ -26,6 +26,7 @@ import {
 import { cva } from 'class-variance-authority';
 import { useComposedRef, useEditorRef } from 'platejs/react';
 
+import { filterPlatejsProps } from '@/lib/plate-utils';
 import { cn } from '@/lib/utils';
 
 type FilterFn = (
@@ -245,7 +246,7 @@ const InlineComboboxInput = ({
           )}
           value={value}
           autoSelect
-          {...inputProps}
+          {...filterPlatejsProps(inputProps)}
           {...props}
         />
       </span>

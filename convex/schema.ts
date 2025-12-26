@@ -586,7 +586,11 @@ export default defineSchema({
   // Rate limit tracking
   rateLimits: defineTable({
     userId: v.id("users"),
-    type: v.union(v.literal("text_message"), v.literal("voice_message")),
+    type: v.union(
+      v.literal("text_message"),
+      v.literal("voice_message"),
+      v.literal("link_preview")
+    ),
     windowStart: v.number(), // Start of current window
     count: v.number(), // Count within window
   }).index("by_user_type", ["userId", "type"]),

@@ -1,10 +1,10 @@
 import { v } from "convex/values";
-import { query, mutation, internalMutation, QueryCtx } from "./_generated/server";
+import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 import * as apiModule from "./_generated/api";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const internal = (apiModule as any).internal;
-import { getCurrentUser, requireAuth, requireAdmin, requireSelfOrAdmin, ensureUser } from "./lib/auth";
+import { requireAuth, requireAdmin, requireSelfOrAdmin, ensureUser } from "./lib/auth";
 
 // ============================================================================
 // Queries
@@ -685,6 +685,46 @@ export const createFromClerk = mutation({
     );
 
     return userId;
+  },
+});
+
+// ============================================================================
+// Internal Queries (called from other server functions)
+// ============================================================================
+
+/**
+ * Get user by Clerk ID (internal - no auth check).
+ * Used by actions that need to look up users by their Clerk identity.
+ */
+export const getByClerkIdInternal = internalQuery({
+  args: { clerkId: v.string() },
+  returns: v.union(
+    v.object({
+      _id: v.id("users"),
+      clerkId: v.string(),
+      email: v.string(),
+      name: v.string(),
+      avatarUrl: v.optional(v.string()),
+      role: v.union(v.literal("user"), v.literal("admin")),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .unique();
+
+    if (!user) return null;
+
+    return {
+      _id: user._id,
+      clerkId: user.clerkId,
+      email: user.email,
+      name: user.name,
+      avatarUrl: user.avatarUrl,
+      role: user.role,
+    };
   },
 });
 

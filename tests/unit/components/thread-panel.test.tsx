@@ -1,3 +1,4 @@
+import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -75,7 +76,7 @@ vi.mock("@/components/messaging/thread-view", () => ({
   ),
 }));
 
-// Mock MessageInput component
+// Mock MessageInput component - calls onSend on Enter key press
 vi.mock("@/components/messaging/message-input", () => ({
   MessageInput: ({
     onSend,
@@ -87,19 +88,31 @@ vi.mock("@/components/messaging/message-input", () => ({
     parentId?: Id<"messages">;
     placeholder?: string;
     onSent?: () => void;
-  }) => (
-    <div data-testid="message-input">
-      <input
-        data-testid="message-input-field"
-        placeholder={placeholder}
-        onChange={(e) => onSend(e.target.value)}
-      />
-      <div>ParentId: {parentId}</div>
-      <button onClick={onSent} data-testid="sent-callback">
-        Sent
-      </button>
-    </div>
-  ),
+  }) => {
+    // Use a closure variable to track input value
+    let currentValue = "";
+    return (
+      <div data-testid="message-input">
+        <input
+          data-testid="message-input-field"
+          placeholder={placeholder}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            currentValue = e.target.value;
+          }}
+          onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+            if (e.key === "Enter" && !e.shiftKey && currentValue.trim()) {
+              onSend(currentValue);
+              currentValue = "";
+            }
+          }}
+        />
+        <div>ParentId: {parentId}</div>
+        <button onClick={onSent} data-testid="sent-callback">
+          Sent
+        </button>
+      </div>
+    );
+  },
 }));
 
 // ============================================================================
@@ -268,7 +281,7 @@ describe("ThreadPanel", () => {
 
     // Act
     const input = screen.getByTestId("message-input-field");
-    await user.type(input, "Test reply message");
+    await user.type(input, "Test reply message{Enter}");
 
     // Assert
     expect(mockOnSendReply).toHaveBeenCalledWith("Test reply message");

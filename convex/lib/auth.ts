@@ -1,6 +1,8 @@
 import { QueryCtx, MutationCtx } from "../_generated/server";
 import { Doc, Id } from "../_generated/dataModel";
-import { internal } from "../_generated/api";
+import * as apiModule from "../_generated/api";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const internal = (apiModule as any).internal;
 import { isChannelMember, hasChannelRole } from "./permissions";
 
 /**

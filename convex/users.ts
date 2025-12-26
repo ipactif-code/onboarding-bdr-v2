@@ -1,7 +1,9 @@
 import { v } from "convex/values";
 import { query, mutation, internalMutation, QueryCtx } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
-import { internal } from "./_generated/api";
+import * as apiModule from "./_generated/api";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const internal = (apiModule as any).internal;
 import { getCurrentUser, requireAuth, requireAdmin, requireSelfOrAdmin, ensureUser } from "./lib/auth";
 
 // ============================================================================

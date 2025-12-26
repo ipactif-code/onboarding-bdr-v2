@@ -1,6 +1,8 @@
 import { v } from "convex/values";
 import { mutation } from "../_generated/server";
-import { internal } from "../_generated/api";
+import * as apiModule from "../_generated/api";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const internal = (apiModule as any).internal;
 import { requireAuth } from "../lib/auth";
 import { MAX_MESSAGE_LENGTH } from "./helpers";
 

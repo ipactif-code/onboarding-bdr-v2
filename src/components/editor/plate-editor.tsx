@@ -141,6 +141,7 @@ export function SimpleEditor({
 
 /**
  * Read-only content renderer.
+ * Syncs editor content when value prop changes (e.g., navigating between lessons).
  */
 export function ContentRenderer({
   value,
@@ -153,6 +154,16 @@ export function ContentRenderer({
     plugins: pluginsWithoutFixedToolbar,
     value: getEditorValue(value) as NonNullable<Parameters<typeof usePlateEditor>[0]>['value'],
   });
+
+  // Sync editor content when value prop changes
+  // usePlateEditor's value option only sets initial value, not reactive updates
+  React.useEffect(() => {
+    const newValue = getEditorValue(value);
+    // Only update if value actually changed to avoid unnecessary re-renders
+    if (JSON.stringify(editor.children) !== JSON.stringify(newValue)) {
+      editor.tf.setValue(newValue as Parameters<typeof editor.tf.setValue>[0]);
+    }
+  }, [value, editor]);
 
   return (
     <Plate editor={editor}>

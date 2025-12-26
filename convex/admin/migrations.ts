@@ -4,11 +4,10 @@ import { internal } from "../_generated/api";
 import { Id } from "../_generated/dataModel";
 
 // Type workaround: The internal API has deeply nested types that cause
-// "Type instantiation is excessively deep" errors. We suppress the error
-// to avoid the type inference, then access the specific functions.
-// @ts-expect-error - Convex internal API has deeply nested types that exceed TS depth limit
+// "Type instantiation is excessively deep" errors. We use `any` to
+// avoid the type inference, then access the specific functions.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const internalApi: any = internal;
+const internalApi = internal as any;
 const migrationsQueriesRef = internalApi.admin.migrationsQueries;
 const migrationsMutationsRef = internalApi.admin.migrationsMutations;
 const channelsMutationsRef = internalApi.channels.courseMutations;

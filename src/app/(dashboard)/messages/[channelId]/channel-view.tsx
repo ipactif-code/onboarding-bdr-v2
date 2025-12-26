@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useQuery } from "convex/react";
-import { toast } from "sonner";
 
 import { Id } from "../../../../../convex/_generated/dataModel";
 
@@ -11,21 +11,31 @@ import { Id } from "../../../../../convex/_generated/dataModel";
 const api: any = require("../../../../../convex/_generated/api").api;
 import { useChannel } from "@/hooks/use-channel";
 import { useChannelMessages } from "@/hooks/use-messages";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
 import { ChannelHeader } from "@/components/messaging/channel-header";
 import { MessageList } from "@/components/messaging/message-list";
 import { MessageInput } from "@/components/messaging/message-input";
 import { LessonSelector } from "@/components/messaging/lesson-selector";
+import { ThreadPanel } from "@/components/messaging/thread-panel";
+import { ChannelViewSkeleton } from "./channel-view-skeleton";
+import { ChannelJoinPrompt } from "./channel-join-prompt";
+import { useChannelActions } from "./use-channel-actions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // ============================================================================
 // Types
 // ============================================================================
 
 interface ChannelViewProps {
-  /**
-   * The channel ID from the URL params.
-   */
+  /** The channel ID from the URL params. */
   channelId: string;
 }
 
@@ -42,23 +52,20 @@ interface ChannelViewProps {
  * - Infinite scroll message list
  * - Rich text message input
  * - Auto-mark messages as read when visible
- *
- * @param channelId - The channel ID to display
  */
 export function ChannelView({ channelId }: ChannelViewProps): React.ReactElement {
-  // Get the current user
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
   const currentUser = useQuery(api.users.me);
   const currentUserId = currentUser?._id;
-
-  // Parse channel ID
   const parsedChannelId = channelId as Id<"channels">;
 
-  // Subscribe to channel data
   const { channel, isLoading: isChannelLoading, isMember, join, markAsRead } = useChannel({
     channelId: parsedChannelId,
   });
 
-  // Subscribe to messages
   const {
     messages,
     isLoading: isMessagesLoading,
@@ -66,35 +73,83 @@ export function ChannelView({ channelId }: ChannelViewProps): React.ReactElement
     hasMore,
     loadMore,
     sendMessage,
-    editMessage: _editMessage, // TODO: Use when inline edit UI is implemented
     deleteMessage,
-  } = useChannelMessages({
-    channelId: parsedChannelId,
+  } = useChannelMessages({ channelId: parsedChannelId });
+
+  const lastReadAtRef = useRef<number>(0);
+  const [selectedLessonId, setSelectedLessonId] = useState<Id<"lessons"> | null>(null);
+  const [openThreadId, setOpenThreadId] = useState<Id<"messages"> | null>(null);
+
+  // Delete confirmation state
+  const [deleteMessageId, setDeleteMessageId] = useState<Id<"messages"> | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Track whether we've processed the initial thread param
+  const threadParamProcessedRef = useRef(false);
+
+  const {
+    handleSendMessage,
+    handleReply,
+    handleCloseThread,
+    handleSendThreadReply,
+    handleEdit,
+    handleDelete,
+    handleJoinChannel,
+  } = useChannelActions({
+    sendMessage,
+    deleteMessage,
+    join,
+    selectedLessonId,
+    openThreadId,
+    setOpenThreadId,
   });
 
-  // Ref to track the last read timestamp to debounce markAsRead calls
-  const lastReadAtRef = useRef<number>(0);
+  // Request delete confirmation - shows modal instead of deleting directly
+  const handleDeleteRequest = useCallback((messageId: Id<"messages">) => {
+    setDeleteMessageId(messageId);
+  }, []);
 
-  // State for selected lesson in course channels (T007)
-  const [selectedLessonId, setSelectedLessonId] = useState<Id<"lessons"> | null>(null);
+  // Actual delete handler - called when user confirms
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deleteMessageId) return;
+    setIsDeleting(true);
+    try {
+      await handleDelete(deleteMessageId);
+    } finally {
+      setIsDeleting(false);
+      setDeleteMessageId(null);
+    }
+  }, [deleteMessageId, handleDelete]);
 
-  // ========================================================================
-  // Mark as read when messages become visible (T035)
-  // ========================================================================
+  // Open thread from URL query parameter (e.g., ?thread=messageId)
+  // Only process once after channel access is verified
+  useEffect(() => {
+    // Skip if already processed, not a member, or channel is still loading
+    if (threadParamProcessedRef.current || !isMember || isChannelLoading) {
+      return;
+    }
 
+    const threadId = searchParams.get("thread");
+    if (threadId) {
+      // Mark as processed to prevent re-running
+      threadParamProcessedRef.current = true;
+
+      // Set the thread to open
+      setOpenThreadId(threadId as Id<"messages">);
+
+      // Clear the query param from URL for cleaner UX
+      router.replace(pathname, { scroll: false });
+    }
+  }, [searchParams, router, pathname, isMember, isChannelLoading, setOpenThreadId]);
+
+  // Mark as read when messages become visible
   const handleMessageVisible = useCallback(
     (_messageId: Id<"messages">, createdAt: number) => {
-      // Only mark as read if this message is newer than our last read
       if (createdAt > lastReadAtRef.current) {
         lastReadAtRef.current = createdAt;
-
-        // Debounce the markAsRead call
-        // We'll only mark as read after the user has stopped scrolling
         setTimeout(() => {
           if (createdAt === lastReadAtRef.current && isMember) {
-            markAsRead(createdAt).catch(() => {
-              // Silently ignore errors for marking as read
-            });
+            markAsRead(createdAt).catch(() => {});
           }
         }, 1000);
       }
@@ -107,88 +162,17 @@ export function ChannelView({ channelId }: ChannelViewProps): React.ReactElement
     if (isMember && messages.length > 0) {
       const latestMessage = messages[messages.length - 1];
       if (latestMessage && latestMessage.createdAt > lastReadAtRef.current) {
-        markAsRead().catch(() => {
-          // Silently ignore errors
-        });
+        markAsRead().catch(() => {});
       }
     }
   }, [isMember, messages, markAsRead]);
 
-  // ========================================================================
-  // Message actions
-  // ========================================================================
-
-  const handleSendMessage = useCallback(
-    async (content: string) => {
-      try {
-        // Pass lessonId for course channels if a lesson is selected (T007)
-        await sendMessage(content, {
-          lessonId: selectedLessonId ?? undefined,
-        });
-        // Reset lesson selection after sending (optional: keep selection sticky)
-        // Note: We keep the selection sticky for better UX when discussing a lesson
-        // Auto-scroll is handled by MessageList
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Failed to send message";
-        toast.error(message);
-      }
-    },
-    [sendMessage, selectedLessonId]
-  );
-
-  const handleReply = useCallback((_messageId: Id<"messages">) => {
-    // TODO: Implement thread reply UI
-    toast.info("Thread replies coming soon!");
-  }, []);
-
-  const handleEdit = useCallback(
-    async (_messageId: Id<"messages">) => {
-      // TODO: Implement inline edit UI
-      // For now, just show a placeholder
-      toast.info("Edit UI coming soon!");
-    },
-    []
-  );
-
-  const handleDelete = useCallback(
-    async (messageId: Id<"messages">) => {
-      try {
-        await deleteMessage(messageId);
-        toast.success("Message deleted");
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Failed to delete message";
-        toast.error(message);
-      }
-    },
-    [deleteMessage]
-  );
-
-  // ========================================================================
-  // Join channel action
-  // ========================================================================
-
-  const handleJoinChannel = useCallback(async () => {
-    try {
-      await join();
-      toast.success("Joined channel successfully");
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to join channel";
-      toast.error(message);
-    }
-  }, [join]);
-
-  // ========================================================================
   // Loading state
-  // ========================================================================
-
   if (isChannelLoading || currentUser === undefined) {
     return <ChannelViewSkeleton />;
   }
 
-  // ========================================================================
   // Channel not found
-  // ========================================================================
-
   if (!channel) {
     return (
       <div className="flex h-full flex-col items-center justify-center p-8 text-center">
@@ -200,54 +184,16 @@ export function ChannelView({ channelId }: ChannelViewProps): React.ReactElement
     );
   }
 
-  // ========================================================================
   // Not a member - show join prompt
-  // ========================================================================
-
   if (!isMember) {
-    return (
-      <div className="flex h-full flex-col">
-        <ChannelHeader channel={channel} />
-        <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
-          <h2 className="text-xl font-semibold">#{channel.name}</h2>
-          {channel.description && (
-            <p className="mt-2 max-w-md text-muted-foreground">
-              {channel.description}
-            </p>
-          )}
-          <p className="mt-4 text-sm text-muted-foreground">
-            {channel.memberCount} {channel.memberCount === 1 ? "member" : "members"}
-          </p>
-          {channel.type === "public" && !channel.isArchived && (
-            <Button onClick={handleJoinChannel} className="mt-6">
-              Join Channel
-            </Button>
-          )}
-          {channel.type === "private" && (
-            <p className="mt-4 text-sm text-muted-foreground">
-              This is a private channel. You need an invite to join.
-            </p>
-          )}
-          {channel.isArchived && (
-            <p className="mt-4 text-sm text-muted-foreground">
-              This channel has been archived.
-            </p>
-          )}
-        </div>
-      </div>
-    );
+    return <ChannelJoinPrompt channel={channel} onJoin={handleJoinChannel} />;
   }
 
-  // ========================================================================
   // Full channel view (member)
-  // ========================================================================
-
   return (
     <div data-slot="channel-view" className="flex h-full flex-col">
-      {/* Channel header */}
       <ChannelHeader channel={channel} />
 
-      {/* Message list */}
       <MessageList
         messages={messages}
         isLoading={isMessagesLoading}
@@ -257,15 +203,13 @@ export function ChannelView({ channelId }: ChannelViewProps): React.ReactElement
         onMessageVisible={handleMessageVisible}
         onReply={handleReply}
         onEdit={handleEdit}
-        onDelete={handleDelete}
+        onDelete={handleDeleteRequest}
         currentUserId={currentUserId}
         className="flex-1"
       />
 
-      {/* Message input */}
       {!channel.isArchived && (
         <div className="border-t p-4">
-          {/* Lesson selector for course channels (T007) */}
           {channel.courseId && (
             <div className="mb-2">
               <LessonSelector
@@ -282,57 +226,47 @@ export function ChannelView({ channelId }: ChannelViewProps): React.ReactElement
         </div>
       )}
 
-      {/* Archived channel notice */}
       {channel.isArchived && (
         <div className="border-t bg-muted/50 p-4 text-center text-sm text-muted-foreground">
           This channel has been archived. You cannot send new messages.
         </div>
       )}
-    </div>
-  );
-}
 
-// ============================================================================
-// Skeleton
-// ============================================================================
+      {currentUserId && (
+        <ThreadPanel
+          parentMessageId={openThreadId}
+          currentUserId={currentUserId}
+          onClose={handleCloseThread}
+          onSendReply={handleSendThreadReply}
+          onEdit={handleEdit}
+          onDelete={handleDeleteRequest}
+        />
+      )}
 
-function ChannelViewSkeleton(): React.ReactElement {
-  return (
-    <div className="flex h-full flex-col">
-      {/* Header skeleton */}
-      <div className="flex h-14 items-center gap-3 border-b px-4">
-        <Skeleton className="size-5" />
-        <div className="flex flex-1 flex-col gap-1">
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-3 w-48" />
-        </div>
-        <Skeleton className="size-8" />
-      </div>
-
-      {/* Messages skeleton */}
-      <div className="flex-1 space-y-1 p-4">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="flex gap-3 py-2">
-            <Skeleton className="size-10 rounded-full" />
-            <div className="flex-1 space-y-2">
-              <div className="flex items-center gap-2">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-3 w-16" />
-              </div>
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-3/4" />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Input skeleton */}
-      <div className="border-t p-4">
-        <div className="flex items-end gap-2">
-          <Skeleton className="h-10 flex-1 rounded-lg" />
-          <Skeleton className="size-10 rounded-lg" />
-        </div>
-      </div>
+      {/* Delete Confirmation Modal */}
+      <AlertDialog
+        open={deleteMessageId !== null}
+        onOpenChange={(open) => !open && setDeleteMessageId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete message?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this message. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+              variant="destructive"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

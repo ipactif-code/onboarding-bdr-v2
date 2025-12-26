@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation } from "../_generated/server";
+import { internal } from "../_generated/api";
 import { requireAuth } from "../lib/auth";
 import { MAX_MESSAGE_LENGTH } from "./helpers";
 
@@ -122,6 +123,14 @@ export const deleteChannelMessage = mutation({
       deletedAt: Date.now(),
       deletedBy: user._id,
     });
+
+    // Update parent thread metadata if this was a reply
+    if (message.parentId) {
+      await ctx.runMutation(
+        internal.messages.threadInternals.updateThreadMetadata,
+        { parentId: message.parentId }
+      );
+    }
 
     return null;
   },

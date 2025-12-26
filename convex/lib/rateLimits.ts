@@ -2,6 +2,23 @@ import { MutationCtx } from "../_generated/server";
 import { Id } from "../_generated/dataModel";
 
 /**
+ * SECURITY NOTE: Rate Limiting Strategy
+ *
+ * This module uses "soft enforcement" for rate limiting. Under high concurrency,
+ * a small number of requests may exceed the limit due to Time-of-Check-to-Time-of-Use
+ * (TOCTOU) race conditions between the read and write operations.
+ *
+ * Mitigation: After incrementing the counter, we re-fetch and verify. If the count
+ * exceeds the limit (due to concurrent requests), we roll back to the limit and
+ * reject the request.
+ *
+ * This is acceptable for user-facing features (messaging, link previews) but should
+ * NOT be used for security-critical operations requiring strict enforcement (e.g.,
+ * authentication attempts, payment processing). For those cases, consider using
+ * Convex's official rate-limiter component with atomic guarantees.
+ */
+
+/**
  * Rate limit configuration for different message types.
  */
 const RATE_LIMIT_CONFIG = {
@@ -12,6 +29,10 @@ const RATE_LIMIT_CONFIG = {
   voice_message: {
     limit: 20,
     windowMs: 60 * 60 * 1000, // 1 hour
+  },
+  link_preview: {
+    limit: 10,
+    windowMs: 60 * 1000, // 1 minute
   },
 } as const;
 

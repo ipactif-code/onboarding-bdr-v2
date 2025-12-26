@@ -8,6 +8,8 @@ import {
 } from '@platejs/link/react';
 import { Link } from 'lucide-react';
 
+import { filterPlatejsProps } from '@/lib/plate-utils';
+
 import { ToolbarButton } from './toolbar';
 
 export function LinkToolbarButton(
@@ -17,7 +19,12 @@ export function LinkToolbarButton(
   const { props: buttonProps } = useLinkToolbarButton(state);
 
   return (
-    <ToolbarButton {...props} {...buttonProps} data-plate-focus tooltip="Link">
+    <ToolbarButton
+      {...props}
+      {...filterPlatejsProps(buttonProps)}
+      data-plate-focus
+      tooltip="Link"
+    >
       <Link />
     </ToolbarButton>
   );

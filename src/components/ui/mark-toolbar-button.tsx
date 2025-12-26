@@ -4,6 +4,8 @@ import * as React from 'react';
 
 import { useMarkToolbarButton, useMarkToolbarButtonState } from 'platejs/react';
 
+import { filterPlatejsProps } from '@/lib/plate-utils';
+
 import { ToolbarButton } from './toolbar';
 
 export function MarkToolbarButton({
@@ -13,9 +15,9 @@ export function MarkToolbarButton({
 }: React.ComponentProps<typeof ToolbarButton> & {
   nodeType: string;
   clear?: string[] | string;
-}) {
+}): React.ReactElement {
   const state = useMarkToolbarButtonState({ clear, nodeType });
   const { props: buttonProps } = useMarkToolbarButton(state);
 
-  return <ToolbarButton {...props} {...buttonProps} />;
+  return <ToolbarButton {...props} {...filterPlatejsProps(buttonProps)} />;
 }

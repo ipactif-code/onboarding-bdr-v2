@@ -2,38 +2,19 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import {
-  BoldPlugin,
-  CodePlugin,
-  ItalicPlugin,
-} from '@platejs/basic-nodes/react';
 import { Plate, usePlateEditor } from 'platejs/react';
 import { Send } from 'lucide-react';
+import { toast } from 'sonner';
 
+import { MessageInputPlugins } from './message-input-plugins';
+import { MessageFixedToolbar } from './message-fixed-toolbar';
 import { Id } from '../../../convex/_generated/dataModel';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui-plate/tooltip';
 import { Editor, EditorContainer } from '@/components/ui/editor';
-import { CodeLeaf } from '@/components/ui/code-node';
-import {
-  createEmptyEditorValue,
-  getTextFromValue,
-  serializeEditorValue,
-} from './message-input-utils';
+import { createEmptyEditorValue, getTextFromValue, serializeEditorValue } from './message-input-utils';
 import { MessageInputSkeleton } from './message-input-skeleton';
-
-/**
- * Minimal plugins for messaging - only basic text formatting.
- * Keeps the message input lightweight compared to the full editor.
- */
-const MessageInputPlugins = [
-  BoldPlugin,
-  ItalicPlugin,
-  CodePlugin.configure({
-    node: { component: CodeLeaf },
-    shortcuts: { toggle: { keys: 'mod+e' } },
-  }),
-];
 
 export interface MessageInputProps {
   /** Callback when user sends a message */
@@ -47,20 +28,23 @@ export interface MessageInputProps {
   /** Maximum character limit (default: 4000) */
   maxLength?: number;
   /** Parent message ID for thread replies (optional) */
-  parentId?: Id<"messages">;
+  parentId?: Id<'messages'>;
   /** Callback after message is sent (optional) */
   onSent?: () => void;
 }
 
 /**
  * Rich text message input component using Plate.js.
- * Supports basic formatting (bold, italic, code) with keyboard shortcuts.
+ * Supports basic formatting (bold, italic, code, strikethrough) with keyboard shortcuts.
  *
  * Features:
  * - Enter to send, Shift+Enter for new line
  * - Character count warning when approaching limit
  * - Debounced typing indicator
  * - Auto-resize based on content
+ * - @mentions with user search combobox
+ * - Markdown autoformat shortcuts (**, *, _, ~~, `)
+ * - Bullet and numbered lists
  */
 export function MessageInput({
   onSend,
@@ -84,9 +68,10 @@ export function MessageInput({
 
   const textContent = useMemo(() => getTextFromValue(editorValue), [editorValue]);
   const characterCount = textContent.length;
-  const isOverLimit = characterCount > maxLength;
+  const isOverLimit = characterCount >= maxLength;
+  const isApproachingLimit = characterCount >= maxLength - 200 && characterCount < maxLength;
   const isEmpty = textContent.trim().length === 0;
-  const showCharacterCount = characterCount > maxLength - 200;
+  const showCharacterCount = characterCount >= maxLength - 200;
 
   const handleTyping = useCallback((): void => {
     if (!onTyping) return;
@@ -121,10 +106,14 @@ export function MessageInput({
     (event: React.KeyboardEvent<HTMLDivElement>): void => {
       if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
+        if (isOverLimit) {
+          toast.error(`Message exceeds ${maxLength} character limit`);
+          return;
+        }
         handleSend();
       }
     },
-    [handleSend]
+    [handleSend, isOverLimit, maxLength]
   );
 
   useEffect(() => {
@@ -146,28 +135,35 @@ export function MessageInput({
         )}
       >
         <Plate editor={editor} onChange={handleEditorChange}>
-          <EditorContainer className="border-0">
-            <Editor
-              ref={editorRef}
-              placeholder={resolvedPlaceholder}
-              disabled={disabled}
-              onKeyDown={handleKeyDown}
-              className={cn(
-                'min-h-[40px] max-h-[160px] overflow-y-auto px-3 py-2 text-sm',
-                'resize-none'
-              )}
-              aria-label="Message input"
-              aria-describedby={showCharacterCount ? 'char-count' : undefined}
-            />
-          </EditorContainer>
+          <div className="flex flex-col">
+            <MessageFixedToolbar />
+            <EditorContainer className="border-0">
+              <Editor
+                ref={editorRef}
+                placeholder={resolvedPlaceholder}
+                disabled={disabled}
+                onKeyDown={handleKeyDown}
+                className={cn(
+                  'min-h-[40px] max-h-[160px] overflow-y-auto px-3 py-2 text-sm',
+                  'resize-none'
+                )}
+                aria-label="Message input"
+                aria-describedby={showCharacterCount ? 'char-count' : undefined}
+              />
+            </EditorContainer>
+          </div>
         </Plate>
 
         {showCharacterCount && (
           <div
             id="char-count"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
             className={cn(
-              'absolute bottom-1 right-12 text-xs',
-              isOverLimit ? 'text-destructive font-medium' : 'text-muted-foreground'
+              'absolute bottom-1 right-12 text-xs font-medium',
+              isOverLimit && 'text-destructive',
+              isApproachingLimit && 'text-amber-500 dark:text-amber-400'
             )}
           >
             {characterCount}/{maxLength}
@@ -175,16 +171,27 @@ export function MessageInput({
         )}
       </div>
 
-      <Button
-        type="button"
-        size="icon"
-        onClick={handleSend}
-        disabled={isEmpty || isOverLimit || disabled}
-        aria-label="Send message"
-        className="shrink-0 min-h-11 min-w-11"
-      >
-        <Send className="size-4" />
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex">
+            <Button
+              type="button"
+              size="icon"
+              onClick={handleSend}
+              disabled={isEmpty || isOverLimit || disabled}
+              aria-label="Send message"
+              className="shrink-0 min-h-11 min-w-11"
+            >
+              <Send className="size-4" />
+            </Button>
+          </span>
+        </TooltipTrigger>
+        {isOverLimit && (
+          <TooltipContent side="top">
+            Message exceeds {maxLength} character limit
+          </TooltipContent>
+        )}
+      </Tooltip>
     </div>
   );
 }

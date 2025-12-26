@@ -17,6 +17,7 @@ import { getInitials, formatTimestamp } from "@/lib/message-utils";
 import { LessonBadge } from "@/components/messaging/lesson-badge";
 import { MessageItemSkeleton } from "@/components/messaging/message-item-skeleton";
 import { MessageActionButtons } from "@/components/messaging/message-action-buttons";
+import { RichTextRenderer } from "@/components/messaging/rich-text-renderer";
 
 // ============================================================================
 // Types
@@ -135,8 +136,8 @@ export function MessageItem({
         )}
 
         {/* Message body */}
-        <div className="mt-1 whitespace-pre-wrap break-words text-sm text-foreground">
-          {content}
+        <div className="mt-1 break-words text-foreground">
+          <RichTextRenderer content={content} />
         </div>
 
         {/* Thread reply count indicator */}

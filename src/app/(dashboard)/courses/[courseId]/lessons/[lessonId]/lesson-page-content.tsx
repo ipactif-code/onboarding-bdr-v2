@@ -2,8 +2,11 @@
 
 import { useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "convex/react";
-import { api } from "../../../../../../../convex/_generated/api";
 import { Id } from "../../../../../../../convex/_generated/dataModel";
+
+// Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const api: any = require("../../../../../../../convex/_generated/api").api;
 import { LessonContent } from "./lesson-content";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -34,8 +37,8 @@ export function LessonPageContent({ courseId, lessonId }: LessonPageContentProps
   const navigation = useMemo(() => {
     if (!course?.sections) return { prev: null, next: null };
 
-    const allLessons = course.sections.flatMap((section) => section.lessons);
-    const currentIndex = allLessons.findIndex((l) => l._id === lessonId);
+    const allLessons = course.sections.flatMap((section: { lessons: Array<{ _id: Id<"lessons"> }> }) => section.lessons);
+    const currentIndex = allLessons.findIndex((l: { _id: Id<"lessons"> }) => l._id === lessonId);
 
     return {
       prev: currentIndex > 0 ? allLessons[currentIndex - 1] : null,

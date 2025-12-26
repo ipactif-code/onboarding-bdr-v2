@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
-import { api } from "../../../../../../convex/_generated/api";
 import { Id } from "../../../../../../convex/_generated/dataModel";
+
+// Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const api: any = require("../../../../../../convex/_generated/api").api;
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -162,7 +165,7 @@ export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
   const [newLessonType, setNewLessonType] = useState<"text" | "embed" | "quiz" | "files">("text");
 
   // Fetch fresh course data
-  const course = useQuery(api.courses.get, { courseId: initialCourse._id }) ?? initialCourse;
+  const course: Course = useQuery(api.courses.get, { courseId: initialCourse._id }) ?? initialCourse;
 
   // Mutations
   const publishCourse = useMutation(api.courses.publish);

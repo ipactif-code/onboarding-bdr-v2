@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
+
+// Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const api: any = require("../../../convex/_generated/api").api;
 import { Search, Plus, X, Loader2 } from "lucide-react";
 import {
   Dialog,
@@ -57,7 +60,7 @@ export function TagsModal({
 
   // Filter out already added tags
   const availableTags = allTags?.filter(
-    (tag) => !currentTags.some((ct) => ct._id === tag._id)
+    (tag: { _id: Id<"tags"> }) => !currentTags.some((ct) => ct._id === tag._id)
   );
 
   const handleAddTag = async (tagName: string) => {
@@ -193,7 +196,7 @@ export function TagsModal({
                 </p>
               ) : (
                 <div className="space-y-1 p-1">
-                  {availableTags.map((tag) => (
+                  {availableTags.map((tag: { _id: Id<"tags">; name: string }) => (
                     <button
                       key={tag._id}
                       onClick={() => handleAddTag(tag.name)}

@@ -5,8 +5,11 @@ import { useState, useCallback } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { User } from "lucide-react";
 
-import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+
+// Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const api: any = require("../../../../convex/_generated/api").api;
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
@@ -65,7 +68,11 @@ export function MembersList({ channelId, userRole }: MembersListProps): React.Re
 
   if (members.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-8 text-center">
+      <div
+        className="flex flex-col items-center justify-center py-8 text-center"
+        role="status"
+        aria-live="polite"
+      >
         <User className="mb-2 size-8 text-muted-foreground/50" aria-hidden="true" />
         <p className="text-sm text-muted-foreground">No members found</p>
       </div>
@@ -95,7 +102,12 @@ export function MembersList({ channelId, userRole }: MembersListProps): React.Re
 
 export function MembersListSkeleton(): React.ReactElement {
   return (
-    <div className="space-y-1 pr-4">
+    <div
+      className="space-y-1 pr-4"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+    >
       {[1, 2, 3, 4].map((i) => (
         <div key={i} className="flex items-center gap-3 px-3 py-2">
           <Skeleton className="size-9 rounded-full" />
@@ -105,6 +117,7 @@ export function MembersListSkeleton(): React.ReactElement {
           </div>
         </div>
       ))}
+      <span className="sr-only">Loading members list</span>
     </div>
   );
 }

@@ -30,12 +30,16 @@ export function MessageListSkeleton({
     <div
       data-slot="message-list-skeleton"
       className={cn("flex flex-1 flex-col overflow-hidden", className)}
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
     >
       <div className="flex-1 space-y-1 p-4">
         {Array.from({ length: count }, (_, i) => (
           <MessageItemSkeleton key={i} />
         ))}
       </div>
+      <span className="sr-only">Loading messages</span>
     </div>
   );
 }

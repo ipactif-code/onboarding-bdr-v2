@@ -1,7 +1,10 @@
 "use client";
 
 import { useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+
+// Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const api: any = require("../../../convex/_generated/api").api;
 import { CheckCircle, BookOpen, Target, Trophy } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatsCard } from "./stats-card";
@@ -11,15 +14,24 @@ export function UserDashboard() {
   const courses = useQuery(api.courses.listForUser);
   const stats = useQuery(api.analytics.getUserDashboardStats);
 
+  // Type for course items from the query
+  type CourseItem = {
+    _id: string;
+    title: string;
+    coverImageUrl?: string;
+    displayOrder: number;
+    progress: { percentage: number; totalLessons: number };
+  };
+
   const completedCourses =
-    courses?.filter((c) => c.progress.percentage === 100).length ?? 0;
+    courses?.filter((c: CourseItem) => c.progress.percentage === 100).length ?? 0;
   const totalCourses = courses?.length ?? 0;
 
   // Courses in progress (started but not completed)
   const inProgressCourses =
     courses
-      ?.filter((c) => c.progress.percentage > 0 && c.progress.percentage < 100)
-      .map((course) => ({
+      ?.filter((c: CourseItem) => c.progress.percentage > 0 && c.progress.percentage < 100)
+      .map((course: CourseItem) => ({
         _id: course._id,
         title: course.title,
         coverImage: course.coverImageUrl,
@@ -31,9 +43,9 @@ export function UserDashboard() {
   const latestCourses =
     courses
       ?.slice()
-      .sort((a, b) => a.displayOrder - b.displayOrder)
+      .sort((a: CourseItem, b: CourseItem) => a.displayOrder - b.displayOrder)
       .slice(0, 10)
-      .map((course) => ({
+      .map((course: CourseItem) => ({
         _id: course._id,
         title: course.title,
         coverImage: course.coverImageUrl,

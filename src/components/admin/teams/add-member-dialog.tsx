@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
-import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
+
+// Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const api: any = require("../../../../convex/_generated/api").api;
 import { Plus, Search, Check, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,7 +43,7 @@ export function AddMemberDialog({ teamId, existingMemberIds }: AddMemberDialogPr
 
   // Filter out existing members
   const availableUsers = users?.data.filter(
-    (user) => !existingMemberIds.includes(user._id)
+    (user: { _id: Id<"users"> }) => !existingMemberIds.includes(user._id)
   );
 
   // Toggle user selection
@@ -122,11 +125,11 @@ export function AddMemberDialog({ teamId, existingMemberIds }: AddMemberDialogPr
             </div>
           ) : (
             <div className="space-y-1">
-              {availableUsers.map((user) => {
+              {availableUsers.map((user: { _id: Id<"users">; name: string; email: string; avatarUrl?: string }) => {
                 const isSelected = selectedUserIds.includes(user._id);
                 const initials = user.name
                   .split(" ")
-                  .map((n) => n[0])
+                  .map((n: string) => n[0])
                   .join("")
                   .toUpperCase();
 

@@ -1,7 +1,10 @@
 "use client";
 
 import { useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+
+// Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const api: any = require("../../../convex/_generated/api").api;
 import { SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -77,7 +80,7 @@ export function CourseFilters({
                   All tags
                 </Label>
               </div>
-              {tags?.map((tag) => (
+              {tags?.map((tag: { _id: string; name: string; courseCount: number }) => (
                 <div key={tag._id} className="flex items-center space-x-2">
                   <RadioGroupItem value={tag._id} id={tag._id} />
                   <Label htmlFor={tag._id} className="text-sm font-normal">

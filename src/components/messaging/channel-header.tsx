@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
-import { Archive, BellOff, Hash, Info, Lock, MoreHorizontal, Star, Users } from "lucide-react";
+import { Archive, BellOff, Hash, Info, Lock, MoreHorizontal, Settings, Star, Users } from "lucide-react";
 import { toast } from "sonner";
 
-import { api } from "../../../convex/_generated/api";
+// Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const api: any = require("../../../convex/_generated/api").api;
 import { type ChannelWithMembership } from "@/hooks/use-channel";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -33,6 +35,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui-plate/tooltip";
 import { ChannelMembersDialog } from "./channel-members-dialog";
+import { ChannelSettingsDialog } from "./channel-settings-dialog";
 
 // ============================================================================
 // Types
@@ -88,6 +91,7 @@ export function ChannelHeader({
   className,
 }: ChannelHeaderProps): React.ReactElement {
   const [isMembersDialogOpen, setIsMembersDialogOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
   const [isUnarchiving, setIsUnarchiving] = useState(false);
@@ -109,6 +113,14 @@ export function ChannelHeader({
 
   // Only global admin can unarchive
   const canUnarchive = currentUser?.role === "admin";
+
+  // Check user role for settings permission
+  // Channel owner, channel admin, channel moderator, or global admin can access settings
+  const canManageSettings =
+    channel?.membership?.role === "owner" ||
+    channel?.membership?.role === "admin" ||
+    channel?.membership?.role === "moderator" ||
+    currentUser?.role === "admin";
 
   const handleArchive = async (): Promise<void> => {
     if (!channel) return;
@@ -282,6 +294,12 @@ export function ChannelHeader({
               <BellOff className="mr-2 size-4" aria-hidden="true" />
               Mute channel
             </DropdownMenuItem>
+            {canManageSettings && (
+              <DropdownMenuItem onClick={() => setIsSettingsOpen(true)}>
+                <Settings className="mr-2 size-4" aria-hidden="true" />
+                Channel settings
+              </DropdownMenuItem>
+            )}
             {canArchive && !channel.isArchived && (
               <>
                 <DropdownMenuSeparator />
@@ -343,6 +361,13 @@ export function ChannelHeader({
         open={isMembersDialogOpen}
         onOpenChange={setIsMembersDialogOpen}
         userRole={channel.membership?.role}
+      />
+
+      {/* Channel Settings Dialog */}
+      <ChannelSettingsDialog
+        channelId={channel._id}
+        open={isSettingsOpen}
+        onOpenChange={setIsSettingsOpen}
       />
     </>
   );

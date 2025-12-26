@@ -266,8 +266,12 @@ export function ChannelList({
 
           {/* Empty state */}
           {channels.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <Hash className="mb-2 size-8 text-muted-foreground/50" />
+            <div
+              className="flex flex-col items-center justify-center py-8 text-center"
+              role="status"
+              aria-live="polite"
+            >
+              <Hash className="mb-2 size-8 text-muted-foreground/50" aria-hidden="true" />
               <p className="text-sm text-muted-foreground">No channels found</p>
               <p className="text-xs text-muted-foreground/70">
                 Channels will appear here when available
@@ -293,6 +297,9 @@ function ChannelListSkeleton({
     <div
       data-slot="channel-list-skeleton"
       className={cn("flex h-full flex-col", className)}
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
     >
       {/* Header skeleton */}
       <div className="flex items-center gap-2 border-b px-3 py-2">
@@ -314,6 +321,7 @@ function ChannelListSkeleton({
           </div>
         </div>
       </div>
+      <span className="sr-only">Loading channels</span>
     </div>
   );
 }

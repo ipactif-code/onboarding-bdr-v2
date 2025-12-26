@@ -2,7 +2,7 @@
  * Channel module exports.
  *
  * This module provides all channel-related functionality:
- * - Queries: list, get, getMembers
+ * - Queries: list, get, getMembers, search
  * - Mutations: create, update, archive, unarchive, join, leave, markAllAsRead, toggleFavorite
  * - Member management: addMembers, removeMember, updateMemberRole
  * - Course channel internal mutations: createCourseChannel, addCourseEnrollee, removeCourseEnrollee, grantCourseInstructorAdmin
@@ -12,7 +12,7 @@
 export { channelWithMembershipValidator, memberInfoValidator } from "./types";
 
 // Queries
-export { list, get, getMembers } from "./queries";
+export { list, get, getMembers, search } from "./queries";
 
 // Channel CRUD mutations
 export {

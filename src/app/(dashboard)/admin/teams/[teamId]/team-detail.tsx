@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
-import { api } from "../../../../../../convex/_generated/api";
 import { Id } from "../../../../../../convex/_generated/dataModel";
+
+// Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const api: any = require("../../../../../../convex/_generated/api").api;
 import Link from "next/link";
 import { ArrowLeft, Pencil, Users, BookOpen, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -192,9 +195,9 @@ export function TeamDetail({ teamId }: TeamDetailProps) {
               <Avatar className="size-10">
                 <AvatarImage src={team.lead.avatarUrl} alt={team.lead.name} />
                 <AvatarFallback>
-                  {team.lead.name
+                  {(team.lead.name as string)
                     .split(" ")
-                    .map((n) => n[0])
+                    .map((n: string) => n[0])
                     .join("")
                     .toUpperCase()}
                 </AvatarFallback>
@@ -217,7 +220,7 @@ export function TeamDetail({ teamId }: TeamDetailProps) {
       <div className="bg-background rounded-lg border border-border p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-foreground">Team Members</h2>
-          <AddMemberDialog teamId={teamId} existingMemberIds={members.map((m) => m._id)} />
+          <AddMemberDialog teamId={teamId} existingMemberIds={members.map((m: { _id: Id<"users"> }) => m._id)} />
         </div>
 
         <MembersTable

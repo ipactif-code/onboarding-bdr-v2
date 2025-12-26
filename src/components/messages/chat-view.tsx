@@ -2,8 +2,11 @@
 
 import { useEffect, useRef } from "react";
 import { useQuery, useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
+
+// Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const api: any = require("../../../convex/_generated/api").api;
 import { ChatHeader } from "./chat-header";
 import { MessageList } from "./message-list";
 import { MessageInput } from "./message-input";
@@ -62,8 +65,19 @@ export function ChatView({ conversationId }: ChatViewProps) {
     isOnline: participant?.status === "online",
   };
 
+  // Type for message items
+  type MessageItem = {
+    _id: Id<"messages">;
+    content: string;
+    senderId: Id<"users">;
+    senderName: string;
+    senderAvatarUrl?: string;
+    createdAt: number;
+    isOwn: boolean;
+  };
+
   // Transform messages for MessageList
-  const messages = data.messages.map((msg) => ({
+  const messages = data.messages.map((msg: MessageItem) => ({
     _id: msg._id,
     content: msg.content,
     senderId: msg.senderId,

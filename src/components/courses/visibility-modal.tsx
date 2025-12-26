@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
+
+// Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const api: any = require("../../../convex/_generated/api").api;
 import { Check, Loader2 } from "lucide-react";
 import {
   Dialog,
@@ -126,7 +129,7 @@ export function VisibilityModal({
             </p>
           ) : (
             <div className="space-y-2">
-              {allTeams.map((team) => {
+              {allTeams.map((team: { _id: Id<"teams">; name: string }) => {
                 const isSelected = selectedTeamIds.has(team._id);
                 return (
                   <div

@@ -6,8 +6,11 @@ import { useRouter, usePathname } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import { Plus, Search, X, Loader2 } from "lucide-react";
 
-import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
+
+// Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const api: any = require("../../../convex/_generated/api").api;
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +24,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { QuickNavigation } from "./quick-navigation";
+import { ChannelSearch } from "./channel-search";
 import { CollapsibleSection } from "./collapsible-section";
 import { FavoritesList } from "./favorites-list";
 import { ChannelListItem } from "./sidebar/channel-list-item";
@@ -492,6 +496,9 @@ export function MessagingSidebar({
           {/* Quick Navigation - always visible */}
           <QuickNavigation className="mb-2" />
 
+          {/* Channel Search */}
+          <ChannelSearch className="px-2 mb-2" />
+
           <div className="my-2 border-t" />
 
           {/* Favorites Section */}
@@ -532,8 +539,8 @@ export function MessagingSidebar({
             ) : (
               <div className="space-y-0.5">
                 {channels
-                  .filter((channel) => !channel.membership?.isFavorite)
-                  .map((channel) => (
+                  .filter((channel: { _id: Id<"channels">; name: string; type: string; membership?: { isFavorite?: boolean; unreadCount?: number } }) => !channel.membership?.isFavorite)
+                  .map((channel: { _id: Id<"channels">; name: string; type: string; membership?: { isFavorite?: boolean; unreadCount?: number } }) => (
                     <ChannelListItem
                       key={channel._id}
                       id={channel._id}
@@ -580,8 +587,8 @@ export function MessagingSidebar({
             ) : (
               <div className="space-y-0.5">
                 {conversations
-                  .filter((conversation) => !conversation.isFavorite)
-                  .map((conversation) => {
+                  .filter((conversation: { _id: Id<"conversations">; isFavorite?: boolean; participants?: Array<{ name?: string; avatarUrl?: string; status?: Status }> }) => !conversation.isFavorite)
+                  .map((conversation: { _id: Id<"conversations">; isFavorite?: boolean; participants?: Array<{ name?: string; avatarUrl?: string; status?: Status }> }) => {
                     // Get the other participant's info (first participant for direct messages)
                     const otherParticipant = conversation.participants?.[0];
                     return (

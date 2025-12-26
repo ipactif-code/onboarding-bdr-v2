@@ -2,8 +2,11 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
-import { api } from "../../../../../../../../convex/_generated/api";
 import { Id } from "../../../../../../../../convex/_generated/dataModel";
+
+// Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const api: any = require("../../../../../../../../convex/_generated/api").api;
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -121,7 +124,7 @@ export function LessonEditor({
   const router = useRouter();
 
   // Fetch fresh lesson data
-  const lesson = useQuery(api.lessons.get, { lessonId: initialLesson._id }) ?? initialLesson;
+  const lesson: Lesson = useQuery(api.lessons.get, { lessonId: initialLesson._id }) ?? initialLesson;
 
   // Local state
   const [title, setTitle] = useState(lesson.title);

@@ -2,7 +2,10 @@
 
 import { useState, useMemo } from "react";
 import { useQuery } from "convex/react";
-import { api } from "../../../../convex/_generated/api";
+
+// Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const api: any = require("../../../../convex/_generated/api").api;
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -32,7 +35,12 @@ export function CoursesList() {
   const filteredCourses = useMemo(() => {
     if (!courses) return [];
 
-    return courses.filter((course) => {
+    return courses.filter((course: {
+      title: string;
+      description?: string;
+      progress: { percentage: number };
+      tags?: Array<{ _id: string }>;
+    }) => {
       // Search filter
       const matchesSearch =
         !search ||
@@ -52,7 +60,7 @@ export function CoursesList() {
       // Tag filter - course.tags is array of { _id, name }
       const matchesTag =
         tagFilter === "all" ||
-        course.tags?.some((tag) => tag._id === tagFilter);
+        course.tags?.some((tag: { _id: string }) => tag._id === tagFilter);
 
       return matchesSearch && matchesStatus && matchesTag;
     });
@@ -99,7 +107,7 @@ export function CoursesList() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Tags</SelectItem>
-              {tags?.map((tag) => (
+              {tags?.map((tag: { _id: string; name: string }) => (
                 <SelectItem key={tag._id} value={tag._id}>
                   {tag.name}
                 </SelectItem>
@@ -131,7 +139,12 @@ export function CoursesList() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredCourses.map((course) => (
+          {filteredCourses.map((course: {
+            _id: string;
+            title: string;
+            coverImageUrl?: string;
+            progress: { totalLessons: number; percentage: number };
+          }) => (
             <CourseCard
               key={course._id}
               id={course._id}

@@ -1,7 +1,10 @@
 "use client";
 
 import { useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+
+// Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const api: any = require("../../../convex/_generated/api").api;
 import {
   Users,
   BookOpen,
@@ -116,7 +119,7 @@ export function AdminDashboard() {
         <Separator />
 
         <RecentUsersTable
-          users={usersResult.data.map((user) => ({
+          users={usersResult.data.map((user: { _id: string; name: string; email: string; avatarUrl?: string; teamCount: number; overallProgress: number; role: string }) => ({
             id: user._id,
             name: user.name,
             email: user.email,

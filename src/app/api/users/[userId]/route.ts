@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { ConvexHttpClient } from "convex/browser";
-import { api } from "../../../../../convex/_generated/api";
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+
+// Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const apiRef: any = require("../../../../../convex/_generated/api").api;
 
 export async function DELETE(
   request: NextRequest,
@@ -17,9 +20,9 @@ export async function DELETE(
     }
 
     // 2. Verify admin role
-    const currentUser = await convex.query(api.users.getByClerkId, {
+    const currentUser = (await convex.query(apiRef.users.getByClerkId, {
       clerkId: currentClerkId,
-    });
+    })) as { role: string; _id: string } | null;
     if (!currentUser || currentUser.role !== "admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

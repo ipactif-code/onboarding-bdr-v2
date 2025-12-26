@@ -14,7 +14,9 @@
 export {
   listByChannel,
   getChannelMessage,
+  getThread,
   getLessonDiscussion,
+  listThreadsWithActivity,
 } from "./messages/channelQueries";
 
 // Channel messaging mutations

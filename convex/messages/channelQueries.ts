@@ -7,7 +7,12 @@
  */
 
 // Core channel message queries
-export { listByChannel, getChannelMessage } from "./channelMessageQueries";
+export {
+  listByChannel,
+  getChannelMessage,
+  getThread,
+  listThreadsWithActivity,
+} from "./channelMessageQueries";
 
 // Lesson discussion queries
 export { getLessonDiscussion } from "./lessonDiscussionQueries";

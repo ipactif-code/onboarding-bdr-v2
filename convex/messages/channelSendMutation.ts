@@ -1,6 +1,8 @@
 import { v } from "convex/values";
 import { mutation } from "../_generated/server";
-import { internal } from "../_generated/api";
+import * as apiModule from "../_generated/api";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const internal = (apiModule as any).internal;
 import { requireChannelMember } from "../lib/auth";
 import { checkRateLimit } from "../lib/rateLimits";
 import { MAX_MESSAGE_LENGTH, extractAndStoreMentions } from "./helpers";
@@ -41,8 +43,15 @@ export const sendToChannel = mutation({
     if (membership?.isMuted) {
       // Check if mute has expired
       if (membership.mutedUntil && membership.mutedUntil > Date.now()) {
+        // Log detailed info for debugging (visible in Convex dashboard)
+        console.error(`User ${user._id} muted until ${membership.mutedUntil}`);
+
+        // Return user-friendly relative time
+        const minutesRemaining = Math.ceil(
+          (membership.mutedUntil - Date.now()) / 60000
+        );
         throw new Error(
-          `You are muted in this channel until ${new Date(membership.mutedUntil).toISOString()}`
+          `You are muted in this channel for ${minutesRemaining} more minute${minutesRemaining !== 1 ? "s" : ""}`
         );
       } else if (membership.mutedUntil === undefined) {
         throw new Error("You are muted in this channel");
@@ -57,8 +66,17 @@ export const sendToChannel = mutation({
     // Check rate limit (FR-044: 30 messages per minute)
     const rateLimitResult = await checkRateLimit(ctx, user._id, "text_message");
     if (!rateLimitResult.allowed) {
+      // Log detailed info for debugging (visible in Convex dashboard)
+      console.error(
+        `Rate limit for user ${user._id}, resets at ${rateLimitResult.resetAt}`
+      );
+
+      // Return user-friendly relative time
+      const secondsRemaining = Math.ceil(
+        (rateLimitResult.resetAt - Date.now()) / 1000
+      );
       throw new Error(
-        `Rate limit exceeded. Try again after ${new Date(rateLimitResult.resetAt).toISOString()}`
+        `Rate limit exceeded. Please wait ${secondsRemaining} second${secondsRemaining !== 1 ? "s" : ""}`
       );
     }
 

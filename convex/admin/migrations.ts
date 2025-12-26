@@ -1,17 +1,12 @@
 import { v } from "convex/values";
 import { action } from "../_generated/server";
-import { internal } from "../_generated/api";
+import * as apiModule from "../_generated/api";
 import { Id } from "../_generated/dataModel";
 
-// Type workaround: The internal API has deeply nested types that cause
-// "Type instantiation is excessively deep" errors. We suppress the error
-// to avoid the type inference, then access the specific functions.
-// @ts-expect-error - Convex internal API has deeply nested types that exceed TS depth limit
+// Type workaround: Convex's internal API has excessively deep type nesting.
+// We use dynamic property access to avoid TS2589 "Type instantiation is excessively deep" errors.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const internalApi: any = internal;
-const migrationsQueriesRef = internalApi.admin.migrationsQueries;
-const migrationsMutationsRef = internalApi.admin.migrationsMutations;
-const channelsMutationsRef = internalApi.channels.courseMutations;
+const internal = (apiModule as any).internal;
 
 // ============================================================================
 // Admin Migration Actions
@@ -42,7 +37,7 @@ export const migratePublishedCoursesToChannels = action({
   }> => {
     // Use an internal query to get all published courses without channels
     const coursesToMigrate = await ctx.runQuery(
-      migrationsQueriesRef.getPublishedCoursesWithoutChannels
+      internal.admin.migrationsQueries.getPublishedCoursesWithoutChannels
     ) as Array<{ _id: Id<"courses">; title: string; creatorId: Id<"users"> }>;
 
     let processed = 0;
@@ -55,7 +50,7 @@ export const migratePublishedCoursesToChannels = action({
       try {
         // Step 1: Create the course channel
         const channelId = await ctx.runMutation(
-          channelsMutationsRef.createCourseChannel,
+          internal.channels.courseMutations.createCourseChannel,
           {
             courseId: course._id,
             creatorId: course.creatorId,
@@ -66,7 +61,7 @@ export const migratePublishedCoursesToChannels = action({
 
         // Step 2: Grant course creator admin rights on the channel
         await ctx.runMutation(
-          channelsMutationsRef.grantCourseInstructorAdmin,
+          internal.channels.courseMutations.grantCourseInstructorAdmin,
           {
             courseId: course._id,
             userId: course.creatorId,
@@ -75,7 +70,7 @@ export const migratePublishedCoursesToChannels = action({
 
         // Step 3: Get all course assignments and add users to the channel
         const enrolledUsers = await ctx.runQuery(
-          migrationsQueriesRef.getCourseEnrolledUsers,
+          internal.admin.migrationsQueries.getCourseEnrolledUsers,
           { courseId: course._id }
         ) as Id<"users">[];
 
@@ -83,7 +78,7 @@ export const migratePublishedCoursesToChannels = action({
         for (const userId of enrolledUsers) {
           try {
             await ctx.runMutation(
-              channelsMutationsRef.addCourseEnrollee,
+              internal.channels.courseMutations.addCourseEnrollee,
               {
                 courseId: course._id,
                 userId: userId as Id<"users">,
@@ -148,7 +143,7 @@ export const syncAllTeamsChannelMembersMigration = action({
     console.warn("[Migration] Starting syncAllTeamsChannelMembersMigration...");
 
     const result = await ctx.runMutation(
-      migrationsMutationsRef.syncAllTeamsChannelMembers
+      internal.admin.migrationsMutations.syncAllTeamsChannelMembers
     ) as {
       coursesProcessed: number;
       channelsUpdated: number;

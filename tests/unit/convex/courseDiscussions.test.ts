@@ -1,6 +1,10 @@
 import { convexTest } from "convex-test";
 import { describe, it, expect } from "vitest";
-import { internal, api } from "../../../convex/_generated/api";
+import * as apiModule from "../../../convex/_generated/api";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const internal = (apiModule as any).internal;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const api = (apiModule as any).api;
 import schema from "../../../convex/schema";
 import { Id } from "../../../convex/_generated/dataModel";
 
@@ -42,7 +46,7 @@ describe("Course Discussions - Phase 5", () => {
           courseId: courseId!,
           creatorId: creatorId!,
         });
-      });
+      }) as Id<"channels">;
 
       // Assert
       await t.run(async (ctx) => {
@@ -101,7 +105,7 @@ describe("Course Discussions - Phase 5", () => {
           courseId: courseId!,
           creatorId: creatorId!,
         });
-      });
+      }) as Id<"channels">;
 
       // Assert
       await t.run(async (ctx) => {
@@ -153,7 +157,7 @@ describe("Course Discussions - Phase 5", () => {
           courseId: course1Id!,
           creatorId: creatorId!,
         });
-      });
+      }) as Id<"channels">;
 
       // Act - create second channel with same title
       const channel2Id = await t.run(async (ctx) => {
@@ -161,7 +165,7 @@ describe("Course Discussions - Phase 5", () => {
           courseId: course2Id!,
           creatorId: creatorId!,
         });
-      });
+      }) as Id<"channels">;
 
       // Assert
       await t.run(async (ctx) => {

@@ -5,3 +5,4 @@ export type { BreadcrumbItem } from "./use-breadcrumbs";
 
 export { useMessageScroll } from "./use-message-scroll";
 export { useMessageIntersection } from "./use-message-intersection";
+export { useThread } from "./use-thread";

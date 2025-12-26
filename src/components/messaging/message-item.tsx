@@ -1,13 +1,12 @@
 "use client";
 
-import { Check, MessageSquare, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Check, MessageSquare } from "lucide-react";
 
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
@@ -17,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { getInitials, formatTimestamp } from "@/lib/message-utils";
 import { LessonBadge } from "@/components/messaging/lesson-badge";
 import { MessageItemSkeleton } from "@/components/messaging/message-item-skeleton";
+import { MessageActionButtons } from "@/components/messaging/message-action-buttons";
 
 // ============================================================================
 // Types
@@ -37,6 +37,12 @@ export interface MessageItemProps {
   lesson?: {
     title: string;
   };
+  /**
+   * Whether to show the thread reply button and indicator.
+   * Set to false when displaying messages inside a thread panel to avoid nested navigation.
+   * @default true
+   */
+  showThreadButton?: boolean;
   onReply?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
@@ -63,6 +69,7 @@ export function MessageItem({
   threadReplyCount = 0,
   status = "sent",
   lesson,
+  showThreadButton = true,
   onReply,
   onEdit,
   onDelete,
@@ -132,8 +139,8 @@ export function MessageItem({
           {content}
         </div>
 
-        {/* Thread reply count */}
-        {threadReplyCount > 0 && (
+        {/* Thread reply count indicator */}
+        {showThreadButton && threadReplyCount > 0 && (
           <button
             type="button"
             onClick={onReply}
@@ -148,76 +155,14 @@ export function MessageItem({
         )}
       </div>
 
-      {/* Action buttons (visible on hover) - min 44x44px touch targets for WCAG 2.5.5 */}
-      <div
-        className={cn(
-          "absolute right-4 top-2 flex items-center gap-0.5 rounded-md border border-border bg-background p-0.5 shadow-sm",
-          "opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100"
-        )}
-      >
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="min-h-11 min-w-11"
-              onClick={onReply}
-              aria-label="Reply to message"
-            >
-              <MessageSquare className="size-4" aria-hidden="true" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Reply</TooltipContent>
-        </Tooltip>
-
-        {isOwn && (
-          <>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="min-h-11 min-w-11"
-                  onClick={onEdit}
-                  aria-label="Edit message"
-                >
-                  <Pencil className="size-4" aria-hidden="true" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Edit</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="min-h-11 min-w-11 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  onClick={onDelete}
-                  aria-label="Delete message"
-                >
-                  <Trash2 className="size-4" aria-hidden="true" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Delete</TooltipContent>
-            </Tooltip>
-          </>
-        )}
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="min-h-11 min-w-11"
-              aria-label="More actions"
-            >
-              <MoreHorizontal className="size-4" aria-hidden="true" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>More</TooltipContent>
-        </Tooltip>
-      </div>
+      {/* Action buttons (visible on hover/focus) */}
+      <MessageActionButtons
+        isOwn={isOwn}
+        showThreadButton={showThreadButton}
+        onReply={onReply}
+        onEdit={onEdit}
+        onDelete={onDelete}
+      />
     </div>
   );
 }

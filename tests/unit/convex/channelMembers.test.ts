@@ -1,8 +1,11 @@
 import { convexTest } from "convex-test";
 import { describe, it, expect } from "vitest";
-import { api } from "../../../convex/_generated/api";
 import schema from "../../../convex/schema";
 import { Id } from "../../../convex/_generated/dataModel";
+
+// Workaround for TS2589: Type instantiation is excessively deep and possibly infinite
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const api: any = require("../../../convex/_generated/api").api;
 
 describe("channels.ts - Member Management", () => {
   describe("getMembers query", () => {

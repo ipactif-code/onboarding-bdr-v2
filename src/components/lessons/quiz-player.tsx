@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
+
+// Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const api: any = require("../../../convex/_generated/api").api;
 import confetti from "canvas-confetti";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";

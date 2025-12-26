@@ -5,7 +5,9 @@ import { usePathname } from "next/navigation";
 import { useQuery } from "convex/react";
 import { MessageSquare } from "lucide-react";
 
-import { api } from "../../../convex/_generated/api";
+// Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const api: any = require("../../../convex/_generated/api").api;
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -93,8 +95,12 @@ export function DMList({
             ))
           ) : (
             /* Empty state */
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <MessageSquare className="mb-2 size-8 text-muted-foreground/50" />
+            <div
+              className="flex flex-col items-center justify-center py-8 text-center"
+              role="status"
+              aria-live="polite"
+            >
+              <MessageSquare className="mb-2 size-8 text-muted-foreground/50" aria-hidden="true" />
               <p className="text-sm text-muted-foreground">
                 No conversations yet
               </p>
@@ -125,6 +131,9 @@ export function DMListSkeleton({
     <div
       data-slot="dm-list-skeleton"
       className={cn("flex h-full flex-col", className)}
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
     >
       {/* Header skeleton */}
       <div className="flex items-center gap-2 border-b px-3 py-2">
@@ -149,6 +158,7 @@ export function DMListSkeleton({
           </div>
         ))}
       </div>
+      <span className="sr-only">Loading conversations</span>
     </div>
   );
 }

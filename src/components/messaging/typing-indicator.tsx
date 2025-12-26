@@ -2,8 +2,11 @@
 
 import * as React from "react";
 import { useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
+
+// Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const api: any = require("../../../convex/_generated/api").api;
 import { cn } from "@/lib/utils";
 
 /**
@@ -115,7 +118,7 @@ export function TypingIndicator({
       setIsVisible(false);
     } else {
       // Someone is typing - update message and fade in
-      const names = typingUsers.map((user) => user.userName);
+      const names = typingUsers.map((user: { userName: string }) => user.userName);
       setDisplayedMessage(formatTypingMessage(names));
       setIsVisible(true);
     }

@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
+
+// Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const api: any = require("../../../convex/_generated/api").api;
 import { Search, Loader2, Send } from "lucide-react";
 import {
   Dialog,
@@ -154,7 +157,7 @@ export function NewMessageModal({
                     </div>
                   ) : (
                     <div className="p-1">
-                      {searchResults.map((user) => (
+                      {searchResults.map((user: { _id: Id<"users">; name: string; avatarUrl?: string }) => (
                         <button
                           key={user._id}
                           onClick={() => handleSelectUser(user)}

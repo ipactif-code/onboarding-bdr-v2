@@ -76,7 +76,7 @@ export function MemberRow({
         <DropdownMenu>
           <DropdownMenuTrigger
             className={cn(
-              "inline-flex size-8 shrink-0 items-center justify-center rounded-md",
+              "inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-md",
               "hover:bg-accent hover:text-accent-foreground",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               "disabled:pointer-events-none disabled:opacity-50"

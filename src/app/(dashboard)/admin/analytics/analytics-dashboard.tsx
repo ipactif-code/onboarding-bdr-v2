@@ -2,7 +2,10 @@
 
 import { useMemo } from "react";
 import { useQuery } from "convex/react";
-import { api } from "../../../../../convex/_generated/api";
+
+// Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const api: any = require("../../../../../convex/_generated/api").api;
 import {
   Users,
   BookOpen,
@@ -169,7 +172,7 @@ export function AnalyticsDashboard() {
     if (!sessionStats?.dailySessionCounts) return [];
     return sessionStats.dailySessionCounts
       .slice(-14) // Last 14 days
-      .map((d) => ({
+      .map((d: { date: string; count: number }) => ({
         date: formatDate(d.date),
         sessions: d.count,
       }));
@@ -178,9 +181,9 @@ export function AnalyticsDashboard() {
   const courseData = useMemo(() => {
     if (!courseMetrics) return [];
     return courseMetrics
-      .filter((c) => c.status === "published")
+      .filter((c: { status: string }) => c.status === "published")
       .slice(0, 6) // Top 6 courses
-      .map((c) => ({
+      .map((c: { title: string; completionRate: number }) => ({
         course: c.title.length > 20 ? c.title.slice(0, 20) + "..." : c.title,
         completionRate: c.completionRate,
       }));
@@ -198,7 +201,7 @@ export function AnalyticsDashboard() {
 
   const scoreDistributionData = useMemo(() => {
     if (!quizMetrics?.scoreDistribution) return [];
-    return quizMetrics.scoreDistribution.map((d) => ({
+    return quizMetrics.scoreDistribution.map((d: { range: string; count: number }) => ({
       range: d.range,
       count: d.count,
     }));

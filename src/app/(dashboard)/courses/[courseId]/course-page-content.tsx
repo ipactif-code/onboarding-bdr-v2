@@ -3,8 +3,11 @@
 import { useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "convex/react";
-import { api } from "../../../../../convex/_generated/api";
 import { Id } from "../../../../../convex/_generated/dataModel";
+
+// Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const api: any = require("../../../../../convex/_generated/api").api;
 import { LessonViewer } from "./lesson-viewer";
 import { CourseSidebar } from "./course-sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -35,8 +38,8 @@ export function CoursePageContent({ courseId }: CoursePageContentProps) {
 
     const completedSet = new Set(
       course.userProgress.lessonStatuses
-        .filter((s) => s.status === "completed")
-        .map((s) => s.lessonId)
+        .filter((s: { status: string }) => s.status === "completed")
+        .map((s: { lessonId: Id<"lessons"> }) => s.lessonId)
     );
 
     for (const section of course.sections) {

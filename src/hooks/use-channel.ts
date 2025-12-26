@@ -2,7 +2,10 @@
 
 import { useCallback } from "react";
 import { useQuery, useMutation } from "convex/react";
-import { api } from "../../convex/_generated/api";
+
+// Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const api: any = require("../../convex/_generated/api").api;
 import { Id } from "../../convex/_generated/dataModel";
 
 // ============================================================================
@@ -180,7 +183,7 @@ export function useChannelList(
 
   // Calculate total unread count across all channels
   const totalUnreadCount =
-    channels?.reduce((total, channel) => {
+    channels?.reduce((total: number, channel: ChannelWithMembership) => {
       return total + (channel.membership?.unreadCount ?? 0);
     }, 0) ?? 0;
 

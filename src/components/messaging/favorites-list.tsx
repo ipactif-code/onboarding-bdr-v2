@@ -5,7 +5,9 @@ import { usePathname } from "next/navigation";
 import { useQuery } from "convex/react";
 import { Star } from "lucide-react";
 
-import { api } from "../../../convex/_generated/api";
+// Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const api: any = require("../../../convex/_generated/api").api;
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChannelListItem } from "./sidebar/channel-list-item";
@@ -79,7 +81,7 @@ export function FavoritesList({
       data-slot="favorites-list"
       className={cn("space-y-0.5", className)}
     >
-      {favorites.map((item) => {
+      {favorites.map((item: { type: "channel" | "dm"; id: string; name: string; isPrivate?: boolean; unreadCount?: number; avatarUrl?: string }) => {
         const isActive =
           activeItem?.type === item.type && activeItem?.id === item.id;
 

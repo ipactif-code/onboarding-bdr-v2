@@ -1,14 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { ConvexHttpClient } from "convex/browser";
-import { api } from "../../../../convex/_generated/api";
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
-// Type workaround: Convex API has deeply nested types that exceed TS depth limit
-// @ts-expect-error - Convex API type instantiation is excessively deep
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const apiRef: any = api;
+// Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
+// TypeScript exceeds depth limits when importing api directly with ConvexHttpClient
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const apiRef: any = require("../../../../convex/_generated/api").api;
+
+async function queryUserByClerkId(
+  clerkId: string
+): Promise<{ role: string } | null> {
+  return convex.query(apiRef.users.getByClerkId, { clerkId }) as Promise<{
+    role: string;
+  } | null>;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,9 +29,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Check if current user is admin (getByClerkId is public, no auth required)
-    const currentUser = await convex.query(apiRef.users.getByClerkId, { clerkId: userId }) as {
-      role: string;
-    } | null;
+    const currentUser = await queryUserByClerkId(userId);
     if (!currentUser || currentUser.role !== "admin") {
       return NextResponse.json(
         { error: "Forbidden: Admin access required" },

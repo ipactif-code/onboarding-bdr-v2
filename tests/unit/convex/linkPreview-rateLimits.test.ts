@@ -1,7 +1,10 @@
 import { convexTest } from "convex-test";
 import { describe, it, expect } from "vitest";
 import schema from "../../../convex/schema";
-import { internal } from "../../../convex/_generated/api";
+import * as apiModule from "../../../convex/_generated/api";
+// Type workaround: Convex's API has excessively deep type nesting.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const internal = (apiModule as any).internal;
 import type { Id } from "../../../convex/_generated/dataModel";
 
 /**

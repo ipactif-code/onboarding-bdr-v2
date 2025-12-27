@@ -1,12 +1,15 @@
 "use client";
 
 import { Check, MessageSquare } from "lucide-react";
-
+import { useQuery } from "convex/react";
+import * as apiModule from "../../../convex/_generated/api";
+import type { Id } from "../../../convex/_generated/dataModel";
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar";
+
 import {
   Tooltip,
   TooltipContent,
@@ -18,15 +21,20 @@ import { LessonBadge } from "@/components/messaging/lesson-badge";
 import { MessageItemSkeleton } from "@/components/messaging/message-item-skeleton";
 import { MessageActionButtons } from "@/components/messaging/message-action-buttons";
 import { RichTextRenderer } from "@/components/messaging/rich-text-renderer";
+import { ReactionBar, ReactionBarSkeleton, type ReactionGroup } from "@/components/messaging/reaction-bar";
+
+// Type workaround: Convex's API has excessively deep type nesting.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const api = (apiModule as any).api;
 
 // ============================================================================
 // Types
 // ============================================================================
 
 export interface MessageItemProps {
-  id: string;
+  id: Id<"messages">;
   content: string;
-  senderId: string;
+  senderId: Id<"users">;
   senderName: string;
   senderAvatarUrl?: string;
   createdAt: number;
@@ -44,6 +52,11 @@ export interface MessageItemProps {
    * @default true
    */
   showThreadButton?: boolean;
+  /**
+   * The current user's display name for highlighting @mentions.
+   * When the current user is mentioned, the mention will be highlighted differently.
+   */
+  currentUserName?: string;
   onReply?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
@@ -71,10 +84,17 @@ export function MessageItem({
   status = "sent",
   lesson,
   showThreadButton = true,
+  currentUserName,
   onReply,
   onEdit,
   onDelete,
 }: MessageItemProps): React.ReactElement {
+  // Fetch reactions for this message (real-time subscription)
+  const reactions = useQuery(
+    api.reactions.getMessageReactions,
+    { messageId: id }
+  ) as ReactionGroup[] | undefined;
+
   return (
     <div
       data-slot="message-item"
@@ -136,8 +156,8 @@ export function MessageItem({
         )}
 
         {/* Message body */}
-        <div className="mt-1 break-words text-foreground">
-          <RichTextRenderer content={content} />
+        <div className="mt-1 break-words">
+          <RichTextRenderer content={content} currentUserName={currentUserName} />
         </div>
 
         {/* Thread reply count indicator */}
@@ -154,10 +174,22 @@ export function MessageItem({
             </span>
           </button>
         )}
+
+        {/* Message reactions */}
+        {reactions === undefined ? (
+          <ReactionBarSkeleton />
+        ) : (
+          <ReactionBar
+            messageId={id}
+            reactions={reactions}
+            className="mt-2"
+          />
+        )}
       </div>
 
       {/* Action buttons (visible on hover/focus) */}
       <MessageActionButtons
+        messageId={id}
         isOwn={isOwn}
         showThreadButton={showThreadButton}
         onReply={onReply}

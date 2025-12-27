@@ -125,44 +125,44 @@ export const seedDatabase = mutation({
     // Add members to teams
     await ctx.db.insert("teamMembers", {
       teamId: salesTeam,
-      userId: users[0]!!,
+      userId: users[0]!,
       joinedAt: now,
     });
     await ctx.db.insert("teamMembers", {
       teamId: salesTeam,
-      userId: users[1]!!,
+      userId: users[1]!,
       joinedAt: now,
     });
     await ctx.db.insert("teamMembers", {
       teamId: salesTeam,
-      userId: users[2]!!,
+      userId: users[2]!,
       joinedAt: now,
     });
 
     await ctx.db.insert("teamMembers", {
       teamId: marketingTeam,
-      userId: users[3]!!,
+      userId: users[3]!,
       joinedAt: now,
     });
     await ctx.db.insert("teamMembers", {
       teamId: marketingTeam,
-      userId: users[4]!!,
+      userId: users[4]!,
       joinedAt: now,
     });
 
     await ctx.db.insert("teamMembers", {
       teamId: supportTeam,
-      userId: users[5]!!,
+      userId: users[5]!,
       joinedAt: now,
     });
     await ctx.db.insert("teamMembers", {
       teamId: supportTeam,
-      userId: users[6]!!,
+      userId: users[6]!,
       joinedAt: now,
     });
     await ctx.db.insert("teamMembers", {
       teamId: supportTeam,
-      userId: users[7]!!,
+      userId: users[7]!,
       joinedAt: now,
     });
 

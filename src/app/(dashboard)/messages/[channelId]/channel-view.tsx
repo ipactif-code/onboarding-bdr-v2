@@ -205,6 +205,7 @@ export function ChannelView({ channelId }: ChannelViewProps): React.ReactElement
         onEdit={handleEdit}
         onDelete={handleDeleteRequest}
         currentUserId={currentUserId}
+        currentUserName={currentUser?.name}
         className="flex-1"
       />
 
@@ -236,6 +237,7 @@ export function ChannelView({ channelId }: ChannelViewProps): React.ReactElement
         <ThreadPanel
           parentMessageId={openThreadId}
           currentUserId={currentUserId}
+          currentUserName={currentUser?.name}
           onClose={handleCloseThread}
           onSendReply={handleSendThreadReply}
           onEdit={handleEdit}

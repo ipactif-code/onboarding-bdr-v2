@@ -59,7 +59,7 @@ export const getBreadcrumbData = query({
 
     let courseId: Id<"courses"> | undefined = args.courseId;
     let sectionId: Id<"sections"> | undefined;
-    let lessonId: Id<"lessons"> | undefined = args.lessonId;
+    const lessonId: Id<"lessons"> | undefined = args.lessonId;
 
     // 2. If lessonId provided, resolve section and course from hierarchy
     if (lessonId) {

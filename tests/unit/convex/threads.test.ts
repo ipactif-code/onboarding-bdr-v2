@@ -1,6 +1,11 @@
 import { convexTest } from "convex-test";
 import { describe, it, expect } from "vitest";
-import { api, internal } from "../../../convex/_generated/api";
+import * as apiModule from "../../../convex/_generated/api";
+// Type workaround: Convex's API has excessively deep type nesting.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const api = (apiModule as any).api;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const internal = (apiModule as any).internal;
 import schema from "../../../convex/schema";
 import { Id } from "../../../convex/_generated/dataModel";
 
@@ -478,7 +483,8 @@ describe("threads.ts - Threaded Replies (Phase 7)", () => {
       // Assert - deleted replies should be excluded from results
       expect(result).toBeDefined();
       expect(result?.replies).toHaveLength(2); // Only non-deleted replies
-      expect(result?.replies.every((r) => r.deletedAt === undefined)).toBe(true);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect(result?.replies.every((r: any) => r.deletedAt === undefined)).toBe(true);
       // Verify the active replies are returned
       expect(result?.replies[0]!.content).toBe("Active reply");
       expect(result?.replies[1]!.content).toBe("Another active reply");
@@ -1427,9 +1433,11 @@ describe("threads.ts - Threaded Replies (Phase 7)", () => {
       await t.run(async (ctx) => {
         const reply = await ctx.db.get(replyId);
         expect(reply).toBeDefined();
-        expect(reply?.content).toBe("This is a reply");
-        expect(reply?.parentId).toEqual(parentId);
-        expect(reply?.channelId).toEqual(channelId);
+        if (reply && "content" in reply && "parentId" in reply && "channelId" in reply) {
+          expect(reply.content).toBe("This is a reply");
+          expect(reply.parentId).toEqual(parentId);
+          expect(reply.channelId).toEqual(channelId);
+        }
       });
     });
 
@@ -1657,7 +1665,9 @@ describe("threads.ts - Threaded Replies (Phase 7)", () => {
       // Assert
       await t.run(async (ctx) => {
         const reply = await ctx.db.get(replyId);
-        expect(reply?.lessonId).toEqual(lessonId);
+        if (reply && "lessonId" in reply) {
+          expect(reply.lessonId).toEqual(lessonId);
+        }
       });
     });
   });

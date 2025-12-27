@@ -20,6 +20,8 @@ interface ThreadPanelProps {
   parentMessageId: Id<"messages"> | null;
   /** Current user ID to identify own messages. */
   currentUserId: Id<"users">;
+  /** The current user's display name for highlighting @mentions. */
+  currentUserName?: string;
   /** Callback to close the panel. */
   onClose: () => void;
   /** Callback when user sends a reply (receives serialized content). */
@@ -64,6 +66,7 @@ interface ThreadPanelProps {
 export function ThreadPanel({
   parentMessageId,
   currentUserId,
+  currentUserName,
   onClose,
   onSendReply,
   onReplySent,
@@ -108,6 +111,7 @@ export function ThreadPanel({
               <ThreadView
                 parentMessageId={parentMessageId}
                 currentUserId={currentUserId}
+                currentUserName={currentUserName}
                 onClose={onClose}
                 onEdit={onEdit}
                 onDelete={onDelete}

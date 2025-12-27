@@ -6,6 +6,7 @@ import { CheckIcon, CopyIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
+import { filterPlatejsProps } from "@/lib/plate-utils";
 import { Button } from "@/components/ui/button";
 
 // ============================================================================
@@ -259,8 +260,11 @@ export function MessageCodeBlockStatic(
   const { children, element, attributes, ...rest } = props;
   const language = element?.lang;
 
+  // Filter out Plate.js internal methods before spreading to DOM
+  const domSafeProps = filterPlatejsProps(rest);
+
   return (
-    <CodeBlockMessage language={language} {...attributes} {...rest}>
+    <CodeBlockMessage language={language} {...attributes} {...domSafeProps}>
       {children}
     </CodeBlockMessage>
   );
@@ -278,8 +282,12 @@ export function MessageCodeLineStatic(
   }
 ): React.ReactElement {
   const { children, element: _element, attributes, ...rest } = props;
+
+  // Filter out Plate.js internal methods before spreading to DOM
+  const domSafeProps = filterPlatejsProps(rest);
+
   return (
-    <div data-slot="code-line" {...attributes} {...rest}>
+    <div data-slot="code-line" {...attributes} {...domSafeProps}>
       {children}
     </div>
   );
@@ -299,8 +307,11 @@ export function MessageCodeSyntaxLeafStatic(
   const { children, leaf, attributes, ...rest } = props;
   const tokenClassName = leaf?.className as string | undefined;
 
+  // Filter out Plate.js internal methods before spreading to DOM
+  const domSafeProps = filterPlatejsProps(rest);
+
   return (
-    <span className={tokenClassName} {...attributes} {...rest}>
+    <span className={tokenClassName} {...attributes} {...domSafeProps}>
       {children}
     </span>
   );

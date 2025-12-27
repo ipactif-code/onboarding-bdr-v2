@@ -2,13 +2,14 @@
 
 import { Check, MessageSquare } from "lucide-react";
 import { useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+import * as apiModule from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar";
+
 import {
   Tooltip,
   TooltipContent,
@@ -21,6 +22,10 @@ import { MessageItemSkeleton } from "@/components/messaging/message-item-skeleto
 import { MessageActionButtons } from "@/components/messaging/message-action-buttons";
 import { RichTextRenderer } from "@/components/messaging/rich-text-renderer";
 import { ReactionBar, ReactionBarSkeleton, type ReactionGroup } from "@/components/messaging/reaction-bar";
+
+// Type workaround: Convex's API has excessively deep type nesting.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const api = (apiModule as any).api;
 
 // ============================================================================
 // Types

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
 import { Smile } from 'lucide-react';
+import { Theme, type EmojiClickData } from 'emoji-picker-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -12,31 +13,6 @@ import {
 } from '@/components/ui/popover';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-
-/**
- * Emoji object returned by emoji-mart picker
- */
-interface EmojiData {
-  id: string;
-  name: string;
-  native: string;
-  unified: string;
-  keywords: string[];
-  shortcodes: string;
-  emoticons?: string[];
-}
-
-/**
- * Props for the emoji-mart Picker component (typed for our usage)
- */
-interface EmojiMartPickerProps {
-  data: unknown;
-  onEmojiSelect: (emoji: EmojiData) => void;
-  theme: 'light' | 'dark';
-  previewPosition: 'none' | 'top' | 'bottom';
-  skinTonePosition: 'none' | 'preview' | 'search';
-  autoFocus: boolean;
-}
 
 export interface EmojiPickerProps {
   /** Callback when an emoji is selected */
@@ -56,14 +32,15 @@ export interface EmojiPickerProps {
 }
 
 /**
- * Emoji picker component that wraps @emoji-mart/react with shadcn/ui Popover.
+ * Emoji picker component that wraps emoji-picker-react with shadcn/ui Popover.
  *
  * Features:
- * - Lazy loads emoji data for performance
+ * - Lazy loads the picker for performance
  * - Respects dark/light theme from next-themes
  * - Built-in search functionality
  * - Shows recent/frequently used emojis
- * - Accessible keyboard navigation (handled by emoji-mart)
+ * - Accessible keyboard navigation
+ * - React 19 compatible
  *
  * @example
  * ```tsx
@@ -84,22 +61,26 @@ export function EmojiPicker({
   disabled = false,
 }: EmojiPickerProps): React.ReactElement {
   const { resolvedTheme } = useTheme();
-  const [PickerComponent, setPickerComponent] = useState<React.ComponentType<EmojiMartPickerProps> | null>(null);
-  const [emojiData, setEmojiData] = useState<unknown>(null);
+  const [PickerComponent, setPickerComponent] = useState<React.ComponentType<{
+    onEmojiClick: (emojiData: EmojiClickData) => void;
+    theme: Theme;
+    searchPlaceHolder?: string;
+    autoFocusSearch?: boolean;
+    lazyLoadEmojis?: boolean;
+    skinTonesDisabled?: boolean;
+    width?: number | string;
+    height?: number | string;
+  }> | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
-  // Lazy load emoji picker and data when popover opens
+  // Lazy load emoji picker when popover opens
   useEffect(() => {
     if (open && !hasLoadedOnce) {
       setIsLoading(true);
-      Promise.all([
-        import('@emoji-mart/react'),
-        import('@emoji-mart/data'),
-      ])
-        .then(([pickerModule, dataModule]) => {
-          setPickerComponent(() => pickerModule.default as React.ComponentType<EmojiMartPickerProps>);
-          setEmojiData(dataModule.default);
+      import('emoji-picker-react')
+        .then((module) => {
+          setPickerComponent(() => module.default);
           setHasLoadedOnce(true);
         })
         .catch((_error: unknown) => {
@@ -113,16 +94,16 @@ export function EmojiPicker({
     }
   }, [open, hasLoadedOnce]);
 
-  const handleEmojiSelect = useCallback(
-    (emoji: EmojiData): void => {
-      onEmojiSelect(emoji.native);
+  const handleEmojiClick = useCallback(
+    (emojiData: EmojiClickData): void => {
+      onEmojiSelect(emojiData.emoji);
       onOpenChange(false);
     },
     [onEmojiSelect, onOpenChange]
   );
 
   // Determine theme for emoji picker
-  const pickerTheme = resolvedTheme === 'dark' ? 'dark' : 'light';
+  const pickerTheme = resolvedTheme === 'dark' ? Theme.DARK : Theme.LIGHT;
 
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
@@ -149,15 +130,17 @@ export function EmojiPicker({
         {isLoading && !PickerComponent && (
           <EmojiPickerLoadingSkeleton />
         )}
-        {PickerComponent && emojiData !== null && (
+        {PickerComponent && (
           <div data-slot="emoji-picker">
             <PickerComponent
-              data={emojiData as EmojiMartPickerProps['data']}
-              onEmojiSelect={handleEmojiSelect}
+              onEmojiClick={handleEmojiClick}
               theme={pickerTheme}
-              previewPosition="none"
-              skinTonePosition="search"
-              autoFocus
+              searchPlaceHolder="Search emoji..."
+              autoFocusSearch
+              lazyLoadEmojis
+              skinTonesDisabled={false}
+              width={352}
+              height={400}
             />
           </div>
         )}
@@ -176,7 +159,7 @@ function EmojiPickerLoadingSkeleton(): React.ReactElement {
       className="rounded-lg bg-popover p-3 border shadow-md"
     >
       <div className="space-y-3">
-        <Skeleton className="h-9 w-[348px]" />
+        <Skeleton className="h-9 w-[328px]" />
         <div className="flex gap-2">
           {Array.from({ length: 9 }).map((_, i) => (
             <Skeleton key={i} className="size-6" />

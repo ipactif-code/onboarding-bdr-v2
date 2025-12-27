@@ -16,36 +16,32 @@ vi.mock("next-themes", () => ({
   }),
 }));
 
-// Mock @emoji-mart/react and @emoji-mart/data for lazy loading
-const mockEmojiMartPicker = vi.fn(({ onEmojiSelect, theme, data }) => (
-  <div data-testid="emoji-picker-component" data-theme={theme}>
-    <button
-      type="button"
-      onClick={() =>
-        onEmojiSelect({
-          id: "grinning",
-          name: "Grinning Face",
-          native: "😀",
-          unified: "1f600",
-          keywords: ["smile", "happy"],
-          shortcodes: ":grinning:",
-        })
-      }
-    >
-      Mock Emoji 😀
-    </button>
-  </div>
-));
-
-const mockEmojiData = { categories: [], emojis: {} };
-
-// Mock dynamic imports
-vi.mock("@emoji-mart/react", () => ({
-  default: mockEmojiMartPicker,
-}));
-
-vi.mock("@emoji-mart/data", () => ({
-  default: mockEmojiData,
+// Mock emoji-picker-react - the new library
+// NOTE: vi.mock is hoisted, so we define the mock inline
+vi.mock("emoji-picker-react", () => ({
+  default: vi.fn(({ onEmojiClick, theme }: {
+    onEmojiClick: (data: { emoji: string; unified: string }) => void;
+    theme: string;
+  }) => (
+    <div data-testid="emoji-picker-component" data-theme={theme}>
+      <button
+        type="button"
+        onClick={() =>
+          onEmojiClick({
+            emoji: "😀",
+            unified: "1f600",
+          })
+        }
+      >
+        Mock Emoji 😀
+      </button>
+    </div>
+  )),
+  Theme: {
+    DARK: "dark",
+    LIGHT: "light",
+    AUTO: "auto",
+  },
 }));
 
 // Mock shadcn/ui components

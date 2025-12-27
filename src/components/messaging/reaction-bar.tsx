@@ -18,11 +18,15 @@ import { useState } from "react";
 import { useMutation } from "convex/react";
 
 import type { Id } from "../../../convex/_generated/dataModel";
-import { api } from "../../../convex/_generated/api";
+import * as apiModule from "../../../convex/_generated/api";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { EmojiPicker } from "@/components/messaging/emoji-picker";
 import { ReactionButton } from "@/components/messaging/reaction-button";
+
+// Type workaround: Convex's API has excessively deep type nesting.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const api = (apiModule as any).api;
 
 // ============================================================================
 // Types

@@ -1,10 +1,11 @@
 import { v } from "convex/values";
 import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
-import * as apiModule from "./_generated/api";
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const internal = (apiModule as any).internal;
 import { requireAuth, requireAdmin, requireSelfOrAdmin, ensureUser } from "./lib/auth";
+
+// Type workaround: Use require() to avoid TS2589 deep type instantiation on 'internal'
+// eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-explicit-any
+const { internal } = require("./_generated/api") as { internal: any };
 
 // ============================================================================
 // Queries

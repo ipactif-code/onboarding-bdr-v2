@@ -1,8 +1,11 @@
 import { convexTest } from "convex-test";
 import { describe, it, expect } from "vitest";
-import { api } from "../../../convex/_generated/api";
 import schema from "../../../convex/schema";
 import { Id } from "../../../convex/_generated/dataModel";
+
+// Type workaround: Use require() to avoid TS2589 deep type instantiation on 'api'
+// eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-explicit-any
+const { api } = require("../../../convex/_generated/api") as { api: any };
 
 describe("mentions.ts - Message Mentions", () => {
   describe("mentions.getMentionsForUser query", () => {
@@ -471,8 +474,10 @@ describe("mentions.ts - Message Mentions", () => {
       // Assert - Both mentions returned, but deleted message has null messageData
       expect(mentions).toHaveLength(2);
 
-      const deletedMention = mentions.find((m) => m.message === null);
-      const activeMention = mentions.find((m) => m.message?.content === "@test Active message");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const deletedMention = mentions.find((m: any) => m.message === null);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const activeMention = mentions.find((m: any) => m.message?.content === "@test Active message");
 
       expect(deletedMention).toBeDefined();
       expect(activeMention).toBeDefined();

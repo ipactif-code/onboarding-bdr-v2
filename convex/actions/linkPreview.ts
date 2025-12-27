@@ -2,7 +2,6 @@
 
 import { action } from "../_generated/server";
 import { v } from "convex/values";
-import * as apiModule from "../_generated/api";
 import { Id } from "../_generated/dataModel";
 import { validateUrlForFetch } from "../lib/urlValidation";
 import {
@@ -12,10 +11,11 @@ import {
   FETCH_TIMEOUT_MS,
 } from "../lib/metadataExtractor";
 
-// Type workaround: Convex's internal API has excessively deep type nesting.
-// We use dynamic property access to avoid TS2589 "Type instantiation is excessively deep" errors.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const internal = (apiModule as any).internal;
+// Type workaround: Use require() to avoid TS2589 deep type instantiation on 'internal'
+// The actual runtime value is still the properly typed internal API, but TypeScript
+// won't try to evaluate the deep FilterApi type
+// eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-explicit-any
+const { internal } = require("../_generated/api") as { internal: any };
 
 /**
  * Link preview result type.
@@ -75,18 +75,19 @@ export const generateLinkPreview = action({
     }
 
     // Step 3: Get user from database (needed for rate limiting)
-    const user = (await ctx.runQuery(internal.users.getByClerkIdInternal, {
-      clerkId: identity.subject,
-    })) as { _id: Id<"users"> } | null;
+    const user: { _id: Id<"users"> } | null = await ctx.runQuery(
+      internal.users.getByClerkIdInternal,
+      { clerkId: identity.subject }
+    );
 
     if (!user) {
       return { error: "User not found" };
     }
 
-    const userId = user._id as Id<"users">;
+    const userId = user._id;
 
     // Step 4: Check rate limit (AFTER validation, so invalid URLs don't consume quota)
-    const rateLimit = await ctx.runMutation(
+    const rateLimit: { allowed: boolean; resetAt: number } = await ctx.runMutation(
       internal.rateLimits.consumeLinkPreviewRateLimit,
       { userId }
     );

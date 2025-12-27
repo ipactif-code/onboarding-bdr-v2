@@ -1,9 +1,10 @@
 import { v } from "convex/values";
 import { mutation } from "../_generated/server";
-import * as apiModule from "../_generated/api";
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const internal = (apiModule as any).internal;
 import { requireAdmin } from "../lib/auth";
+
+// Type workaround: Use require() to avoid TS2589 deep type instantiation on 'internal'
+// eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-explicit-any
+const { internal } = require("../_generated/api") as { internal: any };
 
 // ============================================================================
 // Course Publish Mutations

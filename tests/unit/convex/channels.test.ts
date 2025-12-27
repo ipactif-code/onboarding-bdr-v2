@@ -1,6 +1,9 @@
 import { convexTest } from "convex-test";
 import { describe, it, expect, beforeEach } from "vitest";
-import { api } from "../../../convex/_generated/api";
+import * as apiModule from "../../../convex/_generated/api";
+// Type workaround: Convex's API has excessively deep type nesting.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const api = (apiModule as any).api;
 import schema from "../../../convex/schema";
 import { Id } from "../../../convex/_generated/dataModel";
 
@@ -597,10 +600,12 @@ describe("channels.ts - Channel Management", () => {
       await t.run(async (ctx) => {
         const channel = await ctx.db.get(channelId);
         expect(channel).toBeDefined();
-        expect(channel?.name).toBe("new-channel");
-        expect(channel?.type).toBe("public");
-        expect(channel?.isArchived).toBe(false);
-        expect(channel?.memberCount).toBe(1);
+        if (channel && "name" in channel && "type" in channel && "isArchived" in channel && "memberCount" in channel) {
+          expect(channel.name).toBe("new-channel");
+          expect(channel.type).toBe("public");
+          expect(channel.isArchived).toBe(false);
+          expect(channel.memberCount).toBe(1);
+        }
 
         // Check creator membership
         const membership = await ctx.db

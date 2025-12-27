@@ -18,6 +18,8 @@ interface ThreadViewProps {
   parentMessageId: Id<"messages">;
   /** The current user's ID for determining message ownership. */
   currentUserId: Id<"users">;
+  /** The current user's display name for highlighting @mentions. */
+  currentUserName?: string;
   /** Callback when the thread view should be closed. */
   onClose?: () => void;
   /** Callback when user wants to edit a message. */
@@ -48,6 +50,7 @@ interface ThreadViewProps {
 export function ThreadView({
   parentMessageId,
   currentUserId,
+  currentUserName,
   onClose,
   onEdit,
   onDelete,
@@ -104,6 +107,7 @@ export function ThreadView({
           status={parent.status ?? "sent"}
           lesson={parent.lesson}
           showThreadButton={false}
+          currentUserName={currentUserName}
         />
       </div>
 
@@ -147,6 +151,7 @@ export function ThreadView({
                   status={reply.status ?? "sent"}
                   lesson={reply.lesson}
                   showThreadButton={false}
+                  currentUserName={currentUserName}
                   onEdit={
                     onEdit && currentUserId === reply.senderId
                       ? () => onEdit(reply._id)

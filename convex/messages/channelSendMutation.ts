@@ -161,8 +161,8 @@ export const sendToChannel = mutation({
       lastMessageAt: now,
     });
 
-    // Extract and store mentions
-    await extractAndStoreMentions(ctx, messageId, args.content, args.channelId);
+    // Extract and store mentions (pass user._id for @everyone admin check)
+    await extractAndStoreMentions(ctx, messageId, args.content, args.channelId, user._id);
 
     // T069: Notify instructors for lesson-specific questions in course channels
     // Only trigger when:

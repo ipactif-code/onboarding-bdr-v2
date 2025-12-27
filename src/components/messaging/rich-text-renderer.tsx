@@ -47,6 +47,7 @@ import {
   type LinkMetadata,
 } from "@/components/messaging/link-preview";
 import {
+  MentionContextProvider,
   MessageParagraphStatic,
   MessageLinkStatic,
   MessageMentionStatic,
@@ -140,6 +141,12 @@ export interface RichTextRendererProps {
    */
   className?: string;
   /**
+   * The current user's display name for highlighting their mentions.
+   * When provided, @mentions of the current user will be highlighted differently
+   * (amber background) compared to other mentions (blue text).
+   */
+  currentUserName?: string;
+  /**
    * Whether to show link previews below the message content.
    * When enabled, detects links in the content and renders preview cards.
    * @default false
@@ -205,6 +212,7 @@ export interface RichTextRendererProps {
 export function RichTextRenderer({
   content,
   className,
+  currentUserName,
   showLinkPreviews = false,
   linkMetadataMap,
   loadingLinkUrls,
@@ -255,42 +263,44 @@ export function RichTextRenderer({
   }
 
   return (
-    <div data-slot="rich-text-renderer" className={className}>
-      {/* Message content */}
-      <div
-        className={cn(
-          // Base styles for message context
-          "text-sm leading-relaxed",
-          // Compact list rendering (Plate.js uses inline ol/ul wrapper per item)
-          // These selectors target the list wrappers created by BlockListStatic
-          "[&_ol]:my-0.5 [&_ol]:ml-5 [&_ol]:pl-0",
-          "[&_ul]:my-0.5 [&_ul]:ml-5 [&_ul]:pl-0",
-          "[&_li]:my-0 [&_li]:py-0 [&_li]:leading-snug",
-          // Nested list indentation
-          "[&_li_ol]:ml-4 [&_li_ul]:ml-4",
-          // Ensure proper list markers display
-          "[&_ol>li]:list-decimal [&_ol>li]:list-inside",
-          "[&_ul>li]:list-disc [&_ul>li]:list-inside",
-          // Mark styles (applied via Slate's default rendering)
-          "[&_strong]:font-semibold",
-          "[&_em]:italic",
-          "[&_u]:underline",
-          "[&_s]:line-through"
-        )}
-      >
-        <PlateStatic editor={editor} />
-      </div>
+    <MentionContextProvider currentUserName={currentUserName}>
+      <div data-slot="rich-text-renderer" className={className}>
+        {/* Message content */}
+        <div
+          className={cn(
+            // Base styles for message context
+            "text-sm leading-relaxed",
+            // Compact list rendering (Plate.js uses inline ol/ul wrapper per item)
+            // These selectors target the list wrappers created by BlockListStatic
+            "[&_ol]:my-0.5 [&_ol]:ml-5 [&_ol]:pl-0",
+            "[&_ul]:my-0.5 [&_ul]:ml-5 [&_ul]:pl-0",
+            "[&_li]:my-0 [&_li]:py-0 [&_li]:leading-snug",
+            // Nested list indentation
+            "[&_li_ol]:ml-4 [&_li_ul]:ml-4",
+            // Ensure proper list markers display
+            "[&_ol>li]:list-decimal [&_ol>li]:list-inside",
+            "[&_ul>li]:list-disc [&_ul>li]:list-inside",
+            // Mark styles (applied via Slate's default rendering)
+            "[&_strong]:font-semibold",
+            "[&_em]:italic",
+            "[&_u]:underline",
+            "[&_s]:line-through"
+          )}
+        >
+          <PlateStatic editor={editor} />
+        </div>
 
-      {/* Link previews (shown below message content) */}
-      {showLinkPreviews && linkUrls.length > 0 && (
-        <LinkPreviewList
-          urls={linkUrls}
-          metadataMap={linkMetadataMap}
-          loadingUrls={loadingLinkUrls}
-          maxPreviews={MAX_LINK_PREVIEWS}
-        />
-      )}
-    </div>
+        {/* Link previews (shown below message content) */}
+        {showLinkPreviews && linkUrls.length > 0 && (
+          <LinkPreviewList
+            urls={linkUrls}
+            metadataMap={linkMetadataMap}
+            loadingUrls={loadingLinkUrls}
+            maxPreviews={MAX_LINK_PREVIEWS}
+          />
+        )}
+      </div>
+    </MentionContextProvider>
   );
 }
 

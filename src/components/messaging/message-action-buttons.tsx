@@ -1,7 +1,12 @@
 "use client";
 
-import { MessageSquare, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { useState } from "react";
 
+import { useMutation } from "convex/react";
+import { MessageSquare, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import * as apiModule from "../../../convex/_generated/api";
+import type { Id } from "../../../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -10,11 +15,19 @@ import {
 } from "@/components/ui-plate/tooltip";
 import { cn } from "@/lib/utils";
 
+import { EmojiPicker } from "./emoji-picker";
+
+// Type workaround: Convex's API has excessively deep type nesting.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const api = (apiModule as any).api;
+
 // ============================================================================
 // Types
 // ============================================================================
 
 export interface MessageActionButtonsProps {
+  /** The message ID for adding reactions. */
+  messageId: Id<"messages">;
   /** Whether this message belongs to the current user. */
   isOwn: boolean;
   /** Whether to show the thread reply button. */
@@ -35,10 +48,11 @@ export interface MessageActionButtonsProps {
 
 /**
  * MessageActionButtons displays hover action buttons for a message.
- * Shows reply, edit (own messages only), delete (own messages only), and more options.
+ * Shows reaction picker, reply, edit (own messages only), delete (own messages only), and more options.
  * Buttons have 44x44px minimum touch targets for WCAG 2.5.5 compliance.
  */
 export function MessageActionButtons({
+  messageId,
   isOwn,
   showThreadButton = true,
   onReply,
@@ -46,6 +60,18 @@ export function MessageActionButtons({
   onDelete,
   className,
 }: MessageActionButtonsProps): React.ReactElement {
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const addReaction = useMutation(api.reactions.addReaction);
+
+  const handleEmojiSelect = async (emoji: string): Promise<void> => {
+    try {
+      await addReaction({ messageId, emoji });
+      setShowEmojiPicker(false);
+    } catch {
+      toast.error("Failed to add reaction");
+    }
+  };
+
   return (
     <div
       data-slot="message-action-buttons"
@@ -58,6 +84,23 @@ export function MessageActionButtons({
         className
       )}
     >
+      {/* Add Reaction Button with Emoji Picker */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span>
+            <EmojiPicker
+              open={showEmojiPicker}
+              onOpenChange={setShowEmojiPicker}
+              onEmojiSelect={handleEmojiSelect}
+              triggerClassName="min-h-11 min-w-11"
+              side="top"
+              align="start"
+            />
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>Add reaction</TooltipContent>
+      </Tooltip>
+
       {showThreadButton && (
         <Tooltip>
           <TooltipTrigger asChild>

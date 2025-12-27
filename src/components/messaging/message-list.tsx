@@ -36,6 +36,8 @@ export interface MessageListProps {
   onDelete?: (messageId: Id<"messages">) => void;
   /** The current user's ID for determining message ownership. */
   currentUserId?: Id<"users">;
+  /** The current user's display name for highlighting @mentions. */
+  currentUserName?: string;
   /** Optional className for the container. */
   className?: string;
 }
@@ -65,6 +67,7 @@ export function MessageList({
   onEdit,
   onDelete,
   currentUserId,
+  currentUserName,
   className,
 }: MessageListProps): React.ReactElement {
   // Scroll behavior hook
@@ -193,6 +196,7 @@ export function MessageList({
                 threadReplyCount={message.threadReplyCount}
                 status={message.status ?? "sent"}
                 lesson={message.lesson}
+                currentUserName={currentUserName}
                 onReply={onReply ? () => onReply(message._id) : undefined}
                 onEdit={
                   onEdit && currentUserId === message.senderId

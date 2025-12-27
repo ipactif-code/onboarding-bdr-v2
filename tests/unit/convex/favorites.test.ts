@@ -1,6 +1,9 @@
 import { convexTest } from "convex-test";
 import { describe, it, expect } from "vitest";
-import { api } from "../../../convex/_generated/api";
+import * as apiModule from "../../../convex/_generated/api";
+// Type workaround: Convex's API has excessively deep type nesting.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const api = (apiModule as any).api;
 import schema from "../../../convex/schema";
 import { Id } from "../../../convex/_generated/dataModel";
 
@@ -380,8 +383,10 @@ describe("favorites.ts - Unified Favorites List", () => {
       // Assert
       expect(favorites).toHaveLength(2);
 
-      const channelFavorite = favorites.find((f) => f.type === "channel");
-      const dmFavorite = favorites.find((f) => f.type === "dm");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const channelFavorite = favorites.find((f: any) => f.type === "channel");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const dmFavorite = favorites.find((f: any) => f.type === "dm");
 
       expect(channelFavorite?.unreadCount).toBe(2);
       expect(dmFavorite?.unreadCount).toBe(3);

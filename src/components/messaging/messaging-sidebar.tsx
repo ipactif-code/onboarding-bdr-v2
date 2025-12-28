@@ -528,7 +528,7 @@ export function MessagingSidebar({
                 {[1, 2, 3].map((i) => (
                   <div
                     key={i}
-                    className="h-7 animate-pulse rounded bg-muted"
+                    className="h-7 motion-safe:animate-pulse rounded bg-muted"
                   />
                 ))}
               </div>
@@ -576,7 +576,7 @@ export function MessagingSidebar({
                 {[1, 2, 3].map((i) => (
                   <div
                     key={i}
-                    className="h-7 animate-pulse rounded bg-muted"
+                    className="h-7 motion-safe:animate-pulse rounded bg-muted"
                   />
                 ))}
               </div>

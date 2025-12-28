@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, MessageSquare } from "lucide-react";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import * as apiModule from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import {
@@ -22,6 +22,7 @@ import { MessageItemSkeleton } from "@/components/messaging/message-item-skeleto
 import { MessageActionButtons } from "@/components/messaging/message-action-buttons";
 import { RichTextRenderer } from "@/components/messaging/rich-text-renderer";
 import { ReactionBar, ReactionBarSkeleton, type ReactionGroup } from "@/components/messaging/reaction-bar";
+import { VoicePlayer, VoicePlayerSkeleton } from "@/components/messaging/voice-player";
 
 // Type workaround: Convex's API has excessively deep type nesting.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -31,9 +32,14 @@ const api = (apiModule as any).api;
 // Types
 // ============================================================================
 
+/** Message content type. */
+type MessageContentType = "text" | "voice" | "file" | "system";
+
 export interface MessageItemProps {
   id: Id<"messages">;
   content: string;
+  /** Content type of the message (text, voice, file, system). Defaults to "text". */
+  contentType?: MessageContentType;
   senderId: Id<"users">;
   senderName: string;
   senderAvatarUrl?: string;
@@ -74,6 +80,7 @@ export interface MessageItemProps {
 export function MessageItem({
   id,
   content,
+  contentType = "text",
   senderId,
   senderName,
   senderAvatarUrl,
@@ -94,6 +101,19 @@ export function MessageItem({
     api.reactions.getMessageReactions,
     { messageId: id }
   ) as ReactionGroup[] | undefined;
+
+  // Fetch voice message data when contentType is "voice"
+  const voiceData = useQuery(
+    api.voiceMessages.getVoiceMessage,
+    contentType === "voice" ? { messageId: id } : "skip"
+  );
+
+  // Mutations for transcription
+  // - editTranscription and retryTranscription: only available for own messages
+  // - requestTranscription: available to any user (anyone can request transcription)
+  const editTranscription = useMutation(api.voiceMessages.editTranscription);
+  const retryTranscription = useMutation(api.voiceMessages.retryTranscription);
+  const requestTranscription = useMutation(api.voiceMessages.requestTranscription);
 
   return (
     <div
@@ -157,7 +177,40 @@ export function MessageItem({
 
         {/* Message body */}
         <div className="mt-1 break-words">
-          <RichTextRenderer content={content} currentUserName={currentUserName} />
+          {contentType === "voice" ? (
+            voiceData === undefined ? (
+              <VoicePlayerSkeleton />
+            ) : voiceData && voiceData.audioUrl ? (
+              <VoicePlayer
+                audioUrl={voiceData.audioUrl}
+                duration={voiceData.duration}
+                waveformData={voiceData.waveformData}
+                transcription={voiceData.transcription}
+                transcriptionStatus={voiceData.transcriptionStatus}
+                onTranscriptionEdit={
+                  isOwn
+                    ? (text) => editTranscription({ messageId: id, transcription: text })
+                    : undefined
+                }
+                onTranscriptionRetry={
+                  isOwn && voiceData.transcriptionStatus === "failed"
+                    ? () => retryTranscription({ messageId: id })
+                    : undefined
+                }
+                onTranscriptionRequest={
+                  voiceData.transcriptionStatus === "pending" && !voiceData.transcription
+                    ? () => requestTranscription({ messageId: id })
+                    : undefined
+                }
+              />
+            ) : (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>Audio file unavailable</span>
+              </div>
+            )
+          ) : (
+            <RichTextRenderer content={content} currentUserName={currentUserName} />
+          )}
         </div>
 
         {/* Thread reply count indicator */}

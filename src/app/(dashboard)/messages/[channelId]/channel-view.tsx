@@ -77,6 +77,7 @@ export function ChannelView({ channelId }: ChannelViewProps): React.ReactElement
   } = useChannelMessages({ channelId: parsedChannelId });
 
   const lastReadAtRef = useRef<number>(0);
+  const hasMarkedAsReadRef = useRef(false);
   const [selectedLessonId, setSelectedLessonId] = useState<Id<"lessons"> | null>(null);
   const [openThreadId, setOpenThreadId] = useState<Id<"messages"> | null>(null);
 
@@ -157,11 +158,21 @@ export function ChannelView({ channelId }: ChannelViewProps): React.ReactElement
     [isMember, markAsRead]
   );
 
-  // Mark as read when entering the channel
+  // Reset mark-as-read flag when channel changes
   useEffect(() => {
-    if (isMember && messages.length > 0) {
+    hasMarkedAsReadRef.current = false;
+  }, [parsedChannelId]);
+
+  // Mark as read when entering the channel (ONLY ONCE per channel)
+  // This prevents infinite loops: markAsRead() triggers a DB update,
+  // which causes channels:get to re-run, giving messages a new reference,
+  // which would trigger this effect again without the guard.
+  useEffect(() => {
+    if (isMember && messages.length > 0 && !hasMarkedAsReadRef.current) {
       const latestMessage = messages[messages.length - 1];
       if (latestMessage && latestMessage.createdAt > lastReadAtRef.current) {
+        lastReadAtRef.current = latestMessage.createdAt;
+        hasMarkedAsReadRef.current = true;
         markAsRead().catch(() => {});
       }
     }
@@ -223,6 +234,8 @@ export function ChannelView({ channelId }: ChannelViewProps): React.ReactElement
           <MessageInput
             onSend={handleSendMessage}
             placeholder={`Message #${channel.name}`}
+            channelId={parsedChannelId}
+            lessonId={selectedLessonId ?? undefined}
           />
         </div>
       )}

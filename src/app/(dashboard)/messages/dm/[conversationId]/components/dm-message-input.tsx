@@ -2,6 +2,7 @@
 
 import { MessageInput } from "@/components/messaging/message-input";
 import { TypingIndicator } from "@/components/messaging/typing-indicator";
+import { Id } from "../../../../../../../convex/_generated/dataModel";
 
 // ============================================================================
 // Types
@@ -54,6 +55,7 @@ export function DMMessageInput({
           onSend={onSend}
           onTyping={onTyping}
           placeholder={`Message ${displayName}`}
+          conversationId={conversationId as Id<"conversations">}
         />
       </div>
     </div>

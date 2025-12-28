@@ -187,6 +187,7 @@ export function MessageList({
               <MessageItem
                 id={message._id}
                 content={message.content}
+                contentType={message.contentType}
                 senderId={message.senderId}
                 senderName={message.sender.name}
                 senderAvatarUrl={message.sender.avatarUrl}

@@ -97,6 +97,7 @@ export function ThreadView({
         <MessageItem
           id={parent._id}
           content={parent.content}
+          contentType={parent.contentType}
           senderId={parent.senderId}
           senderName={parent.sender.name}
           senderAvatarUrl={parent.sender.avatarUrl}
@@ -142,6 +143,7 @@ export function ThreadView({
                 <MessageItem
                   id={reply._id}
                   content={reply.content}
+                  contentType={reply.contentType}
                   senderId={reply.senderId}
                   senderName={reply.sender.name}
                   senderAvatarUrl={reply.sender.avatarUrl}

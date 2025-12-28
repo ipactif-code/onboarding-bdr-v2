@@ -315,7 +315,7 @@ export function RichTextRendererSkeleton({
   return (
     <div
       data-slot="rich-text-renderer-skeleton"
-      className={cn("animate-pulse space-y-1", className)}
+      className={cn("motion-safe:animate-pulse space-y-1", className)}
     >
       <div className="h-4 w-3/4 rounded bg-muted" />
       <div className="h-4 w-1/2 rounded bg-muted" />

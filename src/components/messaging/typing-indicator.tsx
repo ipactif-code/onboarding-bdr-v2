@@ -170,11 +170,11 @@ export function TypingIndicatorSkeleton(): React.ReactElement {
   return (
     <div className="flex items-center gap-2 px-4 py-1.5">
       <div className="flex gap-0.5">
-        <div className="size-1.5 rounded-full bg-muted animate-pulse" />
-        <div className="size-1.5 rounded-full bg-muted animate-pulse" />
-        <div className="size-1.5 rounded-full bg-muted animate-pulse" />
+        <div className="size-1.5 rounded-full bg-muted motion-safe:animate-pulse" />
+        <div className="size-1.5 rounded-full bg-muted motion-safe:animate-pulse" />
+        <div className="size-1.5 rounded-full bg-muted motion-safe:animate-pulse" />
       </div>
-      <div className="h-3 w-24 rounded bg-muted animate-pulse" />
+      <div className="h-3 w-24 rounded bg-muted motion-safe:animate-pulse" />
     </div>
   );
 }

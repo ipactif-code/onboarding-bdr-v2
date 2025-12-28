@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Plate, usePlateEditor } from 'platejs/react';
-import { Send } from 'lucide-react';
+import { Mic, Send } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { MessageInputPlugins } from './message-input-plugins';
 import { MessageFixedToolbar } from './message-fixed-toolbar';
+import { VoiceRecorder } from './voice-recorder';
 import { Id } from '../../../convex/_generated/dataModel';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui-plate/t
 import { Editor, EditorContainer } from '@/components/ui/editor';
 import { createEmptyEditorValue, getTextFromValue, serializeEditorValue } from './message-input-utils';
 import { MessageInputSkeleton } from './message-input-skeleton';
+import { useVoiceSender } from '@/hooks/voice/use-voice-sender';
 
 export interface MessageInputProps {
   /** Callback when user sends a message */
@@ -31,6 +33,14 @@ export interface MessageInputProps {
   parentId?: Id<'messages'>;
   /** Callback after message is sent (optional) */
   onSent?: () => void;
+  /** Channel ID for voice message context (mutually exclusive with conversationId) */
+  channelId?: Id<'channels'>;
+  /** Conversation ID for DM voice message context (mutually exclusive with channelId) */
+  conversationId?: Id<'conversations'>;
+  /** Lesson ID for lesson-specific discussions (only used with channelId) */
+  lessonId?: Id<'lessons'>;
+  /** Callback after voice message is sent (optional) */
+  onVoiceSent?: () => void;
 }
 
 /**
@@ -45,6 +55,7 @@ export interface MessageInputProps {
  * - @mentions with user search combobox
  * - Markdown autoformat shortcuts (**, *, _, ~~, `)
  * - Bullet and numbered lists
+ * - Voice message recording (when channelId or conversationId is provided)
  */
 export function MessageInput({
   onSend,
@@ -54,12 +65,34 @@ export function MessageInput({
   maxLength = 4000,
   parentId,
   onSent,
+  channelId,
+  conversationId,
+  lessonId,
+  onVoiceSent,
 }: MessageInputProps): React.ReactElement {
   const defaultPlaceholder = parentId ? 'Reply to thread...' : 'Type a message...';
   const resolvedPlaceholder = placeholder ?? defaultPlaceholder;
   const [editorValue, setEditorValue] = useState<unknown[]>(createEmptyEditorValue);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const editorRef = useRef<HTMLDivElement | null>(null);
+
+  // Voice recording state
+  const [isVoiceMode, setIsVoiceMode] = useState(false);
+
+  // Voice recording is enabled when either channelId or conversationId is provided
+  const isVoiceEnabled = Boolean(channelId || conversationId);
+
+  // Voice sending hook - handles upload and send mutations
+  const { sendVoice, isUploading: isUploadingVoice } = useVoiceSender({
+    channelId,
+    conversationId,
+    lessonId,
+    parentId,
+    onSuccess: () => {
+      setIsVoiceMode(false);
+      onVoiceSent?.();
+    },
+  });
 
   const editor = usePlateEditor({
     plugins: MessageInputPlugins,
@@ -102,6 +135,25 @@ export function MessageInput({
     onSent?.();
   }, [isEmpty, isOverLimit, disabled, editorValue, onSend, editor, onSent]);
 
+  // Handle voice message send - delegate to useVoiceSender hook
+  const handleVoiceSend = useCallback(
+    async (blob: Blob, mimeType: string, duration: number, waveformData: number[]): Promise<void> => {
+      if (disabled || isUploadingVoice) return;
+      await sendVoice(blob, mimeType, duration, waveformData);
+    },
+    [disabled, isUploadingVoice, sendVoice]
+  );
+
+  // Handle voice recording cancel
+  const handleVoiceCancel = useCallback((): void => {
+    setIsVoiceMode(false);
+  }, []);
+
+  // Toggle voice recording mode
+  const handleVoiceToggle = useCallback((): void => {
+    setIsVoiceMode((prev) => !prev);
+  }, []);
+
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>): void => {
       if (event.key === 'Enter' && !event.shiftKey) {
@@ -124,6 +176,33 @@ export function MessageInput({
     };
   }, []);
 
+  // Voice recording mode - full-width VoiceRecorder
+  if (isVoiceMode) {
+    return (
+      <div className="relative w-full">
+        <VoiceRecorder
+          onSend={handleVoiceSend}
+          onCancel={handleVoiceCancel}
+          disabled={disabled || isUploadingVoice}
+          className={cn(isUploadingVoice && 'opacity-70 pointer-events-none')}
+        />
+        {isUploadingVoice && (
+          <div
+            className="absolute inset-0 flex items-center justify-center bg-background/50 rounded-lg"
+            role="status"
+            aria-label="Uploading voice message"
+          >
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <span>Sending voice message...</span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Text input mode (default)
   return (
     <div className="relative flex w-full items-end gap-2">
       <div
@@ -171,6 +250,27 @@ export function MessageInput({
         )}
       </div>
 
+      {/* Voice recording button - only shown when voice is enabled */}
+      {isVoiceEnabled && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              onClick={handleVoiceToggle}
+              disabled={disabled}
+              aria-label="Record voice message"
+              className="shrink-0 min-h-11 min-w-11"
+            >
+              <Mic className="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top">Record voice message</TooltipContent>
+        </Tooltip>
+      )}
+
+      {/* Send button */}
       <Tooltip>
         <TooltipTrigger asChild>
           <span className="inline-flex">

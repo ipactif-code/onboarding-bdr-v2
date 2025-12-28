@@ -173,8 +173,8 @@ export function ReactionBarSkeleton(): React.ReactElement {
       className="flex items-center gap-1"
       aria-hidden="true"
     >
-      <div className="h-7 w-12 animate-pulse rounded-md bg-muted" />
-      <div className="h-7 w-12 animate-pulse rounded-md bg-muted" />
+      <div className="h-7 w-12 motion-safe:animate-pulse rounded-md bg-muted" />
+      <div className="h-7 w-12 motion-safe:animate-pulse rounded-md bg-muted" />
     </div>
   );
 }

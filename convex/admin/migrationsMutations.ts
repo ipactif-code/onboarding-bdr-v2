@@ -3,6 +3,26 @@ import { internalMutation } from "../_generated/server";
 import { Doc, Id } from "../_generated/dataModel";
 
 // ============================================================================
+// Voice Message Duration Migration - Result Validators
+// ============================================================================
+
+/**
+ * Result validator for the fixVoiceMessageDuration mutation.
+ */
+const fixVoiceMessageDurationResultValidator = v.union(
+  v.object({
+    success: v.literal(true),
+    oldDuration: v.number(),
+    newDuration: v.number(),
+    diff: v.number(),
+  }),
+  v.object({
+    success: v.literal(false),
+    reason: v.string(),
+  })
+);
+
+// ============================================================================
 // Migration Helper Internal Mutations
 // ============================================================================
 // These internal mutations support the migration actions.
@@ -155,6 +175,122 @@ export const syncAllTeamsChannelMembers = internalMutation({
       membersAdded,
       membersReactivated,
       errors,
+    };
+  },
+});
+
+// ============================================================================
+// Voice Message Duration Migration Mutations
+// ============================================================================
+
+/**
+ * Fix the duration of a single voice message.
+ *
+ * Called by frontend migration scripts after detecting the actual duration
+ * using WaveSurfer.js or similar audio library. Only updates if the
+ * difference exceeds the threshold (1 second).
+ *
+ * This mutation is idempotent - running it multiple times with the same
+ * correct duration will not cause additional database writes.
+ *
+ * @param voiceMessageId - The ID of the voice message record to update
+ * @param correctDuration - The actual duration detected by the frontend (in seconds)
+ * @returns Success status with old/new duration, or failure reason
+ */
+export const fixVoiceMessageDuration = internalMutation({
+  args: {
+    // Accept as string to allow flexible lookup (voiceMessages._id or messages._id)
+    voiceMessageId: v.string(),
+    correctDuration: v.number(),
+  },
+  returns: fixVoiceMessageDurationResultValidator,
+  handler: async (
+    ctx,
+    args
+  ): Promise<
+    | { success: true; oldDuration: number; newDuration: number; diff: number }
+    | { success: false; reason: string }
+  > => {
+    // Validate correctDuration is positive
+    if (args.correctDuration <= 0) {
+      return {
+        success: false,
+        reason: `Invalid duration: ${args.correctDuration} (must be positive)`,
+      };
+    }
+
+    // Try multiple lookup strategies to find the voice message
+    console.log(
+      `[internal:fixVoiceMessageDuration] Looking up voice message: ${args.voiceMessageId}`
+    );
+
+    let voiceMessage: Doc<"voiceMessages"> | null = null;
+
+    // Strategy 1: Try as a voiceMessages._id
+    try {
+      const voiceMessageId = args.voiceMessageId as Id<"voiceMessages">;
+      voiceMessage = await ctx.db.get(voiceMessageId);
+      if (voiceMessage) {
+        console.log(
+          `[internal:fixVoiceMessageDuration] Found by voiceMessages._id (duration: ${voiceMessage.duration})`
+        );
+      }
+    } catch {
+      // Not a valid voiceMessages ID, try next strategy
+    }
+
+    // Strategy 2: Try as a messages._id and find the linked voiceMessage
+    if (!voiceMessage) {
+      try {
+        const messageId = args.voiceMessageId as Id<"messages">;
+        voiceMessage = await ctx.db
+          .query("voiceMessages")
+          .withIndex("by_message", (q) => q.eq("messageId", messageId))
+          .unique();
+        if (voiceMessage) {
+          console.log(
+            `[internal:fixVoiceMessageDuration] Found by messages._id lookup (duration: ${voiceMessage.duration})`
+          );
+        }
+      } catch {
+        // Not a valid messages ID either
+      }
+    }
+
+    if (!voiceMessage) {
+      console.log(`[internal:fixVoiceMessageDuration] NOT FOUND`);
+      return {
+        success: false,
+        reason: `Voice message not found (id: ${args.voiceMessageId})`,
+      };
+    }
+
+    const oldDuration = voiceMessage.duration;
+    const diff = Math.abs(oldDuration - args.correctDuration);
+
+    // Only update if difference > 1 second (threshold for meaningful change)
+    if (diff <= 1) {
+      return {
+        success: false,
+        reason: `Duration difference <= 1s (diff: ${diff.toFixed(2)}s), skipping`,
+      };
+    }
+
+    // Update the duration in the voiceMessages table
+    await ctx.db.patch(voiceMessage._id, {
+      duration: args.correctDuration,
+    });
+
+    console.warn(
+      `[Migration] Fixed voice message ${voiceMessage._id}: ` +
+        `${oldDuration.toFixed(2)}s -> ${args.correctDuration.toFixed(2)}s (diff: ${diff.toFixed(2)}s)`
+    );
+
+    return {
+      success: true,
+      oldDuration,
+      newDuration: args.correctDuration,
+      diff,
     };
   },
 });

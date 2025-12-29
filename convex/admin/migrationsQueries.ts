@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { internalQuery } from "../_generated/server";
 import { Id } from "../_generated/dataModel";
+import { transcriptionStatusValidator } from "../voiceMessages/types";
 
 // ============================================================================
 // Migration Helper Internal Queries
@@ -129,5 +130,74 @@ export const getCourseEnrolledUsers = internalQuery({
     }
 
     return Array.from(userIds) as Id<"users">[];
+  },
+});
+
+// ============================================================================
+// Voice Message Duration Migration Queries
+// ============================================================================
+
+/**
+ * List all voice messages for duration audit.
+ *
+ * Returns all voice messages with their stored duration and storage ID,
+ * so a frontend script can verify the actual duration using WaveSurfer.js
+ * and correct any mismatches.
+ *
+ * @returns Array of voice message records for auditing
+ */
+export const listVoiceMessagesForAudit = internalQuery({
+  args: {},
+  returns: v.array(
+    v.object({
+      _id: v.id("voiceMessages"),
+      messageId: v.id("messages"),
+      storageId: v.id("_storage"),
+      storedDuration: v.number(),
+      transcriptionStatus: transcriptionStatusValidator,
+    })
+  ),
+  handler: async (ctx): Promise<
+    Array<{
+      _id: Id<"voiceMessages">;
+      messageId: Id<"messages">;
+      storageId: Id<"_storage">;
+      storedDuration: number;
+      transcriptionStatus:
+        | "pending"
+        | "processing"
+        | "completed"
+        | "failed";
+    }>
+  > => {
+    const voiceMessages = await ctx.db.query("voiceMessages").collect();
+
+    return voiceMessages.map((vm) => ({
+      _id: vm._id,
+      messageId: vm.messageId,
+      storageId: vm.storageId,
+      storedDuration: vm.duration,
+      transcriptionStatus: vm.transcriptionStatus,
+    }));
+  },
+});
+
+/**
+ * Get the audio URL for a voice message storage ID.
+ *
+ * Used by frontend migration scripts to fetch the audio file
+ * and detect its actual duration using WaveSurfer.js or similar.
+ *
+ * @param storageId - The Convex storage ID of the audio file
+ * @returns The URL to download the audio file, or null if not found
+ */
+export const getVoiceMessageAudioUrl = internalQuery({
+  args: {
+    storageId: v.id("_storage"),
+  },
+  returns: v.union(v.string(), v.null()),
+  handler: async (ctx, args): Promise<string | null> => {
+    const url = await ctx.storage.getUrl(args.storageId);
+    return url;
   },
 });

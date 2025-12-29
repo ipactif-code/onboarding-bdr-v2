@@ -11,7 +11,14 @@
 export {
   getPublishedCoursesWithoutChannels,
   getCourseEnrolledUsers,
+  // Voice message duration migration
+  listVoiceMessagesForAudit,
+  getVoiceMessageAudioUrl,
 } from "./migrationsQueries";
 
 // Internal Mutations
-export { syncAllTeamsChannelMembers } from "./migrationsMutations";
+export {
+  syncAllTeamsChannelMembers,
+  // Voice message duration migration
+  fixVoiceMessageDuration,
+} from "./migrationsMutations";

@@ -10,6 +10,7 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar";
+import { RichTextRenderer } from "@/components/messaging/rich-text-renderer";
 
 export interface Message {
   _id: string;
@@ -128,8 +129,8 @@ function DMMessageItem({
         </div>
 
         {/* Message body */}
-        <div className="mt-1 text-sm text-foreground whitespace-pre-wrap break-words">
-          {message.content}
+        <div className="mt-1 break-words">
+          <RichTextRenderer content={message.content} />
         </div>
       </div>
     </article>

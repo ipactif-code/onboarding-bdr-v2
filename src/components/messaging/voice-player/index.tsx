@@ -95,7 +95,7 @@ function VoicePlayerComponent({
   const [liveRegionAnnouncement, setLiveRegionAnnouncement] = useState<string>("");
   const announcementTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { isPlaying, currentTime, play, pause, setPlaybackRate } =
+  const { isPlaying, currentTime, detectedDuration, play, pause, setPlaybackRate } =
     useVoicePlayback({
       containerRef: waveformContainerRef,
       audioUrl,
@@ -240,21 +240,21 @@ function VoicePlayerComponent({
           onRetry={handleRetry}
         />
 
-        {/* Waveform display */}
+        {/* Waveform display - uses detectedDuration from WaveSurfer for accuracy */}
         <div className="relative flex-1">
           <WaveformSeeker
             containerRef={waveformContainerRef}
             state={playerState}
             currentTime={currentTime}
-            duration={duration}
+            duration={detectedDuration}
             waveformData={waveformData}
           />
         </div>
 
-        {/* Time display */}
+        {/* Time display - uses detectedDuration from WaveSurfer for accuracy */}
         <TimeDisplay
           currentTime={currentTime}
-          duration={duration}
+          duration={detectedDuration}
           isLoading={playerState === "loading"}
         />
 

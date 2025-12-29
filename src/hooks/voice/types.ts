@@ -50,6 +50,12 @@ export interface UseVoiceRecorderReturn {
   resumeRecording: () => void;
   /** Reset all state and release resources */
   resetRecording: () => void;
+  /**
+   * Get the actual duration from the ref (synchronous, race-condition safe).
+   * Use this instead of the `duration` state when sending messages to ensure
+   * the correct duration is stored even if user clicks Send immediately after stopping.
+   */
+  getActualDuration: () => number;
   /** Detected MIME type for recording */
   mimeType: string;
   /** Whether voice recording is supported in this browser */

@@ -101,6 +101,12 @@ export interface UseVoicePlaybackReturn {
   isPlaying: boolean;
   /** Current playback time in seconds */
   currentTime: number;
+  /**
+   * Actual duration detected from WaveSurfer (source of truth).
+   * Use this for display instead of the prop duration to fix
+   * old messages with incorrect stored durations.
+   */
+  detectedDuration: number;
   /** Start or resume playback */
   play: () => Promise<void>;
   /** Pause playback */

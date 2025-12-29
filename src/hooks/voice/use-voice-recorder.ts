@@ -92,6 +92,10 @@ export function useVoiceRecorder(
   const startTimeRef = useRef<number>(0);
   const pausedDurationRef = useRef<number>(0);
 
+  // Ref to store actual duration immediately (prevents race condition)
+  // This is updated synchronously before async state updates
+  const actualDurationRef = useRef<number>(0);
+
   /**
    * Clean up duration interval.
    */
@@ -232,7 +236,12 @@ export function useVoiceRecorder(
           return;
         }
 
-        // Update duration with actual value from blob metadata
+        // Update ref IMMEDIATELY (synchronous) to prevent race condition
+        // This ensures getActualDuration() returns correct value even if
+        // user clicks Send before React state update completes
+        actualDurationRef.current = actualDuration;
+
+        // Update duration state (async - may not complete before Send click)
         setDuration(actualDuration);
 
         const url = URL.createObjectURL(blob);
@@ -251,6 +260,9 @@ export function useVoiceRecorder(
           setIsPaused(false);
           return;
         }
+
+        // Update ref IMMEDIATELY with fallback duration
+        actualDurationRef.current = preliminaryDuration;
 
         setDuration(preliminaryDuration);
         const url = URL.createObjectURL(blob);
@@ -311,12 +323,22 @@ export function useVoiceRecorder(
     setAudioBlob(null);
     setError(null);
     pausedDurationRef.current = 0;
+    actualDurationRef.current = 0;
   }, [
     mediaRecorder,
     waveformAnalyzer,
     cleanupDurationInterval,
     revokeAudioUrl,
   ]);
+
+  /**
+   * Get the actual duration from the ref (synchronous, race-condition safe).
+   * Use this instead of the `duration` state when you need the most up-to-date
+   * value immediately after stopRecording() completes.
+   */
+  const getActualDuration = useCallback((): number => {
+    return actualDurationRef.current;
+  }, []);
 
   // Auto-stop when max duration reached
   useEffect(() => {
@@ -359,6 +381,8 @@ export function useVoiceRecorder(
     pauseRecording,
     resumeRecording,
     resetRecording,
+    // Getters (race-condition safe)
+    getActualDuration,
     // Metadata
     mimeType: mediaRecorder.mimeType,
     isSupported: mediaRecorder.isSupported,

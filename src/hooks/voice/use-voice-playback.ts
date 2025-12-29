@@ -46,6 +46,9 @@ export function useVoicePlayback({
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
+  // Detected duration from WaveSurfer (source of truth for playback)
+  // Falls back to prop duration if detection fails
+  const [detectedDuration, setDetectedDuration] = useState<number>(duration);
 
   // Initialize WaveSurfer
   // Note: We use setTimeout(fn, 0) to defer initialization to the next tick.
@@ -89,6 +92,14 @@ export function useVoicePlayback({
       const handleReady = (): void => {
         if (!isReady) {
           isReady = true;
+
+          // Get actual duration from WaveSurfer (source of truth)
+          // This fixes playback display for old messages with incorrect stored durations
+          const wavesurferDuration = wavesurfer.getDuration();
+          if (wavesurferDuration && isFinite(wavesurferDuration) && wavesurferDuration > 0) {
+            setDetectedDuration(wavesurferDuration);
+          }
+
           onReady?.();
         }
       };
@@ -207,6 +218,9 @@ export function useVoicePlayback({
   return {
     isPlaying,
     currentTime,
+    // Detected duration from WaveSurfer - use for display instead of prop
+    // This fixes old messages with incorrect stored durations
+    detectedDuration,
     play,
     pause,
     seekTo,

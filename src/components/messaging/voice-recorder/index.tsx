@@ -94,6 +94,7 @@ export function VoiceRecorder({
     pauseRecording,
     resumeRecording,
     resetRecording,
+    getActualDuration,
     mimeType,
     isSupported,
   } = useVoiceRecorder({
@@ -115,11 +116,15 @@ export function VoiceRecorder({
   const state = getState();
 
   // Handle send action
+  // Uses getActualDuration() instead of duration state to prevent race condition
+  // where user clicks Send before async state update completes
   const handleSend = useCallback(() => {
     if (!audioBlob) return;
-    onSend(audioBlob, mimeType, duration, waveformData);
+    // Get duration from ref (synchronous, race-condition safe)
+    const actualDuration = getActualDuration();
+    onSend(audioBlob, mimeType, actualDuration, waveformData);
     resetRecording();
-  }, [audioBlob, mimeType, duration, waveformData, onSend, resetRecording]);
+  }, [audioBlob, mimeType, getActualDuration, waveformData, onSend, resetRecording]);
 
   // Handle cancel action
   const handleCancel = useCallback(() => {

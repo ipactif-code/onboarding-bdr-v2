@@ -10,10 +10,14 @@ import { MessagingSidebar } from "@/components/messaging/messaging-sidebar";
  * - Left sidebar: Slack-like navigation with collapsible sections
  * - Right main area: Channel/conversation content or placeholder
  *
+ * Search functionality is now handled by the CommandPalette (Ctrl+K / Cmd+K)
+ * which is provided at the dashboard layout level.
+ *
  * The parent dashboard layout already:
  * - Handles authentication checks
  * - Hides the app header for /messages routes
  * - Provides the SidebarProvider context
+ * - Provides the CommandPaletteProvider
  */
 export default function MessagesLayout({
   children,
@@ -27,8 +31,8 @@ export default function MessagesLayout({
         <MessagingSidebar />
       </aside>
 
-      {/* Main content area for channel/conversation views */}
-      <main className="flex flex-1 flex-col overflow-hidden" aria-label="Messages">
+      {/* Main content area */}
+      <main className="flex-1 overflow-hidden" aria-label="Messages">
         {children}
       </main>
     </div>

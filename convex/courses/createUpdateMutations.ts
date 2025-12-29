@@ -102,6 +102,20 @@ export const update = mutation({
 
     if (Object.keys(updates).length > 0) {
       await ctx.db.patch(args.courseId, updates);
+
+      // SYNC: Update linked channel name when course title changes
+      if (args.title !== undefined) {
+        const courseChannel = await ctx.db
+          .query("channels")
+          .withIndex("by_course", (q) => q.eq("courseId", args.courseId))
+          .unique();
+
+        if (courseChannel) {
+          await ctx.db.patch(courseChannel._id, {
+            name: args.title,
+          });
+        }
+      }
     }
 
     return null;

@@ -698,6 +698,16 @@ export default defineSchema({
     .index("by_deleted_by", ["deletedBy"])
     .index("by_gdpr_request", ["gdprRequestId"]),
 
+  // Search history for user search queries
+  searchHistory: defineTable({
+    userId: v.id("users"),
+    query: v.string(),
+    resultCount: v.number(),
+    timestamp: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_recent", ["userId", "timestamp"]),
+
   // GDPR data export and deletion requests
   gdprRequests: defineTable({
     userId: v.id("users"),

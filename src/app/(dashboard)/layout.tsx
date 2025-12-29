@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/layout/app-header";
+import { CommandPaletteProvider } from "@/components/command-palette";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserProvider } from "@/contexts/user-context";
@@ -66,18 +67,20 @@ export default function DashboardLayout({
     <SidebarProvider defaultOpen={false}>
       <AuthReadyGuard>
         <UserProvider>
-          <AppSidebar />
-          <SidebarInset className="min-w-0">
-            {!hideHeader && <AppHeader />}
-            <div
-              className={cn(
-                "flex flex-1 flex-col min-h-0 min-w-0",
-                !hideHeader && "p-6"
-              )}
-            >
-              {children}
-            </div>
-          </SidebarInset>
+          <CommandPaletteProvider>
+            <AppSidebar />
+            <SidebarInset className="min-w-0">
+              {!hideHeader && <AppHeader />}
+              <div
+                className={cn(
+                  "flex flex-1 flex-col min-h-0 min-w-0",
+                  !hideHeader && "p-6"
+                )}
+              >
+                {children}
+              </div>
+            </SidebarInset>
+          </CommandPaletteProvider>
         </UserProvider>
       </AuthReadyGuard>
     </SidebarProvider>

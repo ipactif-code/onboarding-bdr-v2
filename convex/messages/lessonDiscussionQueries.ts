@@ -68,8 +68,9 @@ export const getLessonDiscussion = query({
       .collect();
 
     // Filter to only messages in this channel and apply cursor
+    // Exclude thread replies (messages with parentId) - they should only appear in thread view
     let filteredMessages = allLessonMessages.filter(
-      (m) => m.channelId === channel._id && !m.deletedAt
+      (m) => m.channelId === channel._id && !m.deletedAt && !m.parentId
     );
 
     // Apply cursor if provided

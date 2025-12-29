@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { MessageSquare, Send } from "lucide-react";
 import { toast } from "sonner";
@@ -13,6 +13,7 @@ const api: any = require("../../../../convex/_generated/api").api;
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
+import { ThreadPanel } from "@/components/messaging/thread-panel";
 
 import type { DiscussionMessage } from "./types";
 import { DiscussionMessageItem } from "./discussion-message-item";
@@ -48,6 +49,12 @@ export function InlineDiscussionContent({
 }: InlineDiscussionContentProps): React.ReactElement {
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [openThreadId, setOpenThreadId] = useState<Id<"messages"> | null>(null);
+  const threadTriggerRef = useRef<HTMLElement | null>(null);
+
+  // Query current user for thread panel
+  const currentUser = useQuery(api.users.me);
+  const currentUserId = currentUser?._id;
 
   // Query lesson discussion messages - this is a real-time subscription
   // Messages will automatically update when new ones are added to the channel
@@ -91,6 +98,39 @@ export function InlineDiscussionContent({
       }
     },
     [handleSendMessage]
+  );
+
+  // Handle opening a thread for a message
+  const handleReply = useCallback((messageId: Id<"messages">) => {
+    threadTriggerRef.current = document.activeElement as HTMLElement;
+    setOpenThreadId(messageId);
+  }, []);
+
+  // Handle closing the thread panel
+  const handleCloseThread = useCallback(() => {
+    setOpenThreadId(null);
+    requestAnimationFrame(() => {
+      threadTriggerRef.current?.focus();
+      threadTriggerRef.current = null;
+    });
+  }, []);
+
+  // Handle sending a reply in a thread
+  const handleSendThreadReply = useCallback(
+    async (content: string) => {
+      if (!openThreadId || !discussionData?.channelId) return;
+      try {
+        await sendToChannel({
+          channelId: discussionData.channelId,
+          content,
+          lessonId,
+          parentId: openThreadId,
+        });
+      } catch {
+        toast.error("Failed to send reply. Please try again.");
+      }
+    },
+    [openThreadId, discussionData?.channelId, lessonId, sendToChannel]
   );
 
   // Loading state
@@ -141,7 +181,11 @@ export function InlineDiscussionContent({
         ) : (
           <div className="divide-y divide-border/50">
             {messages.map((message) => (
-              <DiscussionMessageItem key={message._id} message={message} />
+              <DiscussionMessageItem
+                key={message._id}
+                message={message}
+                onReply={() => handleReply(message._id)}
+              />
             ))}
           </div>
         )}
@@ -174,6 +218,17 @@ export function InlineDiscussionContent({
           Enter to send, Shift+Enter for new line
         </p>
       </div>
+
+      {/* Thread Panel */}
+      {currentUserId && (
+        <ThreadPanel
+          parentMessageId={openThreadId}
+          currentUserId={currentUserId}
+          currentUserName={currentUser?.name}
+          onClose={handleCloseThread}
+          onSendReply={handleSendThreadReply}
+        />
+      )}
     </div>
   );
 }

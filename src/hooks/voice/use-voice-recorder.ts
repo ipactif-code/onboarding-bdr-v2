@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { validateVoiceMessage } from "@/lib/audio-utils";
+import { getAudioDuration, validateVoiceMessage } from "@/lib/audio-utils";
 import { useMediaRecorder } from "./use-media-recorder";
 import { useWaveformAnalyzer } from "./use-waveform-analyzer";
 import type { UseVoiceRecorderOptions, UseVoiceRecorderReturn } from "./types";
@@ -189,14 +189,15 @@ export function useVoiceRecorder(
 
   /**
    * Stop the current recording and finalize the audio blob.
+   * Uses actual audio blob metadata for accurate duration.
    */
-  const stopRecording = useCallback((): void => {
-    // Calculate final duration
-    const currentDuration =
+  const stopRecording = useCallback(async (): Promise<void> => {
+    // Calculate preliminary duration from wall-clock for minimum check
+    const preliminaryDuration =
       (Date.now() - startTimeRef.current) / 1000 + pausedDurationRef.current;
 
-    // Validate minimum duration
-    if (currentDuration < minDuration) {
+    // Validate minimum duration (quick check before processing blob)
+    if (preliminaryDuration < minDuration) {
       setError(
         `Recording must be at least ${minDuration} second${minDuration !== 1 ? "s" : ""}`
       );
@@ -208,9 +209,6 @@ export function useVoiceRecorder(
       return;
     }
 
-    // Update duration one final time
-    setDuration(currentDuration);
-
     // Stop media recorder and get blob
     const blob = mediaRecorder.stop();
 
@@ -221,18 +219,44 @@ export function useVoiceRecorder(
     cleanupDurationInterval();
 
     if (blob) {
-      // Validate the recording
-      const validation = validateVoiceMessage(blob, currentDuration);
-      if (!validation.valid) {
-        setError(validation.error ?? "Invalid recording");
-        setIsRecording(false);
-        setIsPaused(false);
-        return;
-      }
+      try {
+        // Get actual duration from audio blob metadata
+        const actualDuration = await getAudioDuration(blob);
 
-      const url = URL.createObjectURL(blob);
-      setAudioBlob(blob);
-      setAudioUrl(url);
+        // Validate the recording with actual duration
+        const validation = validateVoiceMessage(blob, actualDuration);
+        if (!validation.valid) {
+          setError(validation.error ?? "Invalid recording");
+          setIsRecording(false);
+          setIsPaused(false);
+          return;
+        }
+
+        // Update duration with actual value from blob metadata
+        setDuration(actualDuration);
+
+        const url = URL.createObjectURL(blob);
+        setAudioBlob(blob);
+        setAudioUrl(url);
+      } catch (durationError) {
+        // Fallback to wall-clock duration if metadata extraction fails
+        console.warn(
+          "Failed to get audio duration from metadata, using wall-clock duration:",
+          durationError
+        );
+        const validation = validateVoiceMessage(blob, preliminaryDuration);
+        if (!validation.valid) {
+          setError(validation.error ?? "Invalid recording");
+          setIsRecording(false);
+          setIsPaused(false);
+          return;
+        }
+
+        setDuration(preliminaryDuration);
+        const url = URL.createObjectURL(blob);
+        setAudioBlob(blob);
+        setAudioUrl(url);
+      }
     }
 
     setIsRecording(false);

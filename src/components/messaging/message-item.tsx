@@ -63,6 +63,10 @@ export interface MessageItemProps {
    * When the current user is mentioned, the mention will be highlighted differently.
    */
   currentUserName?: string;
+  /** Channel ID for pin functionality (only pass for channel messages). */
+  channelId?: Id<"channels">;
+  /** Whether current user is a channel admin (for pin authorization). */
+  isChannelAdmin?: boolean;
   onReply?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
@@ -92,6 +96,8 @@ export function MessageItem({
   lesson,
   showThreadButton = true,
   currentUserName,
+  channelId,
+  isChannelAdmin,
   onReply,
   onEdit,
   onDelete,
@@ -245,6 +251,8 @@ export function MessageItem({
         messageId={id}
         isOwn={isOwn}
         showThreadButton={showThreadButton}
+        channelId={channelId}
+        isChannelAdmin={isChannelAdmin}
         onReply={onReply}
         onEdit={onEdit}
         onDelete={onDelete}

@@ -2,12 +2,28 @@
 
 import { useState } from "react";
 
-import { useMutation } from "convex/react";
-import { MessageSquare, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { useMutation, useQuery } from "convex/react";
+import {
+  Bookmark,
+  BookmarkCheck,
+  MessageSquare,
+  MoreHorizontal,
+  Pencil,
+  Pin,
+  PinOff,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import * as apiModule from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Tooltip,
   TooltipContent,
@@ -40,6 +56,10 @@ export interface MessageActionButtonsProps {
   onDelete?: () => void;
   /** Optional className for the container. */
   className?: string;
+  /** The channel ID (required for pin functionality). */
+  channelId?: Id<"channels">;
+  /** Whether the current user is a channel admin. */
+  isChannelAdmin?: boolean;
 }
 
 // ============================================================================
@@ -59,9 +79,29 @@ export function MessageActionButtons({
   onEdit,
   onDelete,
   className,
+  channelId,
+  isChannelAdmin = false,
 }: MessageActionButtonsProps): React.ReactElement {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  // Mutations
   const addReaction = useMutation(api.reactions.addReaction);
+  const pinMessage = useMutation(api.pins.pinMessage);
+  const unpinMessage = useMutation(api.pins.unpinMessage);
+  const addBookmark = useMutation(api.bookmarks.addBookmark);
+  const removeBookmark = useMutation(api.bookmarks.removeBookmark);
+
+  // Queries for pin/bookmark status
+  const pinStatus = useQuery(api.pins.getByMessage, { messageId });
+  const bookmarkStatus = useQuery(api.bookmarks.getByMessage, { messageId });
+
+  // Derived state
+  const isPinned = pinStatus !== undefined && pinStatus !== null;
+  const isBookmarked = bookmarkStatus !== undefined && bookmarkStatus !== null;
+
+  // Authorization: Can pin if channel admin OR message creator (isOwn indicates current user owns the message)
+  const canPin = channelId && (isChannelAdmin || isOwn);
 
   const handleEmojiSelect = async (emoji: string): Promise<void> => {
     try {
@@ -69,6 +109,38 @@ export function MessageActionButtons({
       setShowEmojiPicker(false);
     } catch {
       toast.error("Failed to add reaction");
+    }
+  };
+
+  const handlePinToggle = async (): Promise<void> => {
+    if (!channelId) return;
+
+    try {
+      if (isPinned && pinStatus) {
+        await unpinMessage({ pinId: pinStatus._id });
+        toast.success("Message unpinned");
+      } else {
+        await pinMessage({ channelId, messageId });
+        toast.success("Message pinned");
+      }
+    } catch {
+      toast.error(isPinned ? "Failed to unpin message" : "Failed to pin message");
+    }
+  };
+
+  const handleBookmarkToggle = async (): Promise<void> => {
+    try {
+      if (isBookmarked && bookmarkStatus) {
+        await removeBookmark({ bookmarkId: bookmarkStatus._id });
+        toast.success("Bookmark removed");
+      } else {
+        await addBookmark({ messageId });
+        toast.success("Message bookmarked");
+      }
+    } catch {
+      toast.error(
+        isBookmarked ? "Failed to remove bookmark" : "Failed to bookmark message"
+      );
     }
   };
 
@@ -152,19 +224,67 @@ export function MessageActionButtons({
         </>
       )}
 
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="min-h-11 min-w-11"
-            aria-label="More actions"
+      <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="min-h-11 min-w-11"
+                  aria-label="More actions"
+                />
+              }
+            >
+              <MoreHorizontal className="size-4" aria-hidden="true" />
+            </DropdownMenuTrigger>
+          </TooltipTrigger>
+          <TooltipContent>More</TooltipContent>
+        </Tooltip>
+        <DropdownMenuContent align="end" side="top" sideOffset={4}>
+          {/* Pin/Unpin Action - only shown if user can pin */}
+          {canPin && (
+            <>
+              <DropdownMenuItem
+                onClick={handlePinToggle}
+                aria-label={isPinned ? "Unpin message" : "Pin message"}
+              >
+                {isPinned ? (
+                  <>
+                    <PinOff className="size-4" aria-hidden="true" />
+                    <span>Unpin Message</span>
+                  </>
+                ) : (
+                  <>
+                    <Pin className="size-4" aria-hidden="true" />
+                    <span>Pin Message</span>
+                  </>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
+
+          {/* Bookmark/Remove Bookmark Action - always available */}
+          <DropdownMenuItem
+            onClick={handleBookmarkToggle}
+            aria-label={isBookmarked ? "Remove bookmark" : "Bookmark message"}
           >
-            <MoreHorizontal className="size-4" aria-hidden="true" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>More</TooltipContent>
-      </Tooltip>
+            {isBookmarked ? (
+              <>
+                <BookmarkCheck className="size-4" aria-hidden="true" />
+                <span>Remove Bookmark</span>
+              </>
+            ) : (
+              <>
+                <Bookmark className="size-4" aria-hidden="true" />
+                <span>Bookmark Message</span>
+              </>
+            )}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

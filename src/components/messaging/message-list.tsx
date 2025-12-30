@@ -38,6 +38,10 @@ export interface MessageListProps {
   currentUserId?: Id<"users">;
   /** The current user's display name for highlighting @mentions. */
   currentUserName?: string;
+  /** Channel ID for pin functionality. */
+  channelId?: Id<"channels">;
+  /** Whether current user is a channel admin (for pin authorization). */
+  isChannelAdmin?: boolean;
   /** Optional className for the container. */
   className?: string;
 }
@@ -68,6 +72,8 @@ export function MessageList({
   onDelete,
   currentUserId,
   currentUserName,
+  channelId,
+  isChannelAdmin,
   className,
 }: MessageListProps): React.ReactElement {
   // Scroll behavior hook
@@ -198,6 +204,8 @@ export function MessageList({
                 status={message.status ?? "sent"}
                 lesson={message.lesson}
                 currentUserName={currentUserName}
+                channelId={channelId}
+                isChannelAdmin={isChannelAdmin}
                 onReply={onReply ? () => onReply(message._id) : undefined}
                 onEdit={
                   onEdit && currentUserId === message.senderId

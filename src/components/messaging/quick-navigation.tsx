@@ -8,7 +8,8 @@ import {
   AtSign,
   FileText,
   MoreHorizontal,
-  Filter
+  Filter,
+  Bookmark,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +28,7 @@ interface QuickNavigationProps {
   threadCount?: number;
   mentionCount?: number;
   draftCount?: number;
+  bookmarkCount?: number;
 }
 
 /**
@@ -37,6 +39,7 @@ interface QuickNavigationProps {
  * - Threads: Shows thread conversations
  * - Mentions: Shows @mentions
  * - Drafts: Shows saved drafts
+ * - Bookmarks: Shows bookmarked messages
  * - More: Additional filters/options
  *
  * @example
@@ -44,6 +47,7 @@ interface QuickNavigationProps {
  * <QuickNavigation
  *   unreadCount={5}
  *   mentionCount={2}
+ *   bookmarkCount={3}
  * />
  * ```
  */
@@ -53,6 +57,7 @@ export function QuickNavigation({
   threadCount = 0,
   mentionCount = 0,
   draftCount = 0,
+  bookmarkCount = 0,
 }: QuickNavigationProps): React.ReactElement {
   const pathname = usePathname();
 
@@ -84,6 +89,13 @@ export function QuickNavigation({
       href: "/messages/drafts",
       icon: FileText,
       badge: draftCount,
+    },
+    {
+      id: "bookmarks",
+      label: "Bookmarks",
+      href: "/messages/bookmarks",
+      icon: Bookmark,
+      badge: bookmarkCount,
     },
   ];
 

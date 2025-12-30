@@ -475,6 +475,9 @@ export function MessagingSidebar({
   const channels = useQuery(api.channels.list, {});
   const conversations = useQuery(api.messages.listConversations);
 
+  // Fetch unread thread count for sidebar badge
+  const unreadThreadCount = useQuery(api.messages.getUnreadThreadCount);
+
   // Determine active IDs from pathname
   const activeChannelId = pathname?.match(/^\/messages\/([^\/]+)$/)?.[1];
   const activeConversationId = pathname
@@ -494,7 +497,10 @@ export function MessagingSidebar({
       <ScrollArea className="flex-1 h-0">
         <div className="py-2">
           {/* Quick Navigation - always visible */}
-          <QuickNavigation className="mb-2" />
+          <QuickNavigation
+            className="mb-2"
+            threadCount={unreadThreadCount ?? 0}
+          />
 
           {/* Channel Search */}
           <ChannelSearch className="px-2 mb-2" />

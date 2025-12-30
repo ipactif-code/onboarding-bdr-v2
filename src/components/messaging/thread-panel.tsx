@@ -1,6 +1,10 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useCallback } from "react";
+import { useMutation } from "convex/react";
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const api: any = require("../../../convex/_generated/api").api;
 
 import {
   Sheet,
@@ -22,8 +26,10 @@ interface ThreadPanelProps {
   currentUserId: Id<"users">;
   /** The current user's display name for highlighting @mentions. */
   currentUserName?: string;
-  /** Channel ID for pin functionality. */
+  /** Channel ID for pin functionality (channel threads). */
   channelId?: Id<"channels">;
+  /** Conversation ID for DM threads. */
+  conversationId?: Id<"conversations">;
   /** Whether current user is a channel admin (for pin authorization). */
   isChannelAdmin?: boolean;
   /** Callback to close the panel. */
@@ -72,6 +78,7 @@ export function ThreadPanel({
   currentUserId,
   currentUserName,
   channelId,
+  conversationId,
   isChannelAdmin,
   onClose,
   onSendReply,
@@ -81,12 +88,27 @@ export function ThreadPanel({
 }: ThreadPanelProps): React.ReactElement {
   const isOpen = parentMessageId !== null;
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const markThreadAsRead = useMutation(api.messages.markThreadAsRead);
+
+  // Mark thread as read when panel opens
+  const markAsRead = useCallback(async () => {
+    if (!parentMessageId) return;
+    try {
+      await markThreadAsRead({ parentMessageId });
+    } catch {
+      // Silently fail - read status is not critical
+    }
+  }, [parentMessageId, markThreadAsRead]);
 
   // Focus management: move focus to close button when panel opens (WCAG 2.4.3)
+  // Also mark thread as read when opened
   useEffect(() => {
     if (!isOpen) {
       return;
     }
+
+    // Mark thread as read
+    markAsRead();
 
     // Small delay to ensure Sheet animation has started and content is rendered
     const timer = setTimeout(() => {
@@ -94,7 +116,7 @@ export function ThreadPanel({
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [isOpen]);
+  }, [isOpen, markAsRead]);
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -119,6 +141,7 @@ export function ThreadPanel({
                 currentUserId={currentUserId}
                 currentUserName={currentUserName}
                 channelId={channelId}
+                conversationId={conversationId}
                 isChannelAdmin={isChannelAdmin}
                 onClose={onClose}
                 onEdit={onEdit}

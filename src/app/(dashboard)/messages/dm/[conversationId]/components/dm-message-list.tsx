@@ -3,6 +3,7 @@
 import * as React from "react";
 import { MessageCircle } from "lucide-react";
 
+import type { Id } from "../../../../../../../convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,25 +12,36 @@ import {
   AvatarImage,
 } from "@/components/ui/avatar";
 import { RichTextRenderer } from "@/components/messaging/rich-text-renderer";
+import { MessageActionButtons } from "@/components/messaging/message-action-buttons";
 
 export interface Message {
-  _id: string;
-  senderId: string;
+  _id: Id<"messages">;
+  senderId: Id<"users">;
   senderName: string;
   senderAvatarUrl?: string;
   content: string;
   createdAt: number;
   isOwn: boolean;
+  /** Number of replies in the thread (0 if no replies). */
+  threadReplyCount?: number;
 }
 
 export interface DMMessageListProps {
   messages: Message[];
+  /** The conversation ID for pin functionality. */
+  conversationId: Id<"conversations">;
   isAtBottom: boolean;
   onScroll: (event: React.UIEvent<HTMLDivElement>) => void;
   onScrollToBottom: () => void;
   scrollAreaRef: React.RefObject<HTMLDivElement | null>;
   bottomRef: React.RefObject<HTMLDivElement | null>;
   className?: string;
+  /** Handler called when reply button is clicked on a message (opens thread panel). */
+  onReply?: (messageId: Id<"messages">) => void;
+  /** Handler called when edit button is clicked on a message. */
+  onEdit?: (messageId: Id<"messages">) => void;
+  /** Handler called when delete button is clicked on a message. */
+  onDelete?: (messageId: Id<"messages">) => void;
 }
 
 /** Generates initials from a display name. */
@@ -87,15 +99,29 @@ function formatTime(timestamp: number): string {
 
 interface DMMessageItemProps {
   message: Message;
+  /** The conversation ID for pin functionality. */
+  conversationId: Id<"conversations">;
   ariaPosinset: number;
   ariaSetsize: number;
+  /** Handler called when reply button is clicked. */
+  onReply?: () => void;
+  /** Handler called when edit button is clicked. */
+  onEdit?: () => void;
+  /** Handler called when delete button is clicked. */
+  onDelete?: () => void;
 }
 
 function DMMessageItem({
   message,
+  conversationId,
   ariaPosinset,
   ariaSetsize,
+  onReply,
+  onEdit,
+  onDelete,
 }: DMMessageItemProps): React.ReactElement {
+  const threadReplyCount = message.threadReplyCount ?? 0;
+
   return (
     <article
       role="article"
@@ -132,7 +158,35 @@ function DMMessageItem({
         <div className="mt-1 break-words">
           <RichTextRenderer content={message.content} />
         </div>
+
+        {/* Thread reply count indicator */}
+        {threadReplyCount > 0 && (
+          <button
+            type="button"
+            onClick={onReply}
+            className="mt-2 flex items-center gap-1.5 text-xs text-primary hover:underline"
+            aria-label={`View ${threadReplyCount} ${threadReplyCount === 1 ? "reply" : "replies"}`}
+          >
+            <MessageCircle className="size-3" aria-hidden="true" />
+            <span>
+              {threadReplyCount} {threadReplyCount === 1 ? "reply" : "replies"}
+            </span>
+          </button>
+        )}
       </div>
+
+      {/* Action buttons (visible on hover/focus) - DMs now support threads */}
+      <MessageActionButtons
+        messageId={message._id}
+        isOwn={message.isOwn}
+        showThreadButton={true}
+        channelId={undefined}
+        conversationId={conversationId}
+        isChannelAdmin={false}
+        onReply={onReply}
+        onEdit={message.isOwn ? onEdit : undefined}
+        onDelete={message.isOwn ? onDelete : undefined}
+      />
     </article>
   );
 }
@@ -140,12 +194,16 @@ function DMMessageItem({
 /** Message list for DM conversations - handles rendering and scrolling. */
 export function DMMessageList({
   messages,
+  conversationId,
   isAtBottom,
   onScroll,
   onScrollToBottom,
   scrollAreaRef,
   bottomRef,
   className,
+  onReply,
+  onEdit,
+  onDelete,
 }: DMMessageListProps): React.ReactElement {
   return (
     <div className={cn("relative flex flex-1 flex-col overflow-hidden", className)}>
@@ -175,8 +233,12 @@ export function DMMessageList({
             <DMMessageItem
               key={message._id}
               message={message}
+              conversationId={conversationId}
               ariaPosinset={index + 1}
               ariaSetsize={messages.length}
+              onReply={onReply ? () => onReply(message._id) : undefined}
+              onEdit={onEdit ? () => onEdit(message._id) : undefined}
+              onDelete={onDelete ? () => onDelete(message._id) : undefined}
             />
           ))}
 

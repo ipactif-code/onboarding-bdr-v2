@@ -127,8 +127,9 @@ export const listConversations = query({
           )
           .collect();
 
+        // Exclude deleted messages and thread replies from unread count
         const unreadCount = allMessages.filter(
-          (m) => m.createdAt > lastReadAt && m.senderId !== user._id
+          (m) => m.createdAt > lastReadAt && !m.deletedAt && m.senderId !== user._id && !m.parentId
         ).length;
 
         return {

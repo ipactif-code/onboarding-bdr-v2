@@ -511,15 +511,18 @@ export default defineSchema({
     .index("by_channel", ["channelId"])
     .index("by_user_unnotified", ["mentionedUserId", "notifiedAt"]),
 
-  // Pinned messages per channel
+  // Pinned messages per channel or conversation (DM)
   pins: defineTable({
-    channelId: v.id("channels"),
+    channelId: v.optional(v.id("channels")), // For channel pins
+    conversationId: v.optional(v.id("conversations")), // For DM pins
     messageId: v.id("messages"),
     pinnedBy: v.id("users"),
     pinnedAt: v.number(),
   })
     .index("by_channel", ["channelId"])
     .index("by_channel_time", ["channelId", "pinnedAt"])
+    .index("by_conversation", ["conversationId"])
+    .index("by_conversation_time", ["conversationId", "pinnedAt"])
     .index("by_message", ["messageId"]),
 
   // Personal bookmarks
@@ -697,6 +700,15 @@ export default defineSchema({
     .index("by_scheduled_anonymization", ["anonymizationScheduledFor"])
     .index("by_deleted_by", ["deletedBy"])
     .index("by_gdpr_request", ["gdprRequestId"]),
+
+  // Thread read status - tracks when users last read each thread
+  threadReadStatus: defineTable({
+    userId: v.id("users"),
+    parentMessageId: v.id("messages"), // The thread's parent message ID
+    lastReadAt: v.number(), // Timestamp of last read
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_thread", ["userId", "parentMessageId"]),
 
   // Search history for user search queries
   searchHistory: defineTable({

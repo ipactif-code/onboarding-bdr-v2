@@ -82,11 +82,21 @@ export const getOrCreateDirect = mutation({
 /**
  * Send a message to a conversation.
  * T166: Implement messages.send mutation
+ * Supports threading via optional parentId parameter.
  */
 export const send = mutation({
   args: {
     conversationId: v.id("conversations"),
     content: v.string(),
+    contentType: v.optional(
+      v.union(
+        v.literal("text"),
+        v.literal("voice"),
+        v.literal("file"),
+        v.literal("system")
+      )
+    ),
+    parentId: v.optional(v.id("messages")),
   },
   returns: v.id("messages"),
   handler: async (ctx, args) => {
@@ -113,6 +123,29 @@ export const send = mutation({
       throw new Error("You are not a participant in this conversation");
     }
 
+    if (participation.leftAt) {
+      throw new Error("You have left this conversation");
+    }
+
+    // Validate parent message if provided (for threading)
+    let parentMessage = null;
+    if (args.parentId) {
+      parentMessage = await ctx.db.get(args.parentId);
+      if (!parentMessage) {
+        throw new Error("Parent message not found");
+      }
+      if (parentMessage.conversationId !== args.conversationId) {
+        throw new Error("Parent message belongs to different conversation");
+      }
+      // Parent should not itself be a reply (no nested threads)
+      if (parentMessage.parentId) {
+        throw new Error("Cannot reply to a thread reply");
+      }
+      if (parentMessage.deletedAt) {
+        throw new Error("Cannot reply to a deleted message");
+      }
+    }
+
     const now = Date.now();
 
     // Create the message
@@ -120,12 +153,27 @@ export const send = mutation({
       conversationId: args.conversationId,
       senderId: user._id,
       content: args.content.trim(),
+      contentType: args.contentType ?? "text",
+      parentId: args.parentId,
       createdAt: now,
+      status: "sent",
+      reactionCount: 0,
+      // Only set thread metadata on top-level messages
+      threadReplyCount: args.parentId ? undefined : 0,
     });
+
+    // Update parent message thread count if this is a reply
+    if (args.parentId && parentMessage) {
+      await ctx.db.patch(args.parentId, {
+        threadReplyCount: (parentMessage.threadReplyCount ?? 0) + 1,
+        threadLastReplyAt: now,
+      });
+    }
 
     // Update conversation timestamp
     await ctx.db.patch(args.conversationId, {
       updatedAt: now,
+      lastMessageAt: now,
     });
 
     // Mark as read for sender

@@ -28,6 +28,8 @@ const api: any = require("../../convex/_generated/api").api;
 interface UseThreadOptions {
   /** The ID of the parent message for the thread. */
   parentMessageId: Id<"messages"> | undefined;
+  /** The conversation ID for DM threads (optional, uses channel thread query if not provided). */
+  conversationId?: Id<"conversations">;
 }
 
 interface UseThreadReturn {
@@ -47,14 +49,21 @@ interface UseThreadReturn {
  * Hook for fetching a thread with its parent message and all replies.
  *
  * Subscribes to real-time updates via Convex subscription.
- * Uses the `getThread` query which returns both parent and replies.
+ * Uses the appropriate query based on whether this is a channel or DM thread:
+ * - Channel threads: `api.messages.getThread`
+ * - DM threads: `api.messages.conversationThreadQueries.getConversationThread`
  *
  * @param options.parentMessageId - The ID of the parent message (undefined skips the query)
+ * @param options.conversationId - The conversation ID for DM threads (optional)
  * @returns Thread data including parent message and replies array
  *
  * @example
  * ```tsx
+ * // Channel thread
  * const { parent, replies, isLoading } = useThread({ parentMessageId });
+ *
+ * // DM thread
+ * const { parent, replies, isLoading } = useThread({ parentMessageId, conversationId });
  *
  * if (isLoading) return <ThreadViewSkeleton />;
  * if (!parent) return <NotFound />;
@@ -70,13 +79,22 @@ interface UseThreadReturn {
  * ```
  */
 export function useThread(options: UseThreadOptions): UseThreadReturn {
-  const { parentMessageId } = options;
+  const { parentMessageId, conversationId } = options;
 
-  // Subscribe to thread data - this will automatically update in real-time
-  const result = useQuery(
+  // Subscribe to channel thread data
+  const channelResult = useQuery(
     api.messages.getThread,
-    parentMessageId ? { parentMessageId } : "skip"
+    parentMessageId && !conversationId ? { parentMessageId } : "skip"
   );
+
+  // Subscribe to DM thread data
+  const dmResult = useQuery(
+    api.messages.conversationThreadQueries.getConversationThread,
+    parentMessageId && conversationId ? { parentMessageId } : "skip"
+  );
+
+  // Use DM result if conversationId is provided, otherwise channel result
+  const result = conversationId ? dmResult : channelResult;
 
   return {
     parent: result?.parent ?? null,

@@ -56,8 +56,10 @@ export interface MessageActionButtonsProps {
   onDelete?: () => void;
   /** Optional className for the container. */
   className?: string;
-  /** The channel ID (required for pin functionality). */
+  /** The channel ID (for channel pin functionality). */
   channelId?: Id<"channels">;
+  /** The conversation ID (for DM pin functionality). */
+  conversationId?: Id<"conversations">;
   /** Whether the current user is a channel admin. */
   isChannelAdmin?: boolean;
 }
@@ -80,6 +82,7 @@ export function MessageActionButtons({
   onDelete,
   className,
   channelId,
+  conversationId,
   isChannelAdmin = false,
 }: MessageActionButtonsProps): React.ReactElement {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -100,8 +103,10 @@ export function MessageActionButtons({
   const isPinned = pinStatus !== undefined && pinStatus !== null;
   const isBookmarked = bookmarkStatus !== undefined && bookmarkStatus !== null;
 
-  // Authorization: Can pin if channel admin OR message creator (isOwn indicates current user owns the message)
-  const canPin = channelId && (isChannelAdmin || isOwn);
+  // Authorization:
+  // - Channels: Can pin if channel admin OR message creator
+  // - DMs: Any participant can pin (backend enforces participant check)
+  const canPin = channelId ? (isChannelAdmin || isOwn) : conversationId ? true : false;
 
   const handleEmojiSelect = async (emoji: string): Promise<void> => {
     try {
@@ -113,14 +118,20 @@ export function MessageActionButtons({
   };
 
   const handlePinToggle = async (): Promise<void> => {
-    if (!channelId) return;
+    // Must have either channelId or conversationId to pin
+    if (!channelId && !conversationId) return;
 
     try {
       if (isPinned && pinStatus) {
         await unpinMessage({ pinId: pinStatus._id });
         toast.success("Message unpinned");
       } else {
-        await pinMessage({ channelId, messageId });
+        // Pin to channel or conversation (DM)
+        if (channelId) {
+          await pinMessage({ channelId, messageId });
+        } else if (conversationId) {
+          await pinMessage({ conversationId, messageId });
+        }
         toast.success("Message pinned");
       }
     } catch {

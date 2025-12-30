@@ -56,6 +56,8 @@ export const getConversation = query({
         isOwn: v.boolean(),
         // T108: Include grouped reactions for conversation messages
         reactions: v.optional(v.array(messageReactionValidator)),
+        // Thread reply count for parent messages (0 if no replies)
+        threadReplyCount: v.optional(v.number()),
       })
     ),
     nextCursor: v.optional(v.number()),
@@ -115,12 +117,14 @@ export const getConversation = query({
     );
 
     // Get messages with pagination
+    // Filter out thread replies (messages with parentId) to show only top-level messages
     let messages = await ctx.db
       .query("messages")
       .withIndex("by_conversation_time", (q) =>
         q.eq("conversationId", args.conversationId)
       )
       .order("desc")
+      .filter((q) => q.eq(q.field("parentId"), undefined)) // Exclude thread replies
       .collect();
 
     // Apply cursor (timestamp-based pagination)
@@ -150,6 +154,8 @@ export const getConversation = query({
           isOwn: msg.senderId === user._id,
           // T108: Include grouped reactions
           reactions: reactionsMap.get(msg._id.toString()) ?? [],
+          // Include thread reply count for parent messages
+          threadReplyCount: msg.threadReplyCount ?? 0,
         };
       })
     );

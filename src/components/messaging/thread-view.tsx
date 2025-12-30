@@ -26,8 +26,10 @@ interface ThreadViewProps {
   onEdit?: (messageId: Id<"messages">) => void;
   /** Callback when user wants to delete a message. */
   onDelete?: (messageId: Id<"messages">) => void;
-  /** Channel ID for pin functionality. */
+  /** Channel ID for pin functionality (channel threads). */
   channelId?: Id<"channels">;
+  /** Conversation ID for DM threads. */
+  conversationId?: Id<"conversations">;
   /** Whether current user is a channel admin (for pin authorization). */
   isChannelAdmin?: boolean;
   /** Optional className for the container. */
@@ -59,11 +61,15 @@ export function ThreadView({
   onEdit,
   onDelete,
   channelId,
+  conversationId,
   isChannelAdmin,
   className,
   closeButtonRef,
 }: ThreadViewProps): React.ReactElement {
-  const { parent, replies, isLoading } = useThread({ parentMessageId });
+  const { parent, replies, isLoading } = useThread({
+    parentMessageId,
+    conversationId,
+  });
 
   // Loading state
   if (isLoading) {

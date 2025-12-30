@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, type ReactElement } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Id } from "../../../convex/_generated/dataModel";
 import Link from "next/link";
@@ -30,7 +31,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 export interface CourseRow {
@@ -53,6 +53,79 @@ interface ColumnOptions {
   onPublish: (id: Id<"courses">) => void;
   onUnpublish: (id: Id<"courses">) => void;
   onDelete: (id: Id<"courses">) => void;
+}
+
+interface CourseActionsCellProps {
+  course: CourseRow;
+  options: ColumnOptions;
+}
+
+function CourseActionsCell({ course, options }: CourseActionsCellProps): ReactElement {
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const isPublished = course.status === "published";
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8" />}>
+          <MoreHorizontal className="size-4" />
+          <span className="sr-only">Open menu</span>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem render={<Link href={`/admin/courses/${course._id}`} />}>
+            <Pencil className="size-4" data-icon="inline-start" />
+            Edit
+          </DropdownMenuItem>
+
+          {isPublished ? (
+            <DropdownMenuItem onClick={() => options.onUnpublish(course._id)}>
+              <GlobeLock className="size-4" data-icon="inline-start" />
+              Unpublish
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem onClick={() => options.onPublish(course._id)}>
+              <Globe className="size-4" data-icon="inline-start" />
+              Publish
+            </DropdownMenuItem>
+          )}
+
+          <DropdownMenuSeparator />
+
+          <DropdownMenuItem
+            onClick={() => setDeleteDialogOpen(true)}
+            className="text-red-600"
+          >
+            <Trash2 className="size-4" data-icon="inline-start" />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete course?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete &quot;{course.title}&quot; and
+              all its sections and lessons. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                options.onDelete(course._id);
+                setDeleteDialogOpen(false);
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
 }
 
 export function getColumns(options: ColumnOptions): ColumnDef<CourseRow>[] {
@@ -152,64 +225,9 @@ export function getColumns(options: ColumnOptions): ColumnDef<CourseRow>[] {
     // Actions column
     {
       id: "actions",
-      cell: ({ row }) => {
-        const course = row.original;
-        const isPublished = course.status === "published";
-
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8" />}>
-              <MoreHorizontal className="size-4" />
-              <span className="sr-only">Open menu</span>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem render={<Link href={`/admin/courses/${course._id}`} />}>
-                <Pencil className="size-4" data-icon="inline-start" />
-                Edit
-              </DropdownMenuItem>
-
-              {isPublished ? (
-                <DropdownMenuItem onClick={() => options.onUnpublish(course._id)}>
-                  <GlobeLock className="size-4" data-icon="inline-start" />
-                  Unpublish
-                </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem onClick={() => options.onPublish(course._id)}>
-                  <Globe className="size-4" data-icon="inline-start" />
-                  Publish
-                </DropdownMenuItem>
-              )}
-
-              <DropdownMenuSeparator />
-
-              <AlertDialog>
-                <AlertDialogTrigger render={<DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600" />}>
-                  <Trash2 className="size-4" data-icon="inline-start" />
-                  Delete
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete course?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will permanently delete &quot;{course.title}&quot; and
-                      all its sections and lessons. This action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => options.onDelete(course._id)}
-                      className="bg-red-600 hover:bg-red-700"
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        );
-      },
+      cell: ({ row }) => (
+        <CourseActionsCell course={row.original} options={options} />
+      ),
       size: 64,
     },
   ];

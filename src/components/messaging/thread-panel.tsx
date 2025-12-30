@@ -22,6 +22,10 @@ interface ThreadPanelProps {
   currentUserId: Id<"users">;
   /** The current user's display name for highlighting @mentions. */
   currentUserName?: string;
+  /** Channel ID for pin functionality. */
+  channelId?: Id<"channels">;
+  /** Whether current user is a channel admin (for pin authorization). */
+  isChannelAdmin?: boolean;
   /** Callback to close the panel. */
   onClose: () => void;
   /** Callback when user sends a reply (receives serialized content). */
@@ -67,6 +71,8 @@ export function ThreadPanel({
   parentMessageId,
   currentUserId,
   currentUserName,
+  channelId,
+  isChannelAdmin,
   onClose,
   onSendReply,
   onReplySent,
@@ -112,6 +118,8 @@ export function ThreadPanel({
                 parentMessageId={parentMessageId}
                 currentUserId={currentUserId}
                 currentUserName={currentUserName}
+                channelId={channelId}
+                isChannelAdmin={isChannelAdmin}
                 onClose={onClose}
                 onEdit={onEdit}
                 onDelete={onDelete}

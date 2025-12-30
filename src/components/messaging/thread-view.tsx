@@ -26,6 +26,10 @@ interface ThreadViewProps {
   onEdit?: (messageId: Id<"messages">) => void;
   /** Callback when user wants to delete a message. */
   onDelete?: (messageId: Id<"messages">) => void;
+  /** Channel ID for pin functionality. */
+  channelId?: Id<"channels">;
+  /** Whether current user is a channel admin (for pin authorization). */
+  isChannelAdmin?: boolean;
   /** Optional className for the container. */
   className?: string;
   /** Ref for the close button to enable focus management (WCAG 2.4.3). */
@@ -54,6 +58,8 @@ export function ThreadView({
   onClose,
   onEdit,
   onDelete,
+  channelId,
+  isChannelAdmin,
   className,
   closeButtonRef,
 }: ThreadViewProps): React.ReactElement {
@@ -109,6 +115,8 @@ export function ThreadView({
           lesson={parent.lesson}
           showThreadButton={false}
           currentUserName={currentUserName}
+          channelId={channelId}
+          isChannelAdmin={isChannelAdmin}
         />
       </div>
 
@@ -154,6 +162,8 @@ export function ThreadView({
                   lesson={reply.lesson}
                   showThreadButton={false}
                   currentUserName={currentUserName}
+                  channelId={channelId}
+                  isChannelAdmin={isChannelAdmin}
                   onEdit={
                     onEdit && currentUserId === reply.senderId
                       ? () => onEdit(reply._id)

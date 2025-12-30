@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
-import { Archive, BellOff, Hash, Info, Lock, MoreHorizontal, Settings, Star, Users } from "lucide-react";
+import { Archive, BellOff, Hash, Info, Lock, MoreHorizontal, Pin, Settings, Star, Users } from "lucide-react";
 import { toast } from "sonner";
 
 // Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
@@ -34,8 +34,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui-plate/tooltip";
+import {
+  Sheet,
+  SheetContent,
+} from "@/components/ui/sheet";
 import { ChannelMembersDialog } from "./channel-members-dialog";
 import { ChannelSettingsDialog } from "./channel-settings-dialog";
+import { PinnedMessages } from "./pinned-messages";
 
 // ============================================================================
 // Types
@@ -92,12 +97,20 @@ export function ChannelHeader({
 }: ChannelHeaderProps): React.ReactElement {
   const [isMembersDialogOpen, setIsMembersDialogOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isPinnedOpen, setIsPinnedOpen] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
   const [isUnarchiving, setIsUnarchiving] = useState(false);
 
   // Get current user to check if they are a global admin
   const currentUser = useQuery(api.users.me);
+
+  // Query pinned messages count
+  const pinnedMessages = useQuery(
+    api.pins.listByChannel,
+    channel ? { channelId: channel._id } : "skip"
+  );
+  const pinnedCount = pinnedMessages?.length ?? 0;
 
   // Mutations for archive/unarchive and favorites
   const archiveChannel = useMutation(api.channels.archive);
@@ -236,6 +249,23 @@ export function ChannelHeader({
           )}
         </div>
 
+        {/* Pinned messages button */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsPinnedOpen(true)}
+              className="shrink-0 gap-1 text-muted-foreground hover:text-foreground"
+              aria-label={`${pinnedCount} pinned ${pinnedCount === 1 ? "message" : "messages"}`}
+            >
+              <Pin className="size-4" />
+              {pinnedCount > 0 && <span>{pinnedCount}</span>}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Pinned messages</TooltipContent>
+        </Tooltip>
+
         {/* Member count - clickable to open members dialog */}
         <Tooltip>
           <TooltipTrigger asChild>
@@ -369,6 +399,13 @@ export function ChannelHeader({
         open={isSettingsOpen}
         onOpenChange={setIsSettingsOpen}
       />
+
+      {/* Pinned Messages Sheet */}
+      <Sheet open={isPinnedOpen} onOpenChange={setIsPinnedOpen}>
+        <SheetContent side="right" className="w-[400px] sm:w-[540px]">
+          <PinnedMessages channelId={channel._id} className="h-full" />
+        </SheetContent>
+      </Sheet>
     </>
   );
 }

@@ -66,6 +66,9 @@ export function ChannelView({ channelId }: ChannelViewProps): React.ReactElement
     channelId: parsedChannelId,
   });
 
+  // Compute if user is a channel admin for pin functionality
+  const isChannelAdmin = channel?.membership?.role === "owner" || channel?.membership?.role === "admin";
+
   const {
     messages,
     isLoading: isMessagesLoading,
@@ -217,6 +220,8 @@ export function ChannelView({ channelId }: ChannelViewProps): React.ReactElement
         onDelete={handleDeleteRequest}
         currentUserId={currentUserId}
         currentUserName={currentUser?.name}
+        channelId={parsedChannelId}
+        isChannelAdmin={isChannelAdmin}
         className="flex-1"
       />
 
@@ -251,6 +256,8 @@ export function ChannelView({ channelId }: ChannelViewProps): React.ReactElement
           parentMessageId={openThreadId}
           currentUserId={currentUserId}
           currentUserName={currentUser?.name}
+          channelId={parsedChannelId}
+          isChannelAdmin={isChannelAdmin}
           onClose={handleCloseThread}
           onSendReply={handleSendThreadReply}
           onEdit={handleEdit}

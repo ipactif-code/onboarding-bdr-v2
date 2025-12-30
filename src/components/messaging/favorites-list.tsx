@@ -81,7 +81,7 @@ export function FavoritesList({
       data-slot="favorites-list"
       className={cn("space-y-0.5", className)}
     >
-      {favorites.map((item: { type: "channel" | "dm"; id: string; name: string; isPrivate?: boolean; unreadCount?: number; avatarUrl?: string }) => {
+      {favorites.map((item: { type: "channel" | "dm"; id: string; name: string; isPrivate?: boolean; unreadCount?: number; avatarUrl?: string; status?: "online" | "away" | "dnd" | "offline" }) => {
         const isActive =
           activeItem?.type === item.type && activeItem?.id === item.id;
 
@@ -104,7 +104,8 @@ export function FavoritesList({
             conversationId={item.id}
             name={item.name}
             avatarUrl={item.avatarUrl}
-            status="offline" // TODO: integrate presence when available
+            status={item.status || "offline"}
+            unreadCount={item.unreadCount ?? 0}
             isActive={isActive}
           />
         );

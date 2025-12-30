@@ -8,30 +8,9 @@ import {
   AvatarImage,
   AvatarGroup,
   AvatarGroupCount,
-  AvatarBadge,
 } from "@/components/ui/avatar";
+import { StatusIndicator } from "@/components/presence";
 import { type Participant, getInitials } from "./types";
-
-// ============================================================================
-// OnlineIndicator Component
-// ============================================================================
-
-interface OnlineIndicatorProps {
-  status: "online" | "offline" | "away" | "dnd";
-}
-
-/**
- * Displays an online status indicator badge on avatars.
- */
-function OnlineIndicator({
-  status,
-}: OnlineIndicatorProps): React.ReactElement | null {
-  if (status !== "online") {
-    return null;
-  }
-
-  return <AvatarBadge className="bg-green-500" role="img" aria-label="Online" />;
-}
 
 // ============================================================================
 // ConversationAvatar Component
@@ -55,20 +34,28 @@ export function ConversationAvatar({
   participants,
   type,
 }: ConversationAvatarProps): React.ReactElement {
-  // For direct messages, show a single avatar with online indicator
+  // For direct messages, show a single avatar with status indicator
   if (type === "direct" && participants.length > 0) {
     const participant = participants[0];
     return (
-      <Avatar size="default">
-        <AvatarImage
-          src={participant?.avatarUrl}
-          alt={participant?.name ?? "User"}
-        />
-        <AvatarFallback>
-          {getInitials(participant?.name ?? "U")}
-        </AvatarFallback>
-        {participant && <OnlineIndicator status={participant.status} />}
-      </Avatar>
+      <div className="relative">
+        <Avatar size="default">
+          <AvatarImage
+            src={participant?.avatarUrl}
+            alt={participant?.name ?? "User"}
+          />
+          <AvatarFallback>
+            {getInitials(participant?.name ?? "U")}
+          </AvatarFallback>
+        </Avatar>
+        {participant && (
+          <StatusIndicator
+            status={participant.status}
+            size="sm"
+            className="absolute -bottom-0.5 -right-0.5 ring-2 ring-background"
+          />
+        )}
+      </div>
     );
   }
 

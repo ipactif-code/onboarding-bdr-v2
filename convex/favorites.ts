@@ -16,6 +16,14 @@ const favoriteItemValidator = v.object({
   avatarUrl: v.optional(v.string()),
   isPrivate: v.optional(v.boolean()),
   unreadCount: v.optional(v.number()),
+  status: v.optional(
+    v.union(
+      v.literal("online"),
+      v.literal("offline"),
+      v.literal("away"),
+      v.literal("dnd")
+    )
+  ),
 });
 
 /**
@@ -35,6 +43,7 @@ export const list = query({
       avatarUrl?: string;
       isPrivate?: boolean;
       unreadCount?: number;
+      status?: "online" | "offline" | "away" | "dnd";
     }> = [];
 
     // 1. Query favorited channels using by_user_favorite index
@@ -69,7 +78,7 @@ export const list = query({
             q.eq("channelId", channel._id).gt("createdAt", lastReadAt)
           )
           .collect();
-        unreadCount = unreadMessages.filter((m) => !m.deletedAt).length;
+        unreadCount = unreadMessages.filter((m) => !m.deletedAt && m.senderId !== user._id).length;
       }
 
       favorites.push({
@@ -104,6 +113,7 @@ export const list = query({
       // For DMs, get the other participant's info
       let name: string;
       let avatarUrl: string | undefined;
+      let status: "online" | "offline" | "away" | "dnd" | undefined;
 
       if (conversation.type === "direct") {
         // Find the other participant
@@ -123,6 +133,7 @@ export const list = query({
           if (otherUser) {
             name = otherUser.name;
             avatarUrl = otherUser.avatarUrl;
+            status = otherUser.status;
           } else {
             name = "Unknown User";
           }
@@ -165,20 +176,18 @@ export const list = query({
         continue;
       }
 
-      // Calculate unread count for DMs
-      let unreadCount = 0;
+      // Calculate unread count for DMs - always calculate, no guard condition
       const lastReadAt = participation.lastReadAt ?? 0;
-      const lastMessageAt = conversation.lastMessageAt ?? 0;
+      const allMessages = await ctx.db
+        .query("messages")
+        .withIndex("by_conversation_time", (q) =>
+          q.eq("conversationId", conversation._id)
+        )
+        .collect();
 
-      if (lastMessageAt > lastReadAt) {
-        const unreadMessages = await ctx.db
-          .query("messages")
-          .withIndex("by_conversation_time", (q) =>
-            q.eq("conversationId", conversation._id).gt("createdAt", lastReadAt)
-          )
-          .collect();
-        unreadCount = unreadMessages.filter((m) => !m.deletedAt).length;
-      }
+      const unreadCount = allMessages.filter(
+        (m) => m.createdAt > lastReadAt && !m.deletedAt && m.senderId !== user._id
+      ).length;
 
       favorites.push({
         type: "dm",
@@ -186,6 +195,7 @@ export const list = query({
         name,
         avatarUrl,
         unreadCount,
+        status,
       });
     }
 

@@ -44,23 +44,32 @@ export function DMView({ conversationId }: DMViewProps): React.ReactElement {
   // Typing indicator hook
   const { handleTyping, clearTyping } = useTypingIndicator({ conversationId });
 
+  const lastReadAtRef = useRef<number>(0);
   const hasMarkedReadRef = useRef(false);
 
-  // Mark as read when entering conversation and reset on conversation change
+  // Reset mark-as-read flag when conversation changes
+  useEffect(() => {
+    hasMarkedReadRef.current = false;
+  }, [parsedConversationId]);
+
+  // Mark as read when entering conversation or when new messages arrive
+  // Uses timestamp tracking to detect genuinely new messages (like channel-view)
   useEffect(() => {
     if (
       conversationData?.conversation &&
       conversationData.messages.length > 0 &&
       !hasMarkedReadRef.current
     ) {
-      hasMarkedReadRef.current = true;
-      markReadMutation({ conversationId: parsedConversationId }).catch(() => {
-        // Silently ignore errors for marking as read
-      });
+      const latestMessage = conversationData.messages[conversationData.messages.length - 1];
+      if (latestMessage && latestMessage.createdAt > lastReadAtRef.current) {
+        lastReadAtRef.current = latestMessage.createdAt;
+        hasMarkedReadRef.current = true;
+        markReadMutation({ conversationId: parsedConversationId }).catch(() => {
+          // Silently ignore errors for marking as read
+        });
+      }
     }
   }, [conversationData, parsedConversationId, markReadMutation]);
-
-  useEffect(() => { hasMarkedReadRef.current = false; }, [conversationId]);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {

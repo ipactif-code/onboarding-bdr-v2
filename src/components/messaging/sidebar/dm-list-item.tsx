@@ -4,13 +4,15 @@ import * as React from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { OnlineIndicator, type Status } from "../online-indicator";
+import { StatusIndicator, type PresenceStatus } from "@/components/presence";
+import { UnreadBadge } from "@/components/messaging/unread-badge";
 
 interface DMListItemProps {
   conversationId: string;
   name: string;
   avatarUrl?: string;
-  status?: Status;
+  status?: PresenceStatus;
+  unreadCount?: number;
   isActive?: boolean;
   onClick?: () => void;
 }
@@ -25,6 +27,7 @@ export function DMListItem({
   name,
   avatarUrl,
   status = "offline",
+  unreadCount,
   isActive = false,
   onClick,
 }: DMListItemProps): React.ReactElement {
@@ -50,17 +53,26 @@ export function DMListItem({
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       )}
     >
-      {/* Avatar with online indicator */}
+      {/* Avatar with status indicator */}
       <div className="relative shrink-0">
         <Avatar className="size-6">
           <AvatarImage src={avatarUrl} alt={name} />
           <AvatarFallback className="text-xs">{initials}</AvatarFallback>
         </Avatar>
-        <OnlineIndicator status={status} size="sm" showAsBadge />
+        <StatusIndicator
+          status={status}
+          size="sm"
+          className="absolute -bottom-0.5 -right-0.5 ring-2 ring-background"
+        />
       </div>
 
       {/* Name only - no preview/timestamp */}
       <span className="flex-1 truncate">{name}</span>
+
+      {/* Unread badge */}
+      {unreadCount !== undefined && unreadCount > 0 && (
+        <UnreadBadge count={unreadCount} size="sm" />
+      )}
     </Link>
   );
 }

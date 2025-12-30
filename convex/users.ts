@@ -348,6 +348,9 @@ export const me = query({
       avatarUrl: v.optional(v.string()),
       role: v.union(v.literal("user"), v.literal("admin")),
       status: v.union(v.literal("online"), v.literal("offline"), v.literal("away"), v.literal("dnd")),
+      customStatus: v.optional(v.string()),
+      customStatusEmoji: v.optional(v.string()),
+      customStatusExpiresAt: v.optional(v.number()),
     }),
     v.null()
   ),
@@ -374,6 +377,9 @@ export const me = query({
       avatarUrl: user.avatarUrl,
       role: user.role,
       status: user.status,
+      customStatus: user.customStatus,
+      customStatusEmoji: user.customStatusEmoji,
+      customStatusExpiresAt: user.customStatusExpiresAt,
     };
   },
 });

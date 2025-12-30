@@ -7,6 +7,7 @@ import { CommandPaletteProvider } from "@/components/command-palette";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserProvider } from "@/contexts/user-context";
+import { PresenceProvider } from "@/components/presence";
 import { useConvexAuth } from "@/components/providers/convex-provider";
 import { cn } from "@/lib/utils";
 
@@ -67,20 +68,22 @@ export default function DashboardLayout({
     <SidebarProvider defaultOpen={false}>
       <AuthReadyGuard>
         <UserProvider>
-          <CommandPaletteProvider>
-            <AppSidebar />
-            <SidebarInset className="min-w-0">
-              {!hideHeader && <AppHeader />}
-              <div
-                className={cn(
-                  "flex flex-1 flex-col min-h-0 min-w-0",
-                  !hideHeader && "p-6"
-                )}
-              >
-                {children}
-              </div>
-            </SidebarInset>
-          </CommandPaletteProvider>
+          <PresenceProvider>
+            <CommandPaletteProvider>
+              <AppSidebar />
+              <SidebarInset className="min-w-0">
+                {!hideHeader && <AppHeader />}
+                <div
+                  className={cn(
+                    "flex flex-1 flex-col min-h-0 min-w-0",
+                    !hideHeader && "p-6"
+                  )}
+                >
+                  {children}
+                </div>
+              </SidebarInset>
+            </CommandPaletteProvider>
+          </PresenceProvider>
         </UserProvider>
       </AuthReadyGuard>
     </SidebarProvider>

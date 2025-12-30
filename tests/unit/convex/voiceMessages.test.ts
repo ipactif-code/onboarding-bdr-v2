@@ -208,7 +208,7 @@ describe("voiceMessages", () => {
       const voiceMessage = await t.run(async (ctx) => {
         return await ctx.db
           .query("voiceMessages")
-          .withIndex("by_message", (q) => q.eq("messageId", messageId))
+          .filter((q) => q.eq(q.field("messageId"), messageId))
           .unique();
       });
 
@@ -278,7 +278,7 @@ describe("voiceMessages", () => {
       const voiceMessage = await t.run(async (ctx) => {
         return await ctx.db
           .query("voiceMessages")
-          .withIndex("by_message", (q) => q.eq("messageId", messageId))
+          .filter((q) => q.eq(q.field("messageId"), messageId))
           .unique();
       });
 
@@ -290,7 +290,7 @@ describe("voiceMessages", () => {
     let t: ReturnType<typeof convexTest>;
     let userId: Id<"users">;
     let otherUserId: Id<"users">;
-    let conversationId: Id<"directMessageConversations">;
+    let conversationId: Id<"conversations">;
     let storageId: Id<"_storage">;
     let asUser: ReturnType<typeof t.withIdentity>;
 
@@ -430,7 +430,7 @@ describe("voiceMessages", () => {
       const voiceMessage = await t.run(async (ctx) => {
         return await ctx.db
           .query("voiceMessages")
-          .withIndex("by_message", (q) => q.eq("messageId", messageId))
+          .filter((q) => q.eq(q.field("messageId"), messageId))
           .unique();
       });
 
@@ -700,7 +700,7 @@ describe("voiceMessages", () => {
       const voiceMessage = await t.run(async (ctx) => {
         return await ctx.db
           .query("voiceMessages")
-          .withIndex("by_message", (q) => q.eq("messageId", messageId))
+          .filter((q) => q.eq(q.field("messageId"), messageId))
           .unique();
       });
 
@@ -825,7 +825,7 @@ describe("voiceMessages", () => {
       await t.run(async (ctx) => {
         const vm = await ctx.db
           .query("voiceMessages")
-          .withIndex("by_message", (q) => q.eq("messageId", messageId))
+          .filter((q) => q.eq(q.field("messageId"), messageId))
           .unique();
         if (vm) {
           await ctx.db.patch(vm._id, { transcriptionStatus: "completed" });
@@ -844,7 +844,7 @@ describe("voiceMessages", () => {
       await t.run(async (ctx) => {
         const vm = await ctx.db
           .query("voiceMessages")
-          .withIndex("by_message", (q) => q.eq("messageId", messageId))
+          .filter((q) => q.eq(q.field("messageId"), messageId))
           .unique();
         if (vm) {
           await ctx.db.patch(vm._id, { duration: 121 }); // Exceeds max
@@ -866,7 +866,7 @@ describe("voiceMessages", () => {
       const voiceMessage = await t.run(async (ctx) => {
         return await ctx.db
           .query("voiceMessages")
-          .withIndex("by_message", (q) => q.eq("messageId", messageId))
+          .filter((q) => q.eq(q.field("messageId"), messageId))
           .unique();
       });
 

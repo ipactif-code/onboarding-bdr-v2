@@ -27,11 +27,13 @@ vi.mock("../../../convex/_generated/api", () => ({
 describe("useMessageSearch hook", () => {
   const mockUseQuery = vi.mocked(useQuery);
   const mockUseMutation = vi.mocked(useMutation);
-  const mockSaveToHistory = vi.fn();
+  const mockSaveToHistory = Object.assign(vi.fn(), {
+    withOptimisticUpdate: vi.fn(),
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseMutation.mockReturnValue(mockSaveToHistory);
+    mockUseMutation.mockReturnValue(mockSaveToHistory as any);
     mockSaveToHistory.mockResolvedValue(undefined);
 
     // Default mock responses (empty state)

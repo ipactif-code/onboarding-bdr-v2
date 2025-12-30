@@ -61,9 +61,12 @@ vi.mock("@/lib/audio-utils", () => ({
 
 // Mock navigator.mediaDevices
 const mockGetUserMedia = vi.fn();
-global.navigator.mediaDevices = {
-  getUserMedia: mockGetUserMedia,
-} as any;
+Object.defineProperty(global.navigator, "mediaDevices", {
+  writable: true,
+  value: {
+    getUserMedia: mockGetUserMedia,
+  },
+});
 
 // Mock MediaStream
 class MockMediaStream {
@@ -323,7 +326,8 @@ describe("useVoiceRecorder (F034)", () => {
         await result.current.startRecording();
       });
 
-      const stream = mockGetUserMedia.mock.results[0].value;
+      const stream = mockGetUserMedia.mock.results[0]?.value;
+      expect(stream).toBeDefined();
 
       unmount();
 

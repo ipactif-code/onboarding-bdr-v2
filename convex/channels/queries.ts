@@ -112,8 +112,8 @@ export const list = query({
         )
         .collect();
 
-      // Filter out deleted messages and count
-      const unreadCount = unreadMessages.filter((m) => !m.deletedAt).length;
+      // Filter out deleted messages and user's own messages, then count
+      const unreadCount = unreadMessages.filter((m) => !m.deletedAt && m.senderId !== user._id).length;
       unreadCountMap.set(channel._id.toString(), unreadCount);
     }
 
@@ -212,7 +212,8 @@ export const get = query({
             q.eq("channelId", args.channelId).gt("createdAt", lastReadAt)
           )
           .collect();
-        unreadCount = unreadMessages.filter((m) => !m.deletedAt).length;
+        // Filter out deleted messages and user's own messages
+        unreadCount = unreadMessages.filter((m) => !m.deletedAt && m.senderId !== user._id).length;
       }
     }
 
@@ -463,7 +464,8 @@ export const search = query({
                 q.eq("channelId", channel._id).gt("createdAt", lastReadAt)
               )
               .collect();
-            unreadCount = unreadMessages.filter((m) => !m.deletedAt).length;
+            // Filter out deleted messages and user's own messages
+            unreadCount = unreadMessages.filter((m) => !m.deletedAt && m.senderId !== user._id).length;
           }
         }
 

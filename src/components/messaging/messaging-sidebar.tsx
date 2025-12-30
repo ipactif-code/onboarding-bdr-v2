@@ -587,8 +587,8 @@ export function MessagingSidebar({
             ) : (
               <div className="space-y-0.5">
                 {conversations
-                  .filter((conversation: { _id: Id<"conversations">; isFavorite?: boolean; participants?: Array<{ name?: string; avatarUrl?: string; status?: Status }> }) => !conversation.isFavorite)
-                  .map((conversation: { _id: Id<"conversations">; isFavorite?: boolean; participants?: Array<{ name?: string; avatarUrl?: string; status?: Status }> }) => {
+                  .filter((conversation: { _id: Id<"conversations">; isFavorite?: boolean; unreadCount?: number; participants?: Array<{ name?: string; avatarUrl?: string; status?: Status }> }) => !conversation.isFavorite)
+                  .map((conversation: { _id: Id<"conversations">; isFavorite?: boolean; unreadCount?: number; participants?: Array<{ name?: string; avatarUrl?: string; status?: Status }> }) => {
                     // Get the other participant's info (first participant for direct messages)
                     const otherParticipant = conversation.participants?.[0];
                     return (
@@ -598,6 +598,7 @@ export function MessagingSidebar({
                         name={otherParticipant?.name ?? "Unknown"}
                         avatarUrl={otherParticipant?.avatarUrl}
                         status={otherParticipant?.status ?? "offline"}
+                        unreadCount={conversation.unreadCount}
                         isActive={activeConversationId === conversation._id}
                       />
                     );

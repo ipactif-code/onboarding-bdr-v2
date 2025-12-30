@@ -19,7 +19,6 @@ import { Id } from "../../../../../../../convex/_generated/dataModel";
 // Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
 // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
 const api: any = require("../../../../../../../convex/_generated/api").api;
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -43,6 +42,7 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar";
+import { StatusIndicator } from "@/components/presence";
 
 // ============================================================================
 // Types
@@ -91,21 +91,6 @@ function getInitials(name: string): string {
   return (first + second).toUpperCase();
 }
 
-/**
- * Gets the status color class for a user status.
- */
-function getStatusColor(status: Participant["status"]): string {
-  switch (status) {
-    case "online":
-      return "bg-green-500";
-    case "away":
-      return "bg-yellow-500";
-    case "dnd":
-      return "bg-red-500";
-    default:
-      return "bg-gray-400";
-  }
-}
 
 // ============================================================================
 // DMHeader Component
@@ -218,13 +203,11 @@ export function DMHeader({
               ) : null}
               <AvatarFallback>{getInitials(firstParticipant.name)}</AvatarFallback>
             </Avatar>
-            {/* Online status indicator */}
-            <span
-              className={cn(
-                "absolute bottom-0 right-0 size-3 rounded-full border-2 border-background",
-                getStatusColor(firstParticipant.status)
-              )}
-              aria-label={`Status: ${firstParticipant.status}`}
+            {/* Status indicator */}
+            <StatusIndicator
+              status={firstParticipant.status}
+              size="md"
+              className="absolute bottom-0 right-0 ring-2 ring-background"
             />
           </div>
         ) : null}

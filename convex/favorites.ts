@@ -78,7 +78,8 @@ export const list = query({
             q.eq("channelId", channel._id).gt("createdAt", lastReadAt)
           )
           .collect();
-        unreadCount = unreadMessages.filter((m) => !m.deletedAt && m.senderId !== user._id).length;
+        // Exclude thread replies from channel unread count
+        unreadCount = unreadMessages.filter((m) => !m.deletedAt && m.senderId !== user._id && !m.parentId).length;
       }
 
       favorites.push({
@@ -185,8 +186,9 @@ export const list = query({
         )
         .collect();
 
+      // Exclude thread replies from DM unread count
       const unreadCount = allMessages.filter(
-        (m) => m.createdAt > lastReadAt && !m.deletedAt && m.senderId !== user._id
+        (m) => m.createdAt > lastReadAt && !m.deletedAt && m.senderId !== user._id && !m.parentId
       ).length;
 
       favorites.push({

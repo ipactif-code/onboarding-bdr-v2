@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import {
   ArrowLeft,
   Users,
@@ -11,6 +11,7 @@ import {
   BellOff,
   EyeOff,
   LogOut,
+  Pin,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -42,7 +43,19 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui-plate/tooltip";
 import { StatusIndicator } from "@/components/presence";
+import { DMPinnedMessages } from "@/components/messaging/dm-pinned-messages";
 
 // ============================================================================
 // Types
@@ -109,12 +122,20 @@ export function DMHeader({
 }: DMHeaderProps): React.ReactElement {
   const router = useRouter();
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const [showPinnedMessages, setShowPinnedMessages] = useState(false);
   const [isHiding, setIsHiding] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
 
   const hideConversation = useMutation(api.directMessages.hide);
   const leaveGroup = useMutation(api.directMessages.leaveGroup);
   const toggleFavorite = useMutation(api.directMessages.toggleFavorite);
+
+  // Query pinned messages count for this conversation
+  const pinnedMessages = useQuery(
+    api.pins.listByConversation,
+    { conversationId: conversationId as Id<"conversations"> }
+  );
+  const pinnedCount = pinnedMessages?.length ?? 0;
 
   const firstParticipant = participants[0];
   const isGroup = conversationType === "group" || participants.length > 1;
@@ -229,6 +250,23 @@ export function DMHeader({
           )}
         </div>
 
+        {/* Pin button with count */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowPinnedMessages(true)}
+              className="shrink-0 gap-1 text-muted-foreground hover:text-foreground"
+              aria-label={`${pinnedCount} pinned ${pinnedCount === 1 ? "message" : "messages"}`}
+            >
+              <Pin className="size-4" aria-hidden="true" />
+              {pinnedCount > 0 && <span>{pinnedCount}</span>}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Pinned messages</TooltipContent>
+        </Tooltip>
+
         {/* Actions dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger
@@ -293,6 +331,19 @@ export function DMHeader({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Pinned Messages Sheet */}
+      <Sheet open={showPinnedMessages} onOpenChange={setShowPinnedMessages}>
+        <SheetContent side="right" className="w-full p-0 sm:max-w-md">
+          <SheetHeader className="sr-only">
+            <SheetTitle>Pinned Messages</SheetTitle>
+          </SheetHeader>
+          <DMPinnedMessages
+            conversationId={conversationId as Id<"conversations">}
+            className="h-full"
+          />
+        </SheetContent>
+      </Sheet>
     </>
   );
 }

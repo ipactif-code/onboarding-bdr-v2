@@ -7,6 +7,7 @@
  * - messages/conversationQueries.ts: Conversation queries
  * - messages/conversationMutations.ts: Conversation mutations
  * - messages/search.ts: Message search functionality
+ * - messages/threadNotifications.ts: Thread read status and notifications
  * - messages/helpers.ts: Shared utilities and validators
  */
 
@@ -45,6 +46,14 @@ export {
 
 // Search
 export { searchMessages } from "./messages/search";
+
+// Thread notifications
+export {
+  getUnreadThreadCount,
+  markThreadAsRead,
+  listAllThreadsWithActivity,
+  listConversationThreadsWithActivity,
+} from "./messages/threadNotifications";
 
 // Helpers (for use by other modules)
 export {

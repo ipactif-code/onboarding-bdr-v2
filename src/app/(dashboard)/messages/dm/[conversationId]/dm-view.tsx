@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { MessageCircle } from "lucide-react";
 
@@ -13,11 +13,22 @@ import { Id } from "../../../../../../convex/_generated/dataModel";
 const api: any = require("../../../../../../convex/_generated/api").api;
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useTypingIndicator } from "@/hooks/use-typing-indicator";
 
 import { DMHeader, type Participant } from "./components/dm-header";
 import { DMMessageList, type Message } from "./components/dm-message-list";
 import { DMMessageInput } from "./components/dm-message-input";
+import { ThreadPanel } from "@/components/messaging/thread-panel";
 
 interface DMViewProps {
   conversationId: string;
@@ -26,6 +37,8 @@ interface DMViewProps {
 /** DMView orchestrates header, message list, and input components. */
 export function DMView({ conversationId }: DMViewProps): React.ReactElement {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -40,6 +53,20 @@ export function DMView({ conversationId }: DMViewProps): React.ReactElement {
 
   const sendMessageMutation = useMutation(api.messages.send);
   const markReadMutation = useMutation(api.messages.markRead);
+  const deleteMessageMutation = useMutation(api.messages.deleteChannelMessage);
+
+  // Delete confirmation state
+  const [deleteMessageId, setDeleteMessageId] = useState<Id<"messages"> | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Thread panel state
+  const [openThreadId, setOpenThreadId] = useState<Id<"messages"> | null>(null);
+
+  // Track whether we've processed the initial thread param from URL
+  const threadParamProcessedRef = useRef(false);
+
+  // Get current user for thread panel
+  const currentUser = useQuery(api.users.me);
 
   // Typing indicator hook
   const { handleTyping, clearTyping } = useTypingIndicator({ conversationId });
@@ -47,9 +74,10 @@ export function DMView({ conversationId }: DMViewProps): React.ReactElement {
   const lastReadAtRef = useRef<number>(0);
   const hasMarkedReadRef = useRef(false);
 
-  // Reset mark-as-read flag when conversation changes
+  // Reset flags when conversation changes
   useEffect(() => {
     hasMarkedReadRef.current = false;
+    threadParamProcessedRef.current = false;
   }, [parsedConversationId]);
 
   // Mark as read when entering conversation or when new messages arrive
@@ -77,6 +105,27 @@ export function DMView({ conversationId }: DMViewProps): React.ReactElement {
       bottomRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
   }, [conversationData?.messages.length, isAtBottom]);
+
+  // Open thread from URL query parameter (e.g., ?thread=messageId)
+  // Only process once after conversation data is loaded
+  useEffect(() => {
+    // Skip if already processed or conversation is still loading
+    if (threadParamProcessedRef.current || conversationData === undefined) {
+      return;
+    }
+
+    const threadId = searchParams.get("thread");
+    if (threadId) {
+      // Mark as processed to prevent re-running
+      threadParamProcessedRef.current = true;
+
+      // Set the thread to open
+      setOpenThreadId(threadId as Id<"messages">);
+
+      // Clear the query param from URL for cleaner UX
+      router.replace(pathname, { scroll: false });
+    }
+  }, [searchParams, router, pathname, conversationData]);
 
   const handleScroll = useCallback((event: React.UIEvent<HTMLDivElement>) => {
     const target = event.currentTarget;
@@ -106,6 +155,61 @@ export function DMView({ conversationId }: DMViewProps): React.ReactElement {
   const scrollToBottom = useCallback(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, []);
+
+  // Edit handler - for now, just show a toast since edit UI is not implemented
+  const handleEdit = useCallback((messageId: Id<"messages">) => {
+    // TODO: Implement edit modal/inline editing for DM messages
+    toast.info("Message editing is not yet available for direct messages");
+    void messageId; // Suppress unused variable warning
+  }, []);
+
+  // Delete request handler - shows confirmation modal
+  const handleDeleteRequest = useCallback((messageId: Id<"messages">) => {
+    setDeleteMessageId(messageId);
+  }, []);
+
+  // Confirm delete handler - actually deletes the message
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deleteMessageId) return;
+    setIsDeleting(true);
+    try {
+      await deleteMessageMutation({ messageId: deleteMessageId });
+      toast.success("Message deleted");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to delete message";
+      toast.error(message);
+    } finally {
+      setIsDeleting(false);
+      setDeleteMessageId(null);
+    }
+  }, [deleteMessageId, deleteMessageMutation]);
+
+  // Thread handlers
+  const handleReply = useCallback((messageId: Id<"messages">) => {
+    setOpenThreadId(messageId);
+  }, []);
+
+  const handleCloseThread = useCallback(() => {
+    setOpenThreadId(null);
+  }, []);
+
+  const handleSendThreadReply = useCallback(
+    async (content: string) => {
+      if (!openThreadId) return;
+      try {
+        await sendMessageMutation({
+          conversationId: parsedConversationId,
+          content,
+          parentId: openThreadId,
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Failed to send reply";
+        toast.error(message);
+      }
+    },
+    [openThreadId, parsedConversationId, sendMessageMutation]
+  );
 
   // Loading state
   if (conversationData === undefined) {
@@ -158,12 +262,16 @@ export function DMView({ conversationId }: DMViewProps): React.ReactElement {
 
       <DMMessageList
         messages={messages as Message[]}
+        conversationId={parsedConversationId}
         isAtBottom={isAtBottom}
         onScroll={handleScroll}
         onScrollToBottom={scrollToBottom}
         scrollAreaRef={scrollAreaRef}
         bottomRef={bottomRef}
         className="flex-1"
+        onReply={handleReply}
+        onEdit={handleEdit}
+        onDelete={handleDeleteRequest}
       />
 
       <DMMessageInput
@@ -172,6 +280,43 @@ export function DMView({ conversationId }: DMViewProps): React.ReactElement {
         onSend={handleSendMessage}
         onTyping={handleTyping}
       />
+
+      {/* Delete Confirmation Modal */}
+      <AlertDialog
+        open={deleteMessageId !== null}
+        onOpenChange={(open) => !open && setDeleteMessageId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete message?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this message. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+              variant="destructive"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Thread Panel for DM threads */}
+      {currentUser && (
+        <ThreadPanel
+          parentMessageId={openThreadId}
+          currentUserId={currentUser._id}
+          currentUserName={currentUser.name}
+          conversationId={parsedConversationId}
+          onClose={handleCloseThread}
+          onSendReply={handleSendThreadReply}
+        />
+      )}
     </div>
   );
 }

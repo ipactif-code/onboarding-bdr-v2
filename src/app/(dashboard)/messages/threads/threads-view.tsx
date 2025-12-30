@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { MessageSquare, Hash } from "lucide-react";
+import { MessageSquare, Hash, User } from "lucide-react";
 import { useQuery } from "convex/react";
 
 import { Id } from "../../../../../convex/_generated/dataModel";
@@ -21,8 +21,13 @@ import { getInitials, formatTimestamp, getTextContent } from "@/lib/message-util
 
 interface ThreadWithActivity {
   _id: Id<"messages">;
-  channelId: Id<"channels">;
-  channel: { _id: Id<"channels">; name: string } | null;
+  channelId?: Id<"channels">;
+  conversationId?: Id<"conversations">;
+  context: {
+    type: "channel" | "dm";
+    id: string;
+    name: string;
+  };
   senderId: Id<"users">;
   sender: { _id: Id<"users">; name: string; avatarUrl?: string };
   content: string;
@@ -30,6 +35,7 @@ interface ThreadWithActivity {
   threadReplyCount: number;
   threadLastReplyAt: number;
   createdAt: number;
+  hasUnread: boolean;
 }
 
 const MAX_CONTENT_LENGTH = 100;
@@ -50,21 +56,33 @@ interface ThreadPreviewProps {
 }
 
 function ThreadPreview({ thread }: ThreadPreviewProps): React.ReactElement {
-  const channelName = thread.channel?.name ?? "Unknown Channel";
   const truncatedContent = truncateContent(thread.content, MAX_CONTENT_LENGTH);
+
+  // Build the correct href based on thread context type
+  const href =
+    thread.context.type === "channel"
+      ? `/messages/${thread.channelId}?thread=${thread._id}`
+      : `/messages/dm/${thread.conversationId}?thread=${thread._id}`;
+
+  // Choose icon based on context type
+  const ContextIcon = thread.context.type === "channel" ? Hash : User;
 
   return (
     <Link
-      href={`/messages/${thread.channelId}?thread=${thread._id}`}
+      href={href}
       className={cn(
         "block rounded-lg border bg-card p-4 transition-colors",
-        "hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        "hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        thread.hasUnread && "border-primary/50 bg-primary/5"
       )}
     >
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <Hash className="size-4" aria-hidden="true" />
-          <span className="font-medium">{channelName}</span>
+          <ContextIcon className="size-4" aria-hidden="true" />
+          <span className="font-medium">{thread.context.name}</span>
+          {thread.hasUnread && (
+            <span className="size-2 rounded-full bg-primary" aria-label="Unread" />
+          )}
         </div>
         <span className="text-xs text-muted-foreground">
           {formatTimestamp(thread.threadLastReplyAt)}
@@ -86,8 +104,11 @@ function ThreadPreview({ thread }: ThreadPreviewProps): React.ReactElement {
         </div>
       </div>
 
-      <div className="mt-3 flex justify-end">
-        <Badge variant="secondary" className="gap-1.5">
+      <div className="mt-3 flex items-center justify-between">
+        <span className="text-xs text-muted-foreground capitalize">
+          {thread.context.type === "dm" ? "Direct Message" : "Channel"}
+        </span>
+        <Badge variant={thread.hasUnread ? "default" : "secondary"} className="gap-1.5">
           <MessageSquare className="size-3" aria-hidden="true" />
           <span>
             {thread.threadReplyCount} {thread.threadReplyCount === 1 ? "reply" : "replies"}
@@ -152,10 +173,12 @@ function ThreadsEmptyState(): React.ReactElement {
 
 /**
  * ThreadsView displays a list of all messages with thread activity.
- * Features real-time updates, thread previews, and navigation to channel with thread panel.
+ * Features real-time updates, thread previews, and navigation to channel/DM with thread panel.
+ * Unified view shows both channel threads and DM threads.
  */
 export function ThreadsView(): React.ReactElement {
-  const result = useQuery(api.messages.listThreadsWithActivity, {
+  // Use unified query that returns both channel and DM threads
+  const result = useQuery(api.messages.listAllThreadsWithActivity, {
     limit: 20,
   });
 
@@ -169,13 +192,25 @@ export function ThreadsView(): React.ReactElement {
     return <ThreadsEmptyState />;
   }
 
+  // Count unread threads for display
+  const unreadCount = threads.filter((t) => t.hasUnread).length;
+
   return (
     <div data-slot="threads-view" className="h-full overflow-y-auto">
       <div className="sticky top-0 z-10 border-b bg-background px-4 py-3">
-        <h1 className="text-lg font-semibold">Threads</h1>
-        <p className="text-sm text-muted-foreground">
-          Messages with replies from channels you have access to
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-semibold">Threads</h1>
+            <p className="text-sm text-muted-foreground">
+              Conversations with replies from channels and direct messages
+            </p>
+          </div>
+          {unreadCount > 0 && (
+            <Badge variant="default" className="ml-2">
+              {unreadCount} unread
+            </Badge>
+          )}
+        </div>
       </div>
       <div className="space-y-3 p-4">
         {threads.map((thread) => (

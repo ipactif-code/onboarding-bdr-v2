@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { MessageCircle } from "lucide-react";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
+import { toast } from "sonner";
 import * as apiModule from "../../../../../../../convex/_generated/api";
 
 import type { Id } from "../../../../../../../convex/_generated/dataModel";
@@ -17,6 +18,7 @@ import { RichTextRenderer } from "@/components/messaging/rich-text-renderer";
 import { MessageActionButtons } from "@/components/messaging/message-action-buttons";
 import { FileAttachment } from "@/components/messaging/file-attachment";
 import { ImageAttachment } from "@/components/messaging/image-attachment";
+import { VoicePlayer, VoicePlayerSkeleton } from "@/components/messaging/voice-player";
 import { Skeleton } from "@/components/ui/skeleton";
 import { isImage } from "@/lib/file-type-utils";
 
@@ -43,6 +45,8 @@ export interface Message {
   senderName: string;
   senderAvatarUrl?: string;
   content: string;
+  /** Content type of the message (text, voice, file, system). */
+  contentType?: "text" | "voice" | "file" | "system";
   createdAt: number;
   isOwn: boolean;
   /** Number of replies in the thread (0 if no replies). */
@@ -147,11 +151,32 @@ function DMMessageItem({
 }: DMMessageItemProps): React.ReactElement {
   const threadReplyCount = message.threadReplyCount ?? 0;
 
+  // Detect voice message using multiple strategies for robustness
+  // This handles legacy data where contentType may be undefined
+  const isVoiceMessage =
+    message.contentType === "voice" ||
+    message.content === "[Voice Message]" ||
+    message.content.includes("[Voice Message]") ||
+    message.content.trim() === "[Voice Message]";
+
+  // Fetch voice message data when this is a voice message
+  const voiceData = useQuery(
+    api.voiceMessages.getVoiceMessage,
+    isVoiceMessage ? { messageId: message._id } : "skip"
+  );
+
   // Fetch attachments when message has them
   const attachments = useQuery(
     api.attachments.getMessageAttachments,
     message.hasAttachments ? { messageId: message._id } : "skip"
   );
+
+  // Mutations for transcription
+  // - editTranscription and retryTranscription: only available for own messages
+  // - requestTranscription: available to any user (anyone can request transcription)
+  const editTranscription = useMutation(api.voiceMessages.editTranscription);
+  const retryTranscription = useMutation(api.voiceMessages.retryTranscription);
+  const requestTranscription = useMutation(api.voiceMessages.requestTranscription);
 
   // Separate attachments into images and files for different layouts
   const imageAttachments = (attachments as MessageAttachment[] | undefined)?.filter(
@@ -195,7 +220,61 @@ function DMMessageItem({
 
         {/* Message body */}
         <div className="mt-1 break-words">
-          <RichTextRenderer content={message.content} />
+          {isVoiceMessage ? (
+            voiceData === undefined ? (
+              <VoicePlayerSkeleton />
+            ) : voiceData && voiceData.audioUrl ? (
+              <VoicePlayer
+                audioUrl={voiceData.audioUrl}
+                duration={voiceData.duration}
+                waveformData={voiceData.waveformData}
+                transcription={voiceData.transcription}
+                transcriptionStatus={voiceData.transcriptionStatus}
+                onTranscriptionEdit={
+                  message.isOwn
+                    ? async (text) => {
+                        try {
+                          await editTranscription({ messageId: message._id, transcription: text });
+                          toast.success("Transcription updated");
+                        } catch {
+                          toast.error("Failed to update transcription");
+                        }
+                      }
+                    : undefined
+                }
+                onTranscriptionRetry={
+                  message.isOwn && voiceData.transcriptionStatus === "failed"
+                    ? async () => {
+                        try {
+                          await retryTranscription({ messageId: message._id });
+                          toast.success("Transcription retry requested");
+                        } catch {
+                          toast.error("Failed to retry transcription");
+                        }
+                      }
+                    : undefined
+                }
+                onTranscriptionRequest={
+                  voiceData.transcriptionStatus === "pending" && !voiceData.transcription
+                    ? async () => {
+                        try {
+                          await requestTranscription({ messageId: message._id });
+                          toast.success("Transcription requested");
+                        } catch {
+                          toast.error("Failed to request transcription");
+                        }
+                      }
+                    : undefined
+                }
+              />
+            ) : (
+              <span className="text-muted-foreground text-sm">
+                Audio unavailable
+              </span>
+            )
+          ) : (
+            <RichTextRenderer content={message.content} />
+          )}
         </div>
 
         {/* Attachments section */}

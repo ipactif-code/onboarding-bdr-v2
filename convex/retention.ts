@@ -1,6 +1,26 @@
 import { v } from "convex/values";
 import { internalMutation } from "./_generated/server";
-import crypto from "crypto";
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+/**
+ * Simple non-cryptographic hash function for generating corpus IDs.
+ * This is NOT suitable for security purposes, only for ID generation and deduplication.
+ *
+ * Uses a variation of djb2 hash algorithm which provides good distribution
+ * for string inputs while being fast and deterministic.
+ */
+function simpleHash(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(16).padStart(8, "0");
+}
 
 // ============================================================================
 // Constants
@@ -100,10 +120,7 @@ export const anonymizeExpiredMessages = internalMutation({
         // Add to AI training corpus if eligible
         if (isEligibleForCorpus && message.content) {
           // Create a hash of the original message for deduplication
-          const sourceHash = crypto
-            .createHash("sha256")
-            .update(message._id + message.content)
-            .digest("hex");
+          const sourceHash = simpleHash(message._id + message.content);
 
           // Check if already in corpus (by hash)
           const existingCorpusEntry = await ctx.db

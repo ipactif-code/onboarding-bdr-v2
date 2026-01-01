@@ -53,6 +53,14 @@ export const getConversation = query({
         senderName: v.string(),
         senderAvatarUrl: v.optional(v.string()),
         content: v.string(),
+        contentType: v.optional(
+          v.union(
+            v.literal("text"),
+            v.literal("voice"),
+            v.literal("file"),
+            v.literal("system")
+          )
+        ),
         createdAt: v.number(),
         isOwn: v.boolean(),
         // T108: Include grouped reactions for conversation messages
@@ -156,6 +164,7 @@ export const getConversation = query({
           senderName: sender?.name ?? "Unknown",
           senderAvatarUrl: sender?.avatarUrl,
           content: msg.content,
+          contentType: msg.contentType ?? "text",
           createdAt: msg.createdAt,
           isOwn: msg.senderId === user._id,
           // T108: Include grouped reactions

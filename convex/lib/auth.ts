@@ -1,9 +1,9 @@
-import { QueryCtx, MutationCtx } from "../_generated/server";
+import { QueryCtx, MutationCtx, ActionCtx } from "../_generated/server";
 import { Doc, Id } from "../_generated/dataModel";
 import { isChannelMember, hasChannelRole } from "./permissions";
 
 // Type workaround: Use require() to avoid TS2589 deep type instantiation on 'internal'
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
 const { internal } = require("../_generated/api") as { internal: any };
 
 /**
@@ -175,4 +175,50 @@ export async function requireChannelAdmin(
   }
 
   return user;
+}
+
+/**
+ * User type returned from internal query (for action contexts).
+ */
+type UserFromInternalQuery = {
+  _id: string;
+  clerkId: string;
+  email: string;
+  name: string;
+  avatarUrl?: string;
+  role: "user" | "admin";
+} | null;
+
+/**
+ * Verify admin access in an action context.
+ * Actions cannot use ctx.db directly, so we use internal queries.
+ *
+ * Use this in actions that require admin access. It performs the same
+ * checks as requireAdmin but works with ActionCtx instead of QueryCtx/MutationCtx.
+ *
+ * @param ctx - Action context
+ * @returns The authenticated admin user document
+ * @throws Error if not authenticated, user not found, or not an admin
+ */
+export async function requireAdminInAction(ctx: ActionCtx): Promise<Doc<"users">> {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) {
+    throw new Error("Unauthorized: Authentication required");
+  }
+
+  const user: UserFromInternalQuery = await ctx.runQuery(
+    internal.users.getByClerkIdInternal,
+    { clerkId: identity.subject }
+  );
+
+  if (!user) {
+    throw new Error("Unauthorized: User not found");
+  }
+
+  if (user.role !== "admin") {
+    throw new Error("Forbidden: Admin access required");
+  }
+
+  // Return as Doc<"users"> - the internal query returns the same structure
+  return user as unknown as Doc<"users">;
 }

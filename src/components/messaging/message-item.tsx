@@ -106,7 +106,7 @@ export interface MessageItemProps {
 export function MessageItem({
   id,
   content,
-  contentType = "text",
+  contentType,
   senderId,
   senderName,
   senderAvatarUrl,
@@ -125,16 +125,27 @@ export function MessageItem({
   onEdit,
   onDelete,
 }: MessageItemProps): React.ReactElement {
+  // Derive effective content type from message data
+  // This handles legacy data where contentType may be undefined but the message is a voice message
+  // Use multiple detection strategies for robustness
+  const isVoiceMessage =
+    contentType === "voice" ||
+    content === "[Voice Message]" ||
+    content.includes("[Voice Message]") ||  // Handle if wrapped in other content
+    content.trim() === "[Voice Message]";   // Handle whitespace
+
+  const effectiveContentType: MessageContentType = contentType ?? (isVoiceMessage ? "voice" : "text");
+
   // Fetch reactions for this message (real-time subscription)
   const reactions = useQuery(
     api.reactions.getMessageReactions,
     { messageId: id }
   ) as ReactionGroup[] | undefined;
 
-  // Fetch voice message data when contentType is "voice"
+  // Fetch voice message data when this is a voice message
   const voiceData = useQuery(
     api.voiceMessages.getVoiceMessage,
-    contentType === "voice" ? { messageId: id } : "skip"
+    effectiveContentType === "voice" ? { messageId: id } : "skip"
   );
 
   // Fetch attachments when message has them
@@ -220,7 +231,7 @@ export function MessageItem({
 
         {/* Message body */}
         <div className="mt-1 break-words">
-          {contentType === "voice" ? (
+          {effectiveContentType === "voice" ? (
             voiceData === undefined ? (
               <VoicePlayerSkeleton />
             ) : voiceData && voiceData.audioUrl ? (
@@ -274,13 +285,8 @@ export function MessageItem({
                   imageAttachments.length >= 3 && "grid-cols-2 md:grid-cols-3"
                 )}
               >
-                {imageAttachments.map((attachment: MessageAttachment) => {
-                  console.log("[MessageItem] Rendering ImageAttachment with:", {
-                    downloadUrl: attachment.downloadUrl,
-                    fileName: attachment.fileName,
-                    hasDownloadUrl: !!attachment.downloadUrl,
-                  });
-                  return attachment.downloadUrl ? (
+                {imageAttachments.map((attachment: MessageAttachment) =>
+                  attachment.downloadUrl ? (
                     <ImageAttachment
                       key={attachment._id}
                       fileName={attachment.fileName}
@@ -291,8 +297,8 @@ export function MessageItem({
                       width={attachment.width}
                       height={attachment.height}
                     />
-                  ) : null;
-                })}
+                  ) : null
+                )}
               </div>
             )}
 

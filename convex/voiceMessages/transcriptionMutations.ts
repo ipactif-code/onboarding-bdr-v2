@@ -6,6 +6,7 @@
 
 import { v, ConvexError } from "convex/values";
 import { mutation } from "../_generated/server";
+import { Doc } from "../_generated/dataModel";
 import { requireAuth, requireChannelMember } from "../lib/auth";
 import { MAX_VOICE_DURATION_SECONDS } from "./types";
 
@@ -89,7 +90,7 @@ export const editTranscription = mutation({
 
 /**
  * Request transcription for a voice message (on-demand).
- * Any channel member can request transcription.
+ * Any channel member or conversation participant can request transcription.
  * This enables cost savings by only transcribing when needed.
  */
 export const requestTranscription = mutation({
@@ -106,11 +107,39 @@ export const requestTranscription = mutation({
       throw new ConvexError({ code: "DELETED", message: "Cannot transcribe a deleted message" });
     }
 
-    // Verify user is a member of the channel (also handles authentication)
-    if (!message.channelId) {
-      throw new ConvexError({ code: "INVALID_STATE", message: "Voice message must belong to a channel" });
+    // Verify user is a member of the channel or conversation participant
+    if (!message.channelId && !message.conversationId) {
+      throw new ConvexError({ code: "INVALID_STATE", message: "Voice message must belong to a channel or conversation" });
     }
-    const user = await requireChannelMember(ctx, message.channelId);
+
+    let user: Doc<"users">;
+    if (message.channelId) {
+      // Channel message: verify channel membership
+      user = await requireChannelMember(ctx, message.channelId);
+    } else {
+      // DM message: verify conversation participation
+      const authenticatedUser = await requireAuth(ctx);
+      const participation = await ctx.db
+        .query("conversationParticipants")
+        .withIndex("by_user_conversation", (q) =>
+          q.eq("userId", authenticatedUser._id).eq("conversationId", message.conversationId!)
+        )
+        .unique();
+
+      if (!participation) {
+        throw new ConvexError({
+          code: "FORBIDDEN",
+          message: "You are not a participant in this conversation",
+        });
+      }
+      if (participation.leftAt !== undefined) {
+        throw new ConvexError({
+          code: "FORBIDDEN",
+          message: "You have left this conversation",
+        });
+      }
+      user = authenticatedUser;
+    }
 
     const voiceMessage = await ctx.db
       .query("voiceMessages")

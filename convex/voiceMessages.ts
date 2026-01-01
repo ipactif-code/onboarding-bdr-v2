@@ -3,6 +3,7 @@
  *
  * Re-exports all public APIs from the voice messages module.
  * This root-level file is required for Convex to register functions at:
+ * - api.voiceMessages.checkBudget
  * - api.voiceMessages.generateUploadUrl
  * - api.voiceMessages.sendVoiceToChannel
  * - api.voiceMessages.sendVoiceToConversation
@@ -12,6 +13,7 @@
  * - api.voiceMessages.requestTranscription
  *
  * This module is split into:
+ * - voiceMessages/budgetQueries.ts: Pre-recording budget validation queries
  * - voiceMessages/queries.ts: Voice message queries
  * - voiceMessages/channelMutations.ts: Channel voice message mutations
  * - voiceMessages/dmMutations.ts: DM voice message mutations
@@ -23,6 +25,7 @@
 
 // Public Queries
 export { getVoiceMessage } from "./voiceMessages/queries";
+export { checkBudget } from "./voiceMessages/budgetQueries";
 
 // Public Mutations - Channel
 export { generateUploadUrl, sendVoiceToChannel } from "./voiceMessages/channelMutations";

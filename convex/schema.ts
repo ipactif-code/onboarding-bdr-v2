@@ -571,7 +571,8 @@ export default defineSchema({
 
   // File attachments on messages
   messageAttachments: defineTable({
-    messageId: v.id("messages"),
+    // messageId is optional initially (set when attachment is linked to a message)
+    messageId: v.optional(v.id("messages")),
     // Storage (either Convex Storage or UploadThing)
     storageId: v.optional(v.id("_storage")),
     downloadUrl: v.optional(v.string()),

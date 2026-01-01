@@ -67,6 +67,8 @@ export interface ChannelMessage {
   deletedAt?: number;
   reactionCount?: number;
   status?: MessageStatus;
+  /** Whether this message has file attachments. */
+  hasAttachments?: boolean;
 }
 
 // ============================================================================
@@ -89,9 +91,25 @@ interface UseChannelMessagesReturn {
   deleteMessage: (messageId: Id<"messages">) => Promise<void>;
 }
 
+/**
+ * Attachment data for a completed upload (UploadThing).
+ * Contains the URL and metadata needed to store the attachment.
+ */
+export interface AttachmentData {
+  /** The URL where the file is stored (UploadThing URL) */
+  url: string;
+  /** The original file name */
+  name: string;
+  /** The file size in bytes */
+  size: number;
+  /** The MIME type of the file */
+  type: string;
+}
+
 interface SendMessageOptions {
   parentId?: Id<"messages">;
   lessonId?: Id<"lessons">;
+  attachments?: AttachmentData[];
 }
 
 /**
@@ -193,6 +211,7 @@ export function useChannelMessages(
         content,
         parentId: sendOptions?.parentId,
         lessonId: sendOptions?.lessonId,
+        attachments: sendOptions?.attachments,
       });
     },
     [channelId, sendMutation]

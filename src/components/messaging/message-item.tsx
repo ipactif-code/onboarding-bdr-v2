@@ -23,6 +23,10 @@ import { MessageActionButtons } from "@/components/messaging/message-action-butt
 import { RichTextRenderer } from "@/components/messaging/rich-text-renderer";
 import { ReactionBar, ReactionBarSkeleton, type ReactionGroup } from "@/components/messaging/reaction-bar";
 import { VoicePlayer, VoicePlayerSkeleton } from "@/components/messaging/voice-player";
+import { FileAttachment } from "@/components/messaging/file-attachment";
+import { ImageAttachment } from "@/components/messaging/image-attachment";
+import { Skeleton } from "@/components/ui/skeleton";
+import { isImage } from "@/lib/file-type-utils";
 
 // Type workaround: Convex's API has excessively deep type nesting.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -34,6 +38,19 @@ const api = (apiModule as any).api;
 
 /** Message content type. */
 type MessageContentType = "text" | "voice" | "file" | "system";
+
+/** Attachment type returned from getMessageAttachments query. */
+interface MessageAttachment {
+  _id: Id<"messageAttachments">;
+  fileName: string;
+  fileSize: number;
+  fileType: string;
+  thumbnailUrl?: string;
+  width?: number;
+  height?: number;
+  uploadedAt: number;
+  downloadUrl: string | null;
+}
 
 export interface MessageItemProps {
   id: Id<"messages">;
@@ -67,6 +84,11 @@ export interface MessageItemProps {
   channelId?: Id<"channels">;
   /** Whether current user is a channel admin (for pin authorization). */
   isChannelAdmin?: boolean;
+  /**
+   * Whether this message has file attachments.
+   * When true, attachments will be fetched and displayed below the message content.
+   */
+  hasAttachments?: boolean;
   onReply?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
@@ -98,6 +120,7 @@ export function MessageItem({
   currentUserName,
   channelId,
   isChannelAdmin,
+  hasAttachments = false,
   onReply,
   onEdit,
   onDelete,
@@ -114,12 +137,26 @@ export function MessageItem({
     contentType === "voice" ? { messageId: id } : "skip"
   );
 
+  // Fetch attachments when message has them
+  const attachments = useQuery(
+    api.attachments.getMessageAttachments,
+    hasAttachments ? { messageId: id } : "skip"
+  );
+
   // Mutations for transcription
   // - editTranscription and retryTranscription: only available for own messages
   // - requestTranscription: available to any user (anyone can request transcription)
   const editTranscription = useMutation(api.voiceMessages.editTranscription);
   const retryTranscription = useMutation(api.voiceMessages.retryTranscription);
   const requestTranscription = useMutation(api.voiceMessages.requestTranscription);
+
+  // Separate attachments into images and files for different layouts
+  const imageAttachments = (attachments as MessageAttachment[] | undefined)?.filter(
+    (att: MessageAttachment) => isImage(att.fileType)
+  ) ?? [];
+  const fileAttachments = (attachments as MessageAttachment[] | undefined)?.filter(
+    (att: MessageAttachment) => !isImage(att.fileType)
+  ) ?? [];
 
   return (
     <div
@@ -219,6 +256,65 @@ export function MessageItem({
           )}
         </div>
 
+        {/* Attachments section */}
+        {hasAttachments && (
+          <div className="mt-2 space-y-2">
+            {/* Loading state */}
+            {attachments === undefined && (
+              <AttachmentsSkeleton />
+            )}
+
+            {/* Images in responsive grid */}
+            {imageAttachments.length > 0 && (
+              <div
+                className={cn(
+                  "grid gap-2",
+                  imageAttachments.length === 1 && "grid-cols-1",
+                  imageAttachments.length === 2 && "grid-cols-2",
+                  imageAttachments.length >= 3 && "grid-cols-2 md:grid-cols-3"
+                )}
+              >
+                {imageAttachments.map((attachment: MessageAttachment) => {
+                  console.log("[MessageItem] Rendering ImageAttachment with:", {
+                    downloadUrl: attachment.downloadUrl,
+                    fileName: attachment.fileName,
+                    hasDownloadUrl: !!attachment.downloadUrl,
+                  });
+                  return attachment.downloadUrl ? (
+                    <ImageAttachment
+                      key={attachment._id}
+                      fileName={attachment.fileName}
+                      fileSize={attachment.fileSize}
+                      fileType={attachment.fileType}
+                      downloadUrl={attachment.downloadUrl}
+                      thumbnailUrl={attachment.thumbnailUrl}
+                      width={attachment.width}
+                      height={attachment.height}
+                    />
+                  ) : null;
+                })}
+              </div>
+            )}
+
+            {/* Files stacked */}
+            {fileAttachments.length > 0 && (
+              <div className="space-y-1">
+                {fileAttachments.map((attachment: MessageAttachment) => (
+                  attachment.downloadUrl && (
+                    <FileAttachment
+                      key={attachment._id}
+                      fileName={attachment.fileName}
+                      fileSize={attachment.fileSize}
+                      fileType={attachment.fileType}
+                      downloadUrl={attachment.downloadUrl}
+                    />
+                  )
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Thread reply count indicator */}
         {showThreadButton && threadReplyCount > 0 && (
           <button
@@ -261,4 +357,22 @@ export function MessageItem({
   );
 }
 
-export { MessageItemSkeleton };
+// ============================================================================
+// AttachmentsSkeleton Component
+// ============================================================================
+
+/**
+ * Skeleton loader for attachments while they are being fetched.
+ */
+function AttachmentsSkeleton(): React.ReactElement {
+  return (
+    <div className="space-y-2" data-slot="attachments-skeleton">
+      {/* Skeleton for potential image */}
+      <Skeleton className="h-48 w-full max-w-md rounded-lg" />
+      {/* Skeleton for potential file */}
+      <Skeleton className="h-11 w-full max-w-md rounded-lg" />
+    </div>
+  );
+}
+
+export { MessageItemSkeleton, AttachmentsSkeleton };

@@ -6,6 +6,7 @@ import { canAccessChannel } from "../lib/permissions";
 import {
   channelMessageWithSenderValidator,
   getReactionsForMessages,
+  getHasAttachmentsForMessages,
 } from "./helpers";
 
 // Re-export listThreadsWithActivity for backward compatibility
@@ -112,13 +113,17 @@ export const getThread = query({
     const allMessageIds = [parentMessage._id, ...replies.map((r) => r._id)];
     const reactionsMap = await getReactionsForMessages(ctx, allMessageIds);
 
-    // Helper function to hydrate a message with sender, lesson, and reactions info
+    // T004: Batch check for attachments on all messages in parallel
+    const attachmentsMap = await getHasAttachmentsForMessages(ctx, allMessageIds);
+
+    // Helper function to hydrate a message with sender, lesson, reactions, and attachments info
     const hydrateMessage = (
       message: typeof parentMessage
     ): Infer<typeof channelMessageWithSenderValidator> => {
       const sender = senderMap.get(message.senderId);
       const lesson = message.lessonId ? lessonMap.get(message.lessonId) : undefined;
       const reactions = reactionsMap.get(message._id.toString()) ?? [];
+      const hasAttachments = attachmentsMap.get(message._id.toString()) ?? false;
 
       return {
         _id: message._id,
@@ -153,6 +158,8 @@ export const getThread = query({
         // T108: Include grouped reactions
         reactions,
         status: message.status,
+        // T004: Include attachment status
+        hasAttachments,
       };
     };
 

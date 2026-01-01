@@ -2,6 +2,8 @@
 
 import * as React from "react";
 import { MessageCircle } from "lucide-react";
+import { useQuery } from "convex/react";
+import * as apiModule from "../../../../../../../convex/_generated/api";
 
 import type { Id } from "../../../../../../../convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
@@ -13,6 +15,27 @@ import {
 } from "@/components/ui/avatar";
 import { RichTextRenderer } from "@/components/messaging/rich-text-renderer";
 import { MessageActionButtons } from "@/components/messaging/message-action-buttons";
+import { FileAttachment } from "@/components/messaging/file-attachment";
+import { ImageAttachment } from "@/components/messaging/image-attachment";
+import { Skeleton } from "@/components/ui/skeleton";
+import { isImage } from "@/lib/file-type-utils";
+
+// Type workaround: Convex's API has excessively deep type nesting.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const api = (apiModule as any).api;
+
+/** Attachment type returned from getMessageAttachments query. */
+interface MessageAttachment {
+  _id: Id<"messageAttachments">;
+  fileName: string;
+  fileSize: number;
+  fileType: string;
+  thumbnailUrl?: string;
+  width?: number;
+  height?: number;
+  uploadedAt: number;
+  downloadUrl: string | null;
+}
 
 export interface Message {
   _id: Id<"messages">;
@@ -24,6 +47,8 @@ export interface Message {
   isOwn: boolean;
   /** Number of replies in the thread (0 if no replies). */
   threadReplyCount?: number;
+  /** Whether this message has file attachments. */
+  hasAttachments?: boolean;
 }
 
 export interface DMMessageListProps {
@@ -122,6 +147,20 @@ function DMMessageItem({
 }: DMMessageItemProps): React.ReactElement {
   const threadReplyCount = message.threadReplyCount ?? 0;
 
+  // Fetch attachments when message has them
+  const attachments = useQuery(
+    api.attachments.getMessageAttachments,
+    message.hasAttachments ? { messageId: message._id } : "skip"
+  );
+
+  // Separate attachments into images and files for different layouts
+  const imageAttachments = (attachments as MessageAttachment[] | undefined)?.filter(
+    (att: MessageAttachment) => isImage(att.fileType)
+  ) ?? [];
+  const fileAttachments = (attachments as MessageAttachment[] | undefined)?.filter(
+    (att: MessageAttachment) => !isImage(att.fileType)
+  ) ?? [];
+
   return (
     <article
       role="article"
@@ -159,6 +198,60 @@ function DMMessageItem({
           <RichTextRenderer content={message.content} />
         </div>
 
+        {/* Attachments section */}
+        {message.hasAttachments && (
+          <div className="mt-2 space-y-2">
+            {/* Loading state */}
+            {attachments === undefined && (
+              <AttachmentsSkeleton />
+            )}
+
+            {/* Images in responsive grid */}
+            {imageAttachments.length > 0 && (
+              <div
+                className={cn(
+                  "grid gap-2",
+                  imageAttachments.length === 1 && "grid-cols-1",
+                  imageAttachments.length === 2 && "grid-cols-2",
+                  imageAttachments.length >= 3 && "grid-cols-2 md:grid-cols-3"
+                )}
+              >
+                {imageAttachments.map((attachment: MessageAttachment) => (
+                  attachment.downloadUrl && (
+                    <ImageAttachment
+                      key={attachment._id}
+                      fileName={attachment.fileName}
+                      fileSize={attachment.fileSize}
+                      fileType={attachment.fileType}
+                      downloadUrl={attachment.downloadUrl}
+                      thumbnailUrl={attachment.thumbnailUrl}
+                      width={attachment.width}
+                      height={attachment.height}
+                    />
+                  )
+                ))}
+              </div>
+            )}
+
+            {/* Files stacked */}
+            {fileAttachments.length > 0 && (
+              <div className="space-y-1">
+                {fileAttachments.map((attachment: MessageAttachment) => (
+                  attachment.downloadUrl && (
+                    <FileAttachment
+                      key={attachment._id}
+                      fileName={attachment.fileName}
+                      fileSize={attachment.fileSize}
+                      fileType={attachment.fileType}
+                      downloadUrl={attachment.downloadUrl}
+                    />
+                  )
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Thread reply count indicator */}
         {threadReplyCount > 0 && (
           <button
@@ -188,6 +281,20 @@ function DMMessageItem({
         onDelete={message.isOwn ? onDelete : undefined}
       />
     </article>
+  );
+}
+
+/**
+ * Skeleton loader for attachments while they are being fetched.
+ */
+function AttachmentsSkeleton(): React.ReactElement {
+  return (
+    <div className="space-y-2" data-slot="attachments-skeleton">
+      {/* Skeleton for potential image */}
+      <Skeleton className="h-48 w-full max-w-md rounded-lg" />
+      {/* Skeleton for potential file */}
+      <Skeleton className="h-11 w-full max-w-md rounded-lg" />
+    </div>
   );
 }
 

@@ -2,7 +2,10 @@ import { v } from "convex/values";
 import { query } from "../_generated/server";
 import { requireAuth } from "../lib/auth";
 import { canAccessChannel } from "../lib/permissions";
-import { channelMessageWithSenderValidator } from "./helpers";
+import {
+  channelMessageWithSenderValidator,
+  getHasAttachmentsForMessages,
+} from "./helpers";
 
 // ============================================================================
 // Lesson Discussion Queries
@@ -87,6 +90,10 @@ export const getLessonDiscussion = query({
     const hasMore = filteredMessages.length > limit;
     const resultMessages = filteredMessages.slice(0, limit);
 
+    // T004: Batch check for attachments on all messages in parallel
+    const messageIds = resultMessages.map((m) => m._id);
+    const attachmentsMap = await getHasAttachmentsForMessages(ctx, messageIds);
+
     // Get sender info for each message
     const result = await Promise.all(
       resultMessages.map(async (message) => {
@@ -124,6 +131,8 @@ export const getLessonDiscussion = query({
           deletedAt: message.deletedAt,
           reactionCount: message.reactionCount,
           status: message.status,
+          // T004: Include attachment status
+          hasAttachments: attachmentsMap.get(message._id.toString()) ?? false,
         };
       })
     );

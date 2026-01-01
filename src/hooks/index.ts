@@ -7,6 +7,13 @@ export { useMessageScroll } from "./use-message-scroll";
 export { useMessageIntersection } from "./use-message-intersection";
 export { useThread } from "./use-thread";
 
+// File upload hooks
+export { useFileUpload } from "./use-file-upload";
+export type {
+  UseFileUploadOptions,
+  UseFileUploadReturn,
+} from "./use-file-upload";
+
 // Voice recording hooks
 export {
   useVoiceRecorder,

@@ -206,6 +206,7 @@ export function MessageList({
                 currentUserName={currentUserName}
                 channelId={channelId}
                 isChannelAdmin={isChannelAdmin}
+                hasAttachments={message.hasAttachments}
                 onReply={onReply ? () => onReply(message._id) : undefined}
                 onEdit={
                   onEdit && currentUserId === message.senderId

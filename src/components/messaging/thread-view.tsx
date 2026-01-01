@@ -123,6 +123,7 @@ export function ThreadView({
           currentUserName={currentUserName}
           channelId={channelId}
           isChannelAdmin={isChannelAdmin}
+          hasAttachments={parent.hasAttachments}
         />
       </div>
 
@@ -170,6 +171,7 @@ export function ThreadView({
                   currentUserName={currentUserName}
                   channelId={channelId}
                   isChannelAdmin={isChannelAdmin}
+                  hasAttachments={reply.hasAttachments}
                   onEdit={
                     onEdit && currentUserId === reply.senderId
                       ? () => onEdit(reply._id)

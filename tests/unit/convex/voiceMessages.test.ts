@@ -260,7 +260,7 @@ describe("voiceMessages", () => {
 
     it("should schedule transcription", async () => {
       // Mock scheduler to verify it's called
-      let scheduledAction: string | null = null;
+      const scheduledAction: string | null = null;
 
       const messageId = await asUser.mutation(
         api.voiceMessages.channelMutations.sendVoiceToChannel,

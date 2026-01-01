@@ -316,6 +316,86 @@ export const checkInactiveUsers = internalMutation({
   },
 });
 
+/**
+ * Clean up expired typing indicators.
+ *
+ * This internal mutation is called by a cron job every 10 seconds to remove
+ * stale typing indicators from the typingIndicators table. A typing indicator
+ * is considered expired if its expiresAt timestamp is in the past.
+ *
+ * This ensures the UI doesn't show "user is typing..." for users who have
+ * stopped typing or disconnected without clearing their indicator.
+ *
+ * @returns Number of typing indicators deleted
+ */
+export const cleanupTypingIndicators = internalMutation({
+  args: {},
+  returns: v.number(),
+  handler: async (ctx) => {
+    const now = Date.now();
+
+    // Query all expired typing indicators using the by_expires index
+    const expiredIndicators = await ctx.db
+      .query("typingIndicators")
+      .withIndex("by_expires", (q) => q.lt("expiresAt", now))
+      .collect();
+
+    let deletedCount = 0;
+
+    for (const indicator of expiredIndicators) {
+      await ctx.db.delete(indicator._id);
+      deletedCount++;
+    }
+
+    return deletedCount;
+  },
+});
+
+/**
+ * Clean up expired custom statuses from users.
+ *
+ * This internal mutation is called by a cron job every minute to clear
+ * custom status fields for users whose customStatusExpiresAt timestamp
+ * has passed.
+ *
+ * This ensures that temporary custom statuses (e.g., "In a meeting until 3pm")
+ * are automatically cleared after their expiration time.
+ *
+ * @returns Number of users whose custom status was cleared
+ */
+export const cleanupExpiredStatuses = internalMutation({
+  args: {},
+  returns: v.number(),
+  handler: async (ctx) => {
+    const now = Date.now();
+
+    // Query all users - we need to check customStatusExpiresAt
+    // Since there's no index on customStatusExpiresAt, we filter after query
+    // This is acceptable as it runs infrequently (every minute) and most users
+    // won't have expiring custom statuses
+    const allUsers = await ctx.db.query("users").collect();
+
+    let updatedCount = 0;
+
+    for (const user of allUsers) {
+      // Check if user has an expired custom status
+      if (
+        user.customStatusExpiresAt !== undefined &&
+        user.customStatusExpiresAt < now
+      ) {
+        await ctx.db.patch(user._id, {
+          customStatus: undefined,
+          customStatusEmoji: undefined,
+          customStatusExpiresAt: undefined,
+        });
+        updatedCount++;
+      }
+    }
+
+    return updatedCount;
+  },
+});
+
 // ============================================================================
 // Mutations
 // ============================================================================

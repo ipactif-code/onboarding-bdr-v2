@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageInput } from "@/components/messaging/message-input";
+import { MessageInput, type AttachmentData } from "@/components/messaging/message-input";
 import { TypingIndicator } from "@/components/messaging/typing-indicator";
 import { Id } from "../../../../../../../convex/_generated/dataModel";
 
@@ -20,9 +20,9 @@ export interface DMMessageInputProps {
   displayName: string;
 
   /**
-   * Callback when user sends a message.
+   * Callback when user sends a message (with optional attachments).
    */
-  onSend: (content: string) => void;
+  onSend: (content: string, attachments?: AttachmentData[]) => void;
 
   /**
    * Optional callback when user is typing (for typing indicator).

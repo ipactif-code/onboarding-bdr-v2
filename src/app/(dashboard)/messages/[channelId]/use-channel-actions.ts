@@ -4,6 +4,7 @@ import { useCallback, useRef } from "react";
 import { toast } from "sonner";
 
 import type { Id } from "../../../../../convex/_generated/dataModel";
+import type { AttachmentData } from "@/hooks/use-messages";
 
 // ============================================================================
 // Types
@@ -11,7 +12,7 @@ import type { Id } from "../../../../../convex/_generated/dataModel";
 
 interface UseChannelActionsOptions {
   /** Send message mutation function. */
-  sendMessage: (content: string, options?: { lessonId?: Id<"lessons">; parentId?: Id<"messages"> }) => Promise<unknown>;
+  sendMessage: (content: string, options?: { lessonId?: Id<"lessons">; parentId?: Id<"messages">; attachments?: AttachmentData[] }) => Promise<unknown>;
   /** Delete message mutation function. */
   deleteMessage: (messageId: Id<"messages">) => Promise<void>;
   /** Join channel mutation function. */
@@ -27,14 +28,14 @@ interface UseChannelActionsOptions {
 interface UseChannelActionsReturn {
   /** Ref to track the element that triggered thread panel open. */
   threadTriggerRef: React.RefObject<HTMLElement | null>;
-  /** Handle sending a message in the main channel. */
-  handleSendMessage: (content: string) => Promise<void>;
+  /** Handle sending a message in the main channel (with optional attachments). */
+  handleSendMessage: (content: string, attachments?: AttachmentData[]) => Promise<void>;
   /** Handle opening a thread for a message. */
   handleReply: (messageId: Id<"messages">) => void;
   /** Handle closing the thread panel. */
   handleCloseThread: () => void;
-  /** Handle sending a reply in a thread. */
-  handleSendThreadReply: (content: string) => Promise<void>;
+  /** Handle sending a reply in a thread (with optional attachments). */
+  handleSendThreadReply: (content: string, attachments?: AttachmentData[]) => Promise<void>;
   /** Handle editing a message (placeholder). */
   handleEdit: (messageId: Id<"messages">) => Promise<void>;
   /** Handle deleting a message. */
@@ -62,9 +63,9 @@ export function useChannelActions({
   const threadTriggerRef = useRef<HTMLElement | null>(null);
 
   const handleSendMessage = useCallback(
-    async (content: string) => {
+    async (content: string, attachments?: AttachmentData[]) => {
       try {
-        await sendMessage(content, { lessonId: selectedLessonId ?? undefined });
+        await sendMessage(content, { lessonId: selectedLessonId ?? undefined, attachments });
       } catch (error) {
         const message = error instanceof Error ? error.message : "Failed to send message";
         toast.error(message);
@@ -87,10 +88,10 @@ export function useChannelActions({
   }, [setOpenThreadId]);
 
   const handleSendThreadReply = useCallback(
-    async (content: string) => {
+    async (content: string, attachments?: AttachmentData[]) => {
       if (!openThreadId) return;
       try {
-        await sendMessage(content, { parentId: openThreadId });
+        await sendMessage(content, { parentId: openThreadId, attachments });
       } catch (error) {
         const message = error instanceof Error ? error.message : "Failed to send reply";
         toast.error(message);

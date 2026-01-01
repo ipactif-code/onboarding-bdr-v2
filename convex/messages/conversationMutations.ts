@@ -82,6 +82,8 @@ export const getOrCreateDirect = mutation({
 /**
  * Send a message to a conversation.
  * T166: Implement messages.send mutation
+ * T162: Support for file attachments via attachmentIds (legacy Convex storage)
+ * T-UploadThing: Support for attachments via UploadThing URLs
  * Supports threading via optional parentId parameter.
  */
 export const send = mutation({
@@ -97,6 +99,19 @@ export const send = mutation({
       )
     ),
     parentId: v.optional(v.id("messages")),
+    // Legacy: attachment IDs from Convex storage
+    attachmentIds: v.optional(v.array(v.id("messageAttachments"))),
+    // New: attachment data from UploadThing
+    attachments: v.optional(
+      v.array(
+        v.object({
+          url: v.string(),
+          name: v.string(),
+          size: v.number(),
+          type: v.string(),
+        })
+      )
+    ),
   },
   returns: v.id("messages"),
   handler: async (ctx, args) => {
@@ -168,6 +183,43 @@ export const send = mutation({
         threadReplyCount: (parentMessage.threadReplyCount ?? 0) + 1,
         threadLastReplyAt: now,
       });
+    }
+
+    // T162: Link attachments to the message if provided (legacy Convex storage)
+    if (args.attachmentIds && args.attachmentIds.length > 0) {
+      for (const attachmentId of args.attachmentIds) {
+        const attachment = await ctx.db.get(attachmentId);
+        if (!attachment) {
+          throw new Error(`Attachment not found: ${attachmentId}`);
+        }
+
+        // Only link attachments that aren't already linked to a message
+        // This prevents stealing attachments from other messages
+        if (attachment.messageId) {
+          throw new Error(
+            `Attachment ${attachmentId} is already linked to a message`
+          );
+        }
+
+        await ctx.db.patch(attachmentId, {
+          messageId,
+        });
+      }
+    }
+
+    // T-UploadThing: Create attachments from UploadThing data
+    if (args.attachments && args.attachments.length > 0) {
+      for (const attachment of args.attachments) {
+        await ctx.db.insert("messageAttachments", {
+          messageId,
+          downloadUrl: attachment.url, // Store UploadThing URL directly
+          fileName: attachment.name,
+          fileSize: attachment.size,
+          fileType: attachment.type,
+          uploadedAt: Date.now(),
+          // storageId is NOT set - we're using external URL from UploadThing
+        });
+      }
     }
 
     // Update conversation timestamp

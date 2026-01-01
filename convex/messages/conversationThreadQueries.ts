@@ -4,6 +4,7 @@ import { requireAuth } from "../lib/auth";
 import {
   messageReactionValidator,
   getReactionsForMessages,
+  getHasAttachmentsForMessages,
 } from "./helpers";
 
 // ============================================================================
@@ -50,6 +51,8 @@ export const conversationMessageWithSenderValidator = v.object({
   status: v.optional(
     v.union(v.literal("sending"), v.literal("sent"), v.literal("failed"))
   ),
+  // T004: Indicates if message has file attachments
+  hasAttachments: v.optional(v.boolean()),
 });
 
 /** Type for conversation message with sender */
@@ -150,12 +153,16 @@ export const getConversationThread = query({
     const allMessageIds = [parentMessage._id, ...replies.map((r) => r._id)];
     const reactionsMap = await getReactionsForMessages(ctx, allMessageIds);
 
-    // Helper function to hydrate a message with sender and reactions info
+    // T004: Batch check for attachments on all messages in parallel
+    const attachmentsMap = await getHasAttachmentsForMessages(ctx, allMessageIds);
+
+    // Helper function to hydrate a message with sender, reactions, and attachments info
     const hydrateMessage = (
       message: typeof parentMessage
     ): ConversationMessageWithSender => {
       const sender = senderMap.get(message.senderId);
       const reactions = reactionsMap.get(message._id.toString()) ?? [];
+      const hasAttachments = attachmentsMap.get(message._id.toString()) ?? false;
 
       return {
         _id: message._id,
@@ -186,6 +193,8 @@ export const getConversationThread = query({
         reactionCount: message.reactionCount,
         reactions,
         status: message.status,
+        // T004: Include attachment status
+        hasAttachments,
       };
     };
 

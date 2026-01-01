@@ -6,6 +6,8 @@ import {
   channelMessageWithSenderValidator,
   getReactionsForMessages,
   getReactionsForMessage,
+  getHasAttachmentsForMessages,
+  hasAttachmentsForMessage,
 } from "./helpers";
 
 // ============================================================================
@@ -76,6 +78,9 @@ export const listByChannel = query({
     const messageIds = resultMessages.map((m) => m._id);
     const reactionsMap = await getReactionsForMessages(ctx, messageIds);
 
+    // T004: Batch check for attachments on all messages in parallel
+    const attachmentsMap = await getHasAttachmentsForMessages(ctx, messageIds);
+
     // Get sender info for each message
     const result = await Promise.all(
       resultMessages.map(async (message) => {
@@ -117,6 +122,8 @@ export const listByChannel = query({
           // T108: Include grouped reactions
           reactions: reactionsMap.get(message._id.toString()) ?? [],
           status: message.status,
+          // T004: Include attachment status
+          hasAttachments: attachmentsMap.get(message._id.toString()) ?? false,
         };
       })
     );
@@ -168,11 +175,12 @@ export const getChannelMessage = query({
       return null;
     }
 
-    // T108: Fetch sender, lesson, and reactions in parallel for performance
-    const [sender, lessonDoc, reactions] = await Promise.all([
+    // T108: Fetch sender, lesson, reactions, and attachments in parallel for performance
+    const [sender, lessonDoc, reactions, hasAttachments] = await Promise.all([
       ctx.db.get(message.senderId),
       message.lessonId ? ctx.db.get(message.lessonId) : Promise.resolve(null),
       getReactionsForMessage(ctx, message._id),
+      hasAttachmentsForMessage(ctx, message._id),
     ]);
 
     // T001-T002: Build lesson data if lessonId exists
@@ -213,6 +221,8 @@ export const getChannelMessage = query({
       // T108: Include grouped reactions
       reactions,
       status: message.status,
+      // T004: Include attachment status
+      hasAttachments,
     };
   },
 });

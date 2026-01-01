@@ -4,6 +4,7 @@ import { requireAuth } from "../lib/auth";
 import {
   messageReactionValidator,
   getReactionsForMessages,
+  getHasAttachmentsForMessages,
 } from "./helpers";
 
 // Re-export other conversation queries for backward compatibility
@@ -58,6 +59,8 @@ export const getConversation = query({
         reactions: v.optional(v.array(messageReactionValidator)),
         // Thread reply count for parent messages (0 if no replies)
         threadReplyCount: v.optional(v.number()),
+        // T004: Indicates if message has file attachments
+        hasAttachments: v.optional(v.boolean()),
       })
     ),
     nextCursor: v.optional(v.number()),
@@ -140,6 +143,9 @@ export const getConversation = query({
     const messageIds = resultMessages.map((m) => m._id);
     const reactionsMap = await getReactionsForMessages(ctx, messageIds);
 
+    // T004: Batch check for attachments on all messages in parallel
+    const attachmentsMap = await getHasAttachmentsForMessages(ctx, messageIds);
+
     // Get sender details for each message
     const messagesWithSenders = await Promise.all(
       resultMessages.map(async (msg) => {
@@ -156,6 +162,8 @@ export const getConversation = query({
           reactions: reactionsMap.get(msg._id.toString()) ?? [],
           // Include thread reply count for parent messages
           threadReplyCount: msg.threadReplyCount ?? 0,
+          // T004: Include attachment status
+          hasAttachments: attachmentsMap.get(msg._id.toString()) ?? false,
         };
       })
     );

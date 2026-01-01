@@ -78,6 +78,8 @@ export const channelMessageWithSenderValidator = v.object({
   status: v.optional(
     v.union(v.literal("sending"), v.literal("sent"), v.literal("failed"))
   ),
+  // T004: Indicates if message has file attachments
+  hasAttachments: v.optional(v.boolean()),
 });
 
 // ============================================================================
@@ -226,6 +228,58 @@ export async function extractAndStoreMentions(
   // 4. PERMISSION CHECKS:
   //    - Verify sender has permission to mention in channel
   //    - Verify mentioned users are channel members (for DM prevention)
+}
+
+// ============================================================================
+// Attachment Helpers
+// ============================================================================
+
+/**
+ * Check if a single message has attachments.
+ *
+ * @param ctx - Query context
+ * @param messageId - The message to check
+ * @returns true if the message has at least one attachment
+ */
+export async function hasAttachmentsForMessage(
+  ctx: QueryCtx,
+  messageId: Id<"messages">
+): Promise<boolean> {
+  const attachment = await ctx.db
+    .query("messageAttachments")
+    .withIndex("by_message", (q) => q.eq("messageId", messageId))
+    .first();
+  return attachment !== null;
+}
+
+/**
+ * Batch check if messages have attachments.
+ *
+ * Uses Promise.all for efficient parallel fetching to avoid N+1 queries.
+ *
+ * @param ctx - Query context
+ * @param messageIds - Array of message IDs to check
+ * @returns Map of messageId (as string) to hasAttachments boolean
+ */
+export async function getHasAttachmentsForMessages(
+  ctx: QueryCtx,
+  messageIds: Id<"messages">[]
+): Promise<Map<string, boolean>> {
+  const attachmentsMap = new Map<string, boolean>();
+
+  // Fetch attachment status for all messages in parallel
+  const results = await Promise.all(
+    messageIds.map(async (messageId) => ({
+      messageId,
+      hasAttachments: await hasAttachmentsForMessage(ctx, messageId),
+    }))
+  );
+
+  for (const { messageId, hasAttachments } of results) {
+    attachmentsMap.set(messageId.toString(), hasAttachments);
+  }
+
+  return attachmentsMap;
 }
 
 // ============================================================================

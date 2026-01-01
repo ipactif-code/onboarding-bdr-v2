@@ -423,7 +423,10 @@ export default defineSchema({
     // Moderation state
     isMuted: v.boolean(), // Cannot send messages
     mutedUntil: v.optional(v.number()),
+    mutedBy: v.optional(v.id("users")), // Who muted this member
     isBanned: v.boolean(), // Cannot access channel
+    bannedAt: v.optional(v.number()), // Timestamp when banned
+    bannedBy: v.optional(v.id("users")), // Who banned this member
     // Favorites
     isFavorite: v.optional(v.boolean()), // User has starred this channel
   })
@@ -431,7 +434,9 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_channel_user", ["channelId", "userId"])
     .index("by_user_active", ["userId", "leftAt"])
-    .index("by_user_favorite", ["userId", "isFavorite"]),
+    .index("by_user_favorite", ["userId", "isFavorite"])
+    .index("by_channel_muted", ["channelId", "mutedUntil"])
+    .index("by_channel_banned", ["channelId", "bannedAt"]),
 
   // Additional admin access for course channels (instructors)
   channelAdmins: defineTable({
@@ -593,7 +598,8 @@ export default defineSchema({
     type: v.union(
       v.literal("text_message"),
       v.literal("voice_message"),
-      v.literal("link_preview")
+      v.literal("link_preview"),
+      v.literal("channel_export")
     ),
     windowStart: v.number(), // Start of current window
     count: v.number(), // Count within window

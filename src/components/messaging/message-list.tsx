@@ -214,7 +214,7 @@ export function MessageList({
                     : undefined
                 }
                 onDelete={
-                  onDelete && currentUserId === message.senderId
+                  onDelete && (currentUserId === message.senderId || isChannelAdmin)
                     ? () => onDelete(message._id)
                     : undefined
                 }

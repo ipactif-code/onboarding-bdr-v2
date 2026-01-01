@@ -201,38 +201,40 @@ export function MessageActionButtons({
         </Tooltip>
       )}
 
+      {/* Edit button - only for own messages */}
       {isOwn && (
-        <>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="min-h-11 min-w-11"
-                onClick={onEdit}
-                aria-label="Edit message"
-              >
-                <Pencil className="size-4" aria-hidden="true" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Edit</TooltipContent>
-          </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="min-h-11 min-w-11"
+              onClick={onEdit}
+              aria-label="Edit message"
+            >
+              <Pencil className="size-4" aria-hidden="true" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Edit</TooltipContent>
+        </Tooltip>
+      )}
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="min-h-11 min-w-11 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                onClick={onDelete}
-                aria-label="Delete message"
-              >
-                <Trash2 className="size-4" aria-hidden="true" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Delete</TooltipContent>
-          </Tooltip>
-        </>
+      {/* Delete button - for own messages OR channel admins */}
+      {(isOwn || isChannelAdmin) && onDelete && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="min-h-11 min-w-11 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={onDelete}
+              aria-label="Delete message"
+            >
+              <Trash2 className="size-4" aria-hidden="true" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Delete</TooltipContent>
+        </Tooltip>
       )}
 
       <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>

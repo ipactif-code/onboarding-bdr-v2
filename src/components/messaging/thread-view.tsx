@@ -178,7 +178,7 @@ export function ThreadView({
                       : undefined
                   }
                   onDelete={
-                    onDelete && currentUserId === reply.senderId
+                    onDelete && (currentUserId === reply.senderId || isChannelAdmin)
                       ? () => onDelete(reply._id)
                       : undefined
                   }

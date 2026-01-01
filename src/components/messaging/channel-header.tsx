@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
-import { Archive, BellOff, Hash, Info, Lock, MoreHorizontal, Pin, Settings, Star, Users } from "lucide-react";
+import { Archive, BellOff, Download, Hash, Info, Lock, MoreHorizontal, Pin, Settings, Star, Users } from "lucide-react";
 import { toast } from "sonner";
 
 // Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
@@ -41,6 +41,7 @@ import {
 import { ChannelMembersDialog } from "./channel-members-dialog";
 import { ChannelSettingsDialog } from "./channel-settings-dialog";
 import { PinnedMessages } from "./pinned-messages";
+import { ExportHistoryDialog } from "@/components/channels/admin/export-history-dialog";
 
 // ============================================================================
 // Types
@@ -98,6 +99,7 @@ export function ChannelHeader({
   const [isMembersDialogOpen, setIsMembersDialogOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isPinnedOpen, setIsPinnedOpen] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
   const [isUnarchiving, setIsUnarchiving] = useState(false);
@@ -325,10 +327,16 @@ export function ChannelHeader({
               Mute channel
             </DropdownMenuItem>
             {canManageSettings && (
-              <DropdownMenuItem onClick={() => setIsSettingsOpen(true)}>
-                <Settings className="mr-2 size-4" aria-hidden="true" />
-                Channel settings
-              </DropdownMenuItem>
+              <>
+                <DropdownMenuItem onClick={() => setIsExportOpen(true)}>
+                  <Download className="mr-2 size-4" aria-hidden="true" />
+                  Export history
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsSettingsOpen(true)}>
+                  <Settings className="mr-2 size-4" aria-hidden="true" />
+                  Channel settings
+                </DropdownMenuItem>
+              </>
             )}
             {canArchive && !channel.isArchived && (
               <>
@@ -406,6 +414,13 @@ export function ChannelHeader({
           <PinnedMessages channelId={channel._id} className="h-full" />
         </SheetContent>
       </Sheet>
+
+      {/* Export History Dialog (controlled mode) */}
+      <ExportHistoryDialog
+        channelId={channel._id}
+        open={isExportOpen}
+        onOpenChange={setIsExportOpen}
+      />
     </>
   );
 }

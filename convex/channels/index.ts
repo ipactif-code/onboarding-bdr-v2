@@ -2,10 +2,12 @@
  * Channel module exports.
  *
  * This module provides all channel-related functionality:
- * - Queries: list, get, getMembers, search
+ * - Queries: list, get, getMembers, search, getChannelMembersWithPagination
  * - Mutations: create, update, archive, unarchive, join, leave, markAllAsRead, toggleFavorite
  * - Member management: addMembers, removeMember, updateMemberRole
+ * - Moderation: muteMember, unmuteMember, banMember, unbanMember, restoreDeletedMessage
  * - Course channel internal mutations: createCourseChannel, addCourseEnrollee, removeCourseEnrollee, grantCourseInstructorAdmin
+ * - Export: exportChannelHistory (action)
  */
 
 // Types
@@ -36,3 +38,16 @@ export {
   removeCourseEnrollee,
   grantCourseInstructorAdmin,
 } from "./courseMutations";
+
+// Moderation mutations (mute, ban, restore)
+export {
+  muteMember,
+  unmuteMember,
+  banMember,
+  unbanMember,
+  restoreDeletedMessage,
+  getChannelMembersWithPagination,
+} from "./moderation";
+
+// Export action (FR-039)
+export { exportChannelHistory } from "./exportHistory";

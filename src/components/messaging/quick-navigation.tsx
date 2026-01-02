@@ -29,6 +29,8 @@ interface QuickNavigationProps {
   mentionCount?: number;
   draftCount?: number;
   bookmarkCount?: number;
+  /** Callback when a navigation link is clicked (for mobile sidebar close) */
+  onNavigate?: () => void;
 }
 
 /**
@@ -58,6 +60,7 @@ export function QuickNavigation({
   mentionCount = 0,
   draftCount = 0,
   bookmarkCount = 0,
+  onNavigate,
 }: QuickNavigationProps): React.ReactElement {
   const pathname = usePathname();
 
@@ -113,8 +116,11 @@ export function QuickNavigation({
           <Link
             key={item.id}
             href={item.href}
+            onClick={onNavigate}
             className={cn(
               "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm",
+              // Mobile touch target: min 44px
+              "min-h-11 md:min-h-0",
               "transition-colors duration-150",
               isActive
                 ? "bg-accent text-accent-foreground font-medium"
@@ -145,6 +151,8 @@ export function QuickNavigation({
       <button
         className={cn(
           "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm",
+          // Mobile touch target: min 44px
+          "min-h-11 md:min-h-0",
           "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         )}

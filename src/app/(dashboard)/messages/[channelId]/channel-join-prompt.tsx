@@ -28,7 +28,7 @@ export function ChannelJoinPrompt({
   onJoin,
 }: ChannelJoinPromptProps): React.ReactElement {
   return (
-    <div data-slot="channel-join-prompt" className="flex h-full flex-col">
+    <div data-slot="channel-join-prompt" className="flex min-h-0 flex-1 flex-col">
       <ChannelHeader channel={channel} />
       <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
         <h2 className="text-xl font-semibold">#{channel.name}</h2>

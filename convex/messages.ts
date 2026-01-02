@@ -8,6 +8,7 @@
  * - messages/conversationMutations.ts: Conversation mutations
  * - messages/search.ts: Message search functionality
  * - messages/threadNotifications.ts: Thread read status and notifications
+ * - messages/rateLimitQueries.ts: Rate limit status queries
  * - messages/helpers.ts: Shared utilities and validators
  */
 
@@ -39,6 +40,7 @@ export {
 export {
   getOrCreateDirect,
   send,
+  send as sendToConversation, // Alias for frontend consistency with sendToChannel
   sendDirect,
   broadcast,
   markRead,
@@ -54,6 +56,9 @@ export {
   listAllThreadsWithActivity,
   listConversationThreadsWithActivity,
 } from "./messages/threadNotifications";
+
+// Rate limit queries
+export { getRateLimitStatus } from "./messages/rateLimitQueries";
 
 // Helpers (for use by other modules)
 export {

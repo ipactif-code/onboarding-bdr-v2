@@ -186,6 +186,11 @@ export function CommandPalette({
               placeholder="Search channels and messages..."
               value={query}
               onValueChange={setQuery}
+              aria-keyshortcuts={
+                typeof navigator !== "undefined" && navigator.userAgent.includes("Mac")
+                  ? "Meta+k"
+                  : "Control+k"
+              }
             />
             <CommandList className="max-h-[400px]">
               <CommandEmpty>

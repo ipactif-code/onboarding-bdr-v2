@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Plate, usePlateEditor } from 'platejs/react';
-import { Loader2, Mic, Send, X } from 'lucide-react';
+import { AlertCircle, CloudOff, Loader2, Mic, Send, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { MessageInputPlugins } from './message-input-plugins';
@@ -21,6 +21,9 @@ import { Editor, EditorContainer } from '@/components/ui/editor';
 import { createEmptyEditorValue, getTextFromValue, serializeEditorValue } from './message-input-utils';
 import { MessageInputSkeleton } from './message-input-skeleton';
 import { useVoiceSender } from '@/hooks/voice/use-voice-sender';
+import { useRateLimitCheck } from '@/hooks/use-rate-limit-check';
+import { useNetworkStatus } from '@/hooks/use-network-status';
+import { useMessageQueue } from '@/hooks/use-message-queue';
 
 /**
  * Attachment data for a completed upload (UploadThing).
@@ -242,6 +245,19 @@ export function MessageInput({
     },
   });
 
+  // Rate limit status hook - FR-047
+  const {
+    isTextRateLimited,
+    isVoiceRateLimited,
+    textCountdown,
+    voiceCountdown,
+  } = useRateLimitCheck();
+
+  // Network status and message queue for offline support
+  const { connectionState } = useNetworkStatus();
+  const { addToQueue } = useMessageQueue();
+  const isOffline = connectionState === 'offline';
+
   const editor = usePlateEditor({
     plugins: MessageInputPlugins,
     value: editorValue as NonNullable<Parameters<typeof usePlateEditor>[0]>['value'],
@@ -287,7 +303,16 @@ export function MessageInput({
   );
 
   const handleSend = useCallback((): void => {
+    // FR-047: Check rate limit before sending
+    if (isTextRateLimited) {
+      toast.error(
+        `You're sending messages too quickly. Please wait ${textCountdown ?? 'a moment'}.`,
+        { id: 'rate-limit-text' }
+      );
+      return;
+    }
     if (isEmpty || isOverLimit || disabled || hasUploadingAttachments) return;
+
     const serialized = serializeEditorValue(editorValue);
     // Pass completed attachments as AttachmentData if we have any
     const attachmentsToSend: AttachmentData[] | undefined =
@@ -299,7 +324,25 @@ export function MessageInput({
             type: r.type,
           }))
         : undefined;
-    onSend(serialized, attachmentsToSend);
+
+    // If offline, queue the message instead of sending
+    if (isOffline) {
+      addToQueue({
+        content: serialized,
+        channelId,
+        conversationId,
+        parentId,
+        lessonId,
+        attachments: attachmentsToSend,
+      });
+      toast.info('Message queued - will send when you\'re back online', {
+        id: 'message-queued',
+        icon: <CloudOff className="size-4" />,
+      });
+    } else {
+      onSend(serialized, attachmentsToSend);
+    }
+
     const emptyValue = createEmptyEditorValue();
     setEditorValue(emptyValue);
     editor.tf.setValue(emptyValue);
@@ -307,15 +350,32 @@ export function MessageInput({
     pendingAttachments.forEach((p) => URL.revokeObjectURL(p.previewUrl));
     setPendingAttachments([]);
     onSent?.();
-  }, [isEmpty, isOverLimit, disabled, hasUploadingAttachments, editorValue, completedAttachments, onSend, editor, pendingAttachments, onSent]);
+  }, [isEmpty, isOverLimit, disabled, hasUploadingAttachments, isTextRateLimited, textCountdown, editorValue, completedAttachments, isOffline, addToQueue, channelId, conversationId, parentId, lessonId, onSend, editor, pendingAttachments, onSent]);
 
   // Handle voice message send - delegate to useVoiceSender hook
   const handleVoiceSend = useCallback(
     async (blob: Blob, mimeType: string, duration: number, waveformData: number[]): Promise<void> => {
+      // Voice messages require upload - can't be queued offline
+      if (isOffline) {
+        toast.error('Voice messages cannot be sent while offline', {
+          id: 'voice-offline',
+          description: 'Please wait until you\'re back online.',
+        });
+        return;
+      }
+
+      // FR-047: Check voice rate limit before sending
+      if (isVoiceRateLimited) {
+        toast.error(
+          `Voice message limit reached. Please wait ${voiceCountdown ?? 'a moment'}.`,
+          { id: 'rate-limit-voice' }
+        );
+        return;
+      }
       if (disabled || isUploadingVoice) return;
       await sendVoice(blob, mimeType, duration, waveformData);
     },
-    [disabled, isUploadingVoice, sendVoice]
+    [disabled, isUploadingVoice, isVoiceRateLimited, voiceCountdown, sendVoice, isOffline]
   );
 
   // Handle voice recording cancel
@@ -438,7 +498,7 @@ export function MessageInput({
 
   // Text input mode (default)
   return (
-    <div className="flex w-full flex-col gap-2">
+    <div className={cn('flex w-full flex-col gap-2', isTextRateLimited && 'pb-5')}>
       {/* Pending attachments preview row */}
       {hasAttachments && (
         <div
@@ -475,7 +535,8 @@ export function MessageInput({
             'relative flex-1 rounded-lg border bg-background transition-colors',
             'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
             disabled && 'cursor-not-allowed opacity-50',
-            isOverLimit && 'border-destructive focus-within:ring-destructive'
+            isOverLimit && 'border-destructive focus-within:ring-destructive',
+            isTextRateLimited && 'border-destructive/50 bg-destructive/5'
           )}
         >
           <Plate editor={editor} onChange={handleEditorChange}>
@@ -513,6 +574,18 @@ export function MessageInput({
               {characterCount}/{maxLength}
             </div>
           )}
+
+          {/* FR-047: Rate limit warning for text messages */}
+          {isTextRateLimited && (
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="absolute -bottom-6 left-0 flex items-center gap-1.5 text-xs text-destructive"
+            >
+              <AlertCircle className="size-3" />
+              <span>Rate limited. Retry in {textCountdown}</span>
+            </div>
+          )}
         </div>
 
         {/* Voice recording button - only shown when voice is enabled */}
@@ -522,16 +595,23 @@ export function MessageInput({
               <Button
                 type="button"
                 size="icon"
-                variant="outline"
+                variant={isVoiceRateLimited ? 'destructive' : 'outline'}
                 onClick={handleVoiceToggle}
-                disabled={disabled}
-                aria-label="Record voice message"
-                className="shrink-0 min-h-11 min-w-11"
+                disabled={disabled || isVoiceRateLimited}
+                aria-label={isVoiceRateLimited ? `Voice limit reached. Reset in ${voiceCountdown}` : 'Record voice message'}
+                className={cn(
+                  'shrink-0 min-h-11 min-w-11',
+                  isVoiceRateLimited && 'opacity-50'
+                )}
               >
                 <Mic className="size-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top">Record voice message</TooltipContent>
+            <TooltipContent side="top">
+              {isVoiceRateLimited
+                ? `Voice limit reached. Reset in ${voiceCountdown}`
+                : 'Record voice message'}
+            </TooltipContent>
           </Tooltip>
         )}
 
@@ -542,21 +622,51 @@ export function MessageInput({
               <Button
                 type="button"
                 size="icon"
+                variant={isTextRateLimited ? 'destructive' : isOffline ? 'outline' : 'default'}
                 onClick={handleSend}
-                disabled={isEmpty || isOverLimit || disabled || hasUploadingAttachments}
-                aria-label={hasUploadingAttachments ? 'Waiting for uploads to complete' : 'Send message'}
-                className="shrink-0 min-h-11 min-w-11"
+                disabled={isEmpty || isOverLimit || disabled || hasUploadingAttachments || isTextRateLimited}
+                aria-label={
+                  isOffline
+                    ? 'Queue message (offline)'
+                    : isTextRateLimited
+                      ? `Rate limited. Retry in ${textCountdown}`
+                      : hasUploadingAttachments
+                        ? 'Waiting for uploads to complete'
+                        : 'Send message'
+                }
+                className={cn(
+                  'shrink-0 min-h-11 min-w-11',
+                  isTextRateLimited && 'opacity-50',
+                  isOffline && 'border-amber-500/50 text-amber-600 dark:text-amber-400'
+                )}
               >
-                <Send className="size-4" />
+                {isOffline ? (
+                  <CloudOff className="size-4" />
+                ) : (
+                  <Send className="size-4" />
+                )}
             </Button>
           </span>
         </TooltipTrigger>
-        {isOverLimit && (
+        {isOffline && !isTextRateLimited && (
+          <TooltipContent side="top">
+            <div className="text-center">
+              <div className="font-medium">You&apos;re offline</div>
+              <div className="text-xs opacity-80">Messages will be queued and sent when online</div>
+            </div>
+          </TooltipContent>
+        )}
+        {isTextRateLimited && (
+          <TooltipContent side="top">
+            Rate limited. Retry in {textCountdown}
+          </TooltipContent>
+        )}
+        {isOverLimit && !isTextRateLimited && !isOffline && (
           <TooltipContent side="top">
             Message exceeds {maxLength} character limit
           </TooltipContent>
         )}
-        {hasUploadingAttachments && !isOverLimit && (
+        {hasUploadingAttachments && !isOverLimit && !isTextRateLimited && !isOffline && (
           <TooltipContent side="top">
             Waiting for uploads to complete
           </TooltipContent>

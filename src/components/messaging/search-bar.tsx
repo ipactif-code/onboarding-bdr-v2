@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 import {
   Search,
   X,
@@ -285,27 +285,10 @@ export function SearchBar({
   }, []);
 
   // ========================================================================
-  // Keyboard shortcut (Ctrl+K / Cmd+K)
-  // ========================================================================
-
-  useEffect(() => {
-    const handleGlobalKeyDown = (e: KeyboardEvent): void => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        inputRef.current?.focus();
-        setIsOpen(true);
-      }
-    };
-
-    document.addEventListener("keydown", handleGlobalKeyDown);
-    return (): void => {
-      document.removeEventListener("keydown", handleGlobalKeyDown);
-    };
-  }, []);
-
-  // ========================================================================
   // IDs for accessibility
   // ========================================================================
+  // Note: Ctrl+K / Cmd+K is handled globally by CommandPaletteProvider
+  // in the dashboard layout. This component focuses on local search UI.
 
   const inputId = "message-search-input";
   const listboxId = "message-search-listbox";
@@ -344,6 +327,11 @@ export function SearchBar({
             aria-haspopup="listbox"
             aria-controls={listboxId}
             aria-autocomplete="list"
+            aria-keyshortcuts={
+              typeof navigator !== "undefined" && navigator.userAgent.includes("Mac")
+                ? "Meta+k"
+                : "Control+k"
+            }
           />
 
           {/* Keyboard shortcut hint */}

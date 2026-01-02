@@ -449,6 +449,11 @@ function CreateChannelDialog({
 
 export interface MessagingSidebarProps {
   className?: string;
+  /**
+   * Callback when a navigation link is clicked.
+   * Used to close the mobile sidebar on navigation.
+   */
+  onNavigate?: () => void;
 }
 
 /**
@@ -466,6 +471,7 @@ export interface MessagingSidebarProps {
  */
 export function MessagingSidebar({
   className,
+  onNavigate,
 }: MessagingSidebarProps): React.ReactElement {
   const [isNewDMDialogOpen, setIsNewDMDialogOpen] = useState(false);
   const [isCreateChannelDialogOpen, setIsCreateChannelDialogOpen] = useState(false);
@@ -500,6 +506,7 @@ export function MessagingSidebar({
           <QuickNavigation
             className="mb-2"
             threadCount={unreadThreadCount ?? 0}
+            onNavigate={onNavigate}
           />
 
           {/* Channel Search */}
@@ -554,6 +561,7 @@ export function MessagingSidebar({
                       isPrivate={channel.type === "private"}
                       unreadCount={channel.membership?.unreadCount ?? 0}
                       isActive={Boolean(isValidChannelId && activeChannelId === channel._id)}
+                      onClick={onNavigate}
                     />
                   ))}
               </div>
@@ -606,6 +614,7 @@ export function MessagingSidebar({
                         status={otherParticipant?.status ?? "offline"}
                         unreadCount={conversation.unreadCount}
                         isActive={activeConversationId === conversation._id}
+                        onClick={onNavigate}
                       />
                     );
                   })}

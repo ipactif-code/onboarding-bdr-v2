@@ -7,6 +7,13 @@ export { useMessageScroll } from "./use-message-scroll";
 export { useMessageIntersection } from "./use-message-intersection";
 export { useThread } from "./use-thread";
 
+// Messaging keyboard shortcuts
+export {
+  useMessagingShortcuts,
+  getSearchShortcutDisplay,
+  getSearchShortcutParts,
+} from "./use-messaging-shortcuts";
+
 // File upload hooks
 export { useFileUpload } from "./use-file-upload";
 export type {

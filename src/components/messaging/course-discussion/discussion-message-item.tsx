@@ -1,12 +1,14 @@
 "use client";
 
-import { MessageCircle } from "lucide-react";
+import { useState, useMemo } from "react";
+import { ChevronDown, ChevronUp, MessageCircle } from "lucide-react";
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { MAX_MESSAGE_CHARS } from "@/components/messaging/rich-text-renderer-utils";
 
 import type { DiscussionMessageItemProps } from "./types";
 import { getInitials, formatTimestamp, getTextContent } from "./utils";
@@ -19,6 +21,14 @@ export function DiscussionMessageItem({
   onReply,
 }: DiscussionMessageItemProps): React.ReactElement {
   const displayContent = getTextContent(message.content);
+
+  // State for expanding/collapsing long messages
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Calculate if content should be truncated
+  const shouldTruncate = useMemo(() => {
+    return displayContent.length > MAX_MESSAGE_CHARS;
+  }, [displayContent]);
 
   return (
     <div
@@ -54,8 +64,53 @@ export function DiscussionMessageItem({
         </div>
 
         {/* Message body */}
-        <div className="mt-1 text-sm text-foreground whitespace-pre-wrap break-words">
-          {displayContent}
+        <div
+          data-slot="message-content-wrapper"
+          data-should-truncate={shouldTruncate}
+          data-is-expanded={isExpanded}
+        >
+          {/* Collapsible content container */}
+          <div
+            className={cn(
+              "relative mt-1 text-sm text-foreground whitespace-pre-wrap break-words overflow-hidden transition-[max-height] duration-300 ease-in-out",
+              shouldTruncate && !isExpanded && "max-h-32"
+            )}
+          >
+            {displayContent}
+            {/* Gradient fade overlay when collapsed */}
+            {shouldTruncate && !isExpanded && (
+              <div
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-background to-transparent"
+                aria-hidden="true"
+              />
+            )}
+          </div>
+
+          {/* Show more / Show less toggle button */}
+          {shouldTruncate && (
+            <button
+              type="button"
+              onClick={() => setIsExpanded((prev) => !prev)}
+              aria-expanded={isExpanded}
+              className={cn(
+                "mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground",
+                "hover:text-foreground focus-visible:outline-none focus-visible:ring-2",
+                "focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm transition-colors"
+              )}
+            >
+              {isExpanded ? (
+                <>
+                  <ChevronUp className="size-3.5" aria-hidden="true" />
+                  <span>Show less</span>
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="size-3.5" aria-hidden="true" />
+                  <span>Show more</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
 
         {/* Thread reply count */}

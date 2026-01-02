@@ -11,6 +11,7 @@ import {
   SheetContent,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 import { ThreadView } from "@/components/messaging/thread-view";
 import { MessageInput, type AttachmentData } from "@/components/messaging/message-input";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -123,7 +124,12 @@ export function ThreadPanel({
       <SheetContent
         side="right"
         showCloseButton={false}
-        className="flex w-full flex-col gap-0 p-0 sm:max-w-md"
+        className={cn(
+          "flex flex-col gap-0 p-0",
+          // Mobile: full screen (100% width)
+          // Tablet+: max-width 448px (md size)
+          "w-full sm:max-w-md"
+        )}
         aria-label="Thread panel"
       >
         {/* Visually hidden title for accessibility */}
@@ -150,10 +156,17 @@ export function ThreadPanel({
               />
             </div>
 
-            {/* Reply input - fixed at bottom */}
+            {/* Reply input - fixed at bottom with safe area padding */}
             <div
               data-slot="thread-panel-input"
-              className="shrink-0 border-t bg-background p-4"
+              className={cn(
+                "shrink-0 border-t bg-background",
+                // Responsive padding: smaller on mobile, larger on desktop
+                "p-2 sm:p-4",
+                // iOS safe area for bottom notch
+                "pb-[max(0.5rem,env(safe-area-inset-bottom))]",
+                "sm:pb-4"
+              )}
             >
               <MessageInput
                 onSend={onSendReply}

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { MessageCircle } from "lucide-react";
+import { ChevronDown, ChevronUp, MessageCircle } from "lucide-react";
 import { useQuery, useMutation } from "convex/react";
 import { toast } from "sonner";
 import * as apiModule from "../../../../../../../convex/_generated/api";
@@ -21,6 +21,10 @@ import { ImageAttachment } from "@/components/messaging/image-attachment";
 import { VoicePlayer, VoicePlayerSkeleton } from "@/components/messaging/voice-player";
 import { Skeleton } from "@/components/ui/skeleton";
 import { isImage } from "@/lib/file-type-utils";
+import {
+  getContentTextLength,
+  MAX_MESSAGE_CHARS,
+} from "@/components/messaging/rich-text-renderer-utils";
 
 // Type workaround: Convex's API has excessively deep type nesting.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -151,6 +155,9 @@ function DMMessageItem({
 }: DMMessageItemProps): React.ReactElement {
   const threadReplyCount = message.threadReplyCount ?? 0;
 
+  // State for expanding/collapsing long messages
+  const [isExpanded, setIsExpanded] = React.useState(false);
+
   // Detect voice message using multiple strategies for robustness
   // This handles legacy data where contentType may be undefined
   const isVoiceMessage =
@@ -158,6 +165,12 @@ function DMMessageItem({
     message.content === "[Voice Message]" ||
     message.content.includes("[Voice Message]") ||
     message.content.trim() === "[Voice Message]";
+
+  // Calculate if content should be truncated (only for text messages)
+  const shouldTruncate = React.useMemo(() => {
+    if (isVoiceMessage) return false;
+    return getContentTextLength(message.content) > MAX_MESSAGE_CHARS;
+  }, [message.content, isVoiceMessage]);
 
   // Fetch voice message data when this is a voice message
   const voiceData = useQuery(
@@ -273,7 +286,54 @@ function DMMessageItem({
               </span>
             )
           ) : (
-            <RichTextRenderer content={message.content} />
+            <div
+              data-slot="message-content-wrapper"
+              data-should-truncate={shouldTruncate}
+              data-is-expanded={isExpanded}
+            >
+              {/* Collapsible content container */}
+              <div
+                className={cn(
+                  "relative overflow-hidden transition-[max-height] duration-300 ease-in-out",
+                  shouldTruncate && !isExpanded && "max-h-32"
+                )}
+              >
+                <RichTextRenderer content={message.content} />
+                {/* Gradient fade overlay when collapsed */}
+                {shouldTruncate && !isExpanded && (
+                  <div
+                    className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-background to-transparent"
+                    aria-hidden="true"
+                  />
+                )}
+              </div>
+
+              {/* Show more / Show less toggle button */}
+              {shouldTruncate && (
+                <button
+                  type="button"
+                  onClick={() => setIsExpanded((prev) => !prev)}
+                  aria-expanded={isExpanded}
+                  className={cn(
+                    "mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground",
+                    "hover:text-foreground focus-visible:outline-none focus-visible:ring-2",
+                    "focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm transition-colors"
+                  )}
+                >
+                  {isExpanded ? (
+                    <>
+                      <ChevronUp className="size-3.5" aria-hidden="true" />
+                      <span>Show less</span>
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="size-3.5" aria-hidden="true" />
+                      <span>Show more</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
           )}
         </div>
 

@@ -189,7 +189,7 @@ export function ChannelView({ channelId }: ChannelViewProps): React.ReactElement
   // Channel not found
   if (!channel) {
     return (
-      <div className="flex h-full flex-col items-center justify-center p-8 text-center">
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center p-8 text-center">
         <h2 className="text-xl font-semibold">Channel not found</h2>
         <p className="mt-2 text-muted-foreground">
           This channel may have been deleted or you don&apos;t have access to it.
@@ -205,7 +205,7 @@ export function ChannelView({ channelId }: ChannelViewProps): React.ReactElement
 
   // Full channel view (member)
   return (
-    <div data-slot="channel-view" className="flex h-full flex-col">
+    <div data-slot="channel-view" className="flex min-h-0 flex-1 flex-col">
       <ChannelHeader channel={channel} />
 
       <MessageList
@@ -222,11 +222,11 @@ export function ChannelView({ channelId }: ChannelViewProps): React.ReactElement
         currentUserName={currentUser?.name}
         channelId={parsedChannelId}
         isChannelAdmin={isChannelAdmin}
-        className="flex-1"
+        className="min-h-0 flex-1"
       />
 
       {!channel.isArchived && (
-        <div className="border-t p-4">
+        <div className="flex-shrink-0 border-t p-4">
           {channel.courseId && (
             <div className="mb-2">
               <LessonSelector
@@ -246,7 +246,7 @@ export function ChannelView({ channelId }: ChannelViewProps): React.ReactElement
       )}
 
       {channel.isArchived && (
-        <div className="border-t bg-muted/50 p-4 text-center text-sm text-muted-foreground">
+        <div className="flex-shrink-0 border-t bg-muted/50 p-4 text-center text-sm text-muted-foreground">
           This channel has been archived. You cannot send new messages.
         </div>
       )}

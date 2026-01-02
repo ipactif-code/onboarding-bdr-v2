@@ -35,6 +35,8 @@ export function ChannelListItem({
       data-slot="channel-list-item"
       className={cn(
         "flex items-center gap-2 rounded-md px-2 py-1 text-sm",
+        // Mobile touch target: min 44px height
+        "min-h-11 md:min-h-0",
         "transition-colors duration-150",
         isActive
           ? "bg-accent text-accent-foreground font-medium"

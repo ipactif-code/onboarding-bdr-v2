@@ -9,6 +9,11 @@
 // ============================================================================
 
 /**
+ * Maximum number of characters before truncation is applied.
+ */
+export const MAX_MESSAGE_CHARS = 500;
+
+/**
  * Default empty content for the editor.
  */
 export const EMPTY_VALUE = [{ type: "p", children: [{ text: "" }] }];
@@ -125,4 +130,59 @@ export function extractLinkUrls(nodes: unknown[]): string[] {
   }
 
   return urls.slice(0, MAX_LINK_PREVIEWS);
+}
+
+// ============================================================================
+// Plain Text Extraction
+// ============================================================================
+
+/**
+ * Recursively extracts plain text from Plate.js content nodes.
+ * Used for character counting to determine if truncation is needed.
+ *
+ * @param nodes - Array of Plate.js content nodes
+ * @returns The concatenated plain text from all nodes
+ */
+export function extractPlainText(nodes: unknown[]): string {
+  const textParts: string[] = [];
+
+  function traverse(node: unknown): void {
+    if (!node || typeof node !== "object") return;
+
+    const nodeObj = node as Record<string, unknown>;
+
+    // Check if this is a text leaf node
+    if (typeof nodeObj.text === "string") {
+      textParts.push(nodeObj.text);
+      return;
+    }
+
+    // Recursively traverse children
+    if (Array.isArray(nodeObj.children)) {
+      for (const child of nodeObj.children) {
+        traverse(child);
+      }
+    }
+  }
+
+  for (const node of nodes) {
+    traverse(node);
+  }
+
+  return textParts.join("");
+}
+
+/**
+ * Gets the plain text length from content (JSON or plain text).
+ * Used to determine if a message should be truncated.
+ *
+ * @param content - The content string (Plate.js JSON or plain text)
+ * @returns The character count of the rendered text
+ */
+export function getContentTextLength(content: string): number {
+  const parsed = parseContent(content);
+  if (parsed) {
+    return extractPlainText(parsed).length;
+  }
+  return content.length;
 }

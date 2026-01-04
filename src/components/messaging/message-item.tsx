@@ -15,7 +15,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui-plate/tooltip";
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { getInitials, formatTimestamp } from "@/lib/message-utils";
 import { LessonBadge } from "@/components/messaging/lesson-badge";

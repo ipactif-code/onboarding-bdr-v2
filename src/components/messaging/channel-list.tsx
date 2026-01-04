@@ -14,7 +14,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui-plate/tooltip";
+} from "@/components/ui/tooltip";
 import { UnreadBadge } from "@/components/messaging/unread-badge";
 
 // ============================================================================

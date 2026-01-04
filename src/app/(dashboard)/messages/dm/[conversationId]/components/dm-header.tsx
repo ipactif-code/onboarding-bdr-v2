@@ -53,7 +53,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui-plate/tooltip";
+} from "@/components/ui/tooltip";
 import { StatusIndicator } from "@/components/presence";
 import { DMPinnedMessages } from "@/components/messaging/dm-pinned-messages";
 

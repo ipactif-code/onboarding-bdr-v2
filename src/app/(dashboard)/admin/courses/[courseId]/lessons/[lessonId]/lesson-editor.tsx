@@ -46,7 +46,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { PlateEditor } from "@/components/editor/plate-editor";
+import { PlateEditor } from "@/components/editor/plate-editor-placeholder";
 import { useAutoSaveContent } from "@/hooks/use-auto-save-content";
 import { sanitizeEditorContent } from "@/lib/sanitize-editor-content";
 import { uploadFiles } from "@/hooks/use-upload-file";

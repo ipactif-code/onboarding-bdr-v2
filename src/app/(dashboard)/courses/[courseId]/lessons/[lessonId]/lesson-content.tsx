@@ -1,6 +1,6 @@
 "use client";
 
-import { ContentRenderer } from "@/components/editor/plate-editor";
+import { ContentRenderer } from "@/components/editor/plate-editor-placeholder";
 import { Card, CardContent } from "@/components/ui/card";
 import { Id } from "../../../../../../../convex/_generated/dataModel";
 import { EmbedViewer } from "@/components/lessons/embed-viewer";

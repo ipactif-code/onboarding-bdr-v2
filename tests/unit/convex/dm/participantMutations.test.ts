@@ -984,6 +984,7 @@ describe("dm/participantMutations.ts - Participant Mutations", () => {
 
       const asUser = t.withIdentity({ subject: "user-clerk" });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const fakeId = "kg2e35v6yb5w9eqgwdzxyzqn4n74wvjr" as any;
 
       // Act & Assert

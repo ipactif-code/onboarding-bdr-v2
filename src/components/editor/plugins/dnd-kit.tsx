@@ -1,13 +1,11 @@
 'use client';
 
+import { DndPlugin } from '@platejs/dnd';
+import { PlaceholderPlugin } from '@platejs/media/react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
-import { DndPlugin } from '@platejs/dnd';
-import { PlaceholderPlugin } from '@platejs/media/react';
-
-// BlockDraggable disabled temporarily due to bugs
-// import { BlockDraggable } from '@/components/ui/block-draggable';
+import { BlockDraggable } from '@/components/ui/block-draggable';
 
 export const DndKit = [
   DndPlugin.configure({
@@ -20,8 +18,7 @@ export const DndKit = [
       },
     },
     render: {
-      // Drag handle disabled - causes hydration/DOM errors
-      // aboveNodes: BlockDraggable,
+      aboveNodes: BlockDraggable,
       aboveSlate: ({ children }) => (
         <DndProvider backend={HTML5Backend}>{children}</DndProvider>
       ),

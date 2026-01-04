@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { type ReactElement } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Play, BookOpen } from "lucide-react";
@@ -40,7 +41,7 @@ const CourseCard = React.forwardRef<HTMLAnchorElement, CourseCardProps>(
       className,
     },
     ref
-  ) => {
+  ): ReactElement => {
     return (
       <Link
         ref={ref}

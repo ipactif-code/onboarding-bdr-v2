@@ -161,7 +161,8 @@ export const getUploadUrl = mutation({
 });
 
 // Allowed file types for attachments
-const ALLOWED_FILE_TYPES = [
+// Reserved for future validation - currently file type validation is handled by UploadThing
+const _ALLOWED_FILE_TYPES = [
   "application/pdf",
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",

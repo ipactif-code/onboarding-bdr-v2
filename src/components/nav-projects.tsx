@@ -1,5 +1,6 @@
 "use client"
 
+import { type ReactElement } from "react"
 import {
   Folder,
   Forward,
@@ -33,7 +34,7 @@ export function NavProjects({
     url: string
     icon: LucideIcon
   }[]
-}) {
+}): ReactElement {
   const { isMobile } = useSidebar()
 
   return (

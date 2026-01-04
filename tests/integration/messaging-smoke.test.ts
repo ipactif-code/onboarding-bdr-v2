@@ -1,7 +1,8 @@
 import { convexTest } from "convex-test";
 import { describe, it, expect, beforeEach } from "vitest";
 import schema from "../../convex/schema";
-import { Id } from "../../convex/_generated/dataModel";
+// Id import not directly used but documents the types we're working with
+import type { Id as _Id } from "../../convex/_generated/dataModel";
 
 describe("Messaging System Integration Smoke Tests", () => {
   let t: ReturnType<typeof convexTest>;
@@ -132,6 +133,7 @@ describe("Messaging System Integration Smoke Tests", () => {
       const participants = await t.run(async (ctx) => {
         return await ctx.db
           .query("conversationParticipants")
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .withIndex("by_conversation" as any, (q: any) => q.eq("conversationId", conversationId))
           .collect();
       });
@@ -198,7 +200,7 @@ describe("Messaging System Integration Smoke Tests", () => {
     });
 
     it("should link reactions to messages and users", async () => {
-      const { messageId, userId, reactionId } = await t.run(async (ctx) => {
+      const { messageId, userId: _userId, reactionId } = await t.run(async (ctx) => {
         const userId = await ctx.db.insert("users", {
           clerkId: "reactor",
           email: "reactor@test.com",
@@ -322,6 +324,7 @@ describe("Messaging System Integration Smoke Tests", () => {
       const messages = await t.run(async (ctx) => {
         return await ctx.db
           .query("messages")
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .withIndex("by_channel_time" as any, (q: any) => q.eq("channelId", channelId))
           .collect();
       });
@@ -367,6 +370,7 @@ describe("Messaging System Integration Smoke Tests", () => {
       const memberships = await t.run(async (ctx) => {
         return await ctx.db
           .query("channelMembers")
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .withIndex("by_user" as any, (q: any) => q.eq("userId", userId))
           .collect();
       });
@@ -405,8 +409,9 @@ describe("Messaging System Integration Smoke Tests", () => {
       });
 
       const results = await t.run(async (ctx) => {
-        return await (ctx.db
-          .query("messages") as any)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return await (ctx.db.query("messages") as any)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .withSearchIndex("search_content", (q: any) => q.search("content", "searchable"))
           .collect();
       });
@@ -544,6 +549,7 @@ describe("Messaging System Integration Smoke Tests", () => {
       const linkedChannels = await t.run(async (ctx) => {
         return await ctx.db
           .query("channels")
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .withIndex("by_course" as any, (q: any) => q.eq("courseId", courseId))
           .collect();
       });

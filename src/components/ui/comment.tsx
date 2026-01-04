@@ -230,7 +230,7 @@ export function Comment(props: {
       </div>
 
       {isFirst && showDocumentContent && (
-        <div className="relative mt-1 flex pl-[32px] text-sm text-subtle-foreground">
+        <div className="relative mt-1 flex pl-[32px] text-sm text-muted-foreground">
           {discussionLength > 1 && (
             <div className="absolute top-[5px] left-3 h-full w-0.5 shrink-0 bg-muted" />
           )}

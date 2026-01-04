@@ -1030,7 +1030,8 @@ describe("channels.ts - Member Management", () => {
           status: "online",
         });
 
-        const globalAdminId = await ctx.db.insert("users", {
+        // Create global admin user (used for identity, not by ID reference)
+        await ctx.db.insert("users", {
           clerkId: "globaladmin-clerk",
           email: "globaladmin@example.com",
           name: "Global Admin",
@@ -1719,7 +1720,8 @@ describe("channels.ts - Member Management", () => {
           status: "online",
         });
 
-        const globalAdminId = await ctx.db.insert("users", {
+        // Create global admin user (used for identity, not by ID reference)
+        await ctx.db.insert("users", {
           clerkId: "globaladmin-clerk",
           email: "globaladmin@example.com",
           name: "Global Admin",
@@ -2079,7 +2081,8 @@ describe("channels.ts - Member Management", () => {
           status: "online",
         });
 
-        const globalAdminId = await ctx.db.insert("users", {
+        // Create global admin user (used for identity, not by ID reference)
+        await ctx.db.insert("users", {
           clerkId: "globaladmin-clerk",
           email: "globaladmin@example.com",
           name: "Global Admin",
@@ -2240,7 +2243,8 @@ describe("channels.ts - Member Management", () => {
           status: "online",
         });
 
-        const globalAdminId = await ctx.db.insert("users", {
+        // Create global admin user (used for identity, not by ID reference)
+        await ctx.db.insert("users", {
           clerkId: "globaladmin-clerk",
           email: "globaladmin@example.com",
           name: "Global Admin",

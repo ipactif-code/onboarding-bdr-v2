@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef } from "react";
+import { forwardRef, type ReactElement } from "react";
 import { Id } from "../../../convex/_generated/dataModel";
 import { CourseCard } from "./course-card";
 
@@ -18,7 +18,7 @@ interface CourseCarouselProps {
 }
 
 export const CourseCarousel = forwardRef<HTMLDivElement, CourseCarouselProps>(
-  ({ courses, showProgress = false }, ref) => {
+  ({ courses, showProgress = false }, ref): ReactElement => {
     return (
       <div
         ref={ref}

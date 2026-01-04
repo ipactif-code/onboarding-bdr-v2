@@ -7,7 +7,6 @@ import { ColumnKit } from './plugins/column-kit';
 import { CommentKit } from './plugins/comment-kit';
 import { BaseDateKit } from './plugins/date-base-kit';
 import { EmojiKit } from './plugins/emoji-kit';
-import { ExcalidrawKit } from './plugins/excalidraw-kit';
 import { BaseFontKit } from './plugins/font-base-kit';
 import { BaseLineHeightKit } from './plugins/line-height-base-kit';
 import { LinkKit } from './plugins/link-kit';
@@ -43,5 +42,4 @@ export const BaseEditorKit = [
   ...SuggestionKit,
   ...MarkdownKit,
   ...EmojiKit,
-  ...ExcalidrawKit,
 ];

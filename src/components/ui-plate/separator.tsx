@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { type ReactElement } from "react"
 import * as SeparatorPrimitive from "@radix-ui/react-separator"
 
 import { cn } from "@/lib/utils"
@@ -10,7 +11,7 @@ function Separator({
   orientation = "horizontal",
   decorative = true,
   ...props
-}: React.ComponentProps<typeof SeparatorPrimitive.Root>) {
+}: React.ComponentProps<typeof SeparatorPrimitive.Root>): ReactElement {
   return (
     <SeparatorPrimitive.Root
       data-slot="separator"

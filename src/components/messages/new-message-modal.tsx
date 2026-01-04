@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactElement } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { Id } from "../../../convex/_generated/dataModel";
 
@@ -31,7 +31,7 @@ export function NewMessageModal({
   open,
   onOpenChange,
   onConversationCreated,
-}: NewMessageModalProps) {
+}: NewMessageModalProps): ReactElement {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState<{
     _id: Id<"users">;
@@ -62,12 +62,12 @@ export function NewMessageModal({
     _id: Id<"users">;
     name: string;
     avatarUrl?: string;
-  }) => {
+  }): void => {
     setSelectedUser(user);
     setSearchQuery("");
   };
 
-  const handleSend = async () => {
+  const handleSend = async (): Promise<void> => {
     if (!selectedUser || !message.trim()) return;
 
     setIsSending(true);
@@ -90,7 +90,7 @@ export function NewMessageModal({
     }
   };
 
-  const getInitials = (name: string) => {
+  const getInitials = (name: string): string => {
     return name
       .split(" ")
       .map((n) => n[0])

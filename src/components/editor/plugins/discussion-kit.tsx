@@ -104,7 +104,7 @@ const discussionsData: TDiscussion[] = [
   },
 ];
 
-const avatarUrl = (seed: string) =>
+const avatarUrl = (seed: string): string =>
   `https://api.dicebear.com/9.x/glass/svg?seed=${seed}`;
 
 const usersData: Record<

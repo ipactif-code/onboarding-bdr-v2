@@ -1,209 +1,404 @@
-<!--
-SYNC IMPACT REPORT
-==================
-Version change: N/A (new) → 1.0.0
-Modified principles: N/A (initial creation)
-Added sections:
-  - 9 Core Principles (Code Quality, Testing Standards, User Experience,
-    Accessibility, Security, Performance, Documentation, Git Workflow,
-    File Conventions)
-  - Quality Standards section
-  - Development Workflow section
-  - Governance section
-Removed sections: N/A
-Templates requiring updates:
-  - .specify/templates/plan-template.md ✅ (Constitution Check section compatible)
-  - .specify/templates/spec-template.md ✅ (Requirements section aligns with principles)
-  - .specify/templates/tasks-template.md ✅ (Task structure supports TDD workflow)
-Follow-up TODOs: None
-==================
--->
+# BDR LMS Platform Constitution
 
-# Onboarding BDR Team v2 Constitution
+## Preamble
 
-## Core Principles
+This constitution documents the established conventions, quality standards, and architectural decisions for the BDR LMS Platform. All development work MUST comply with these articles. Violations require explicit justification and approval.
 
-### I. Code Quality
+---
 
-All code MUST adhere to strict quality standards to ensure maintainability and reliability:
+## Article I: Code Quality
 
-- TypeScript strict mode MUST be enabled; `any` types are forbidden
-- All functions MUST have explicit return type annotations
-- Components MUST follow the Single Responsibility Principle (one reason to change)
-- Composition MUST be preferred over inheritance for code reuse
-- Files MUST NOT exceed 200 lines; split into focused modules when approaching limit
+### TypeScript Strictness (NON-NEGOTIABLE)
+- `strict: true` in tsconfig.json
+- NO `any` types - use `unknown` with type guards
+- Explicit return types on all exported functions
+- No `@ts-ignore` or `@ts-expect-error` without linked issue
 
-**Rationale**: Strict typing catches errors at compile time. SRP and composition enable
-easier testing, refactoring, and code comprehension.
+### ESLint Compliance
+- Zero warnings policy (`--max-warnings 0`)
+- No `eslint-disable` without linked issue number
+- Prettier formatting enforced via ESLint plugin
 
-### II. Testing Standards
+### Code Review Gates
+All PRs must pass:
+- [ ] `pnpm typecheck` (zero errors)
+- [ ] `pnpm lint` (zero warnings)
+- [ ] `pnpm test` (all tests pass)
+- [ ] `pnpm build` (successful production build)
 
-Testing MUST be comprehensive and follow TDD principles for new features:
+---
 
-- Unit tests MUST cover business logic with minimum 80% code coverage
-- Integration tests MUST exist for all API endpoints
-- End-to-end tests MUST cover critical user flows
-- Test-driven development (Red-Green-Refactor) MUST be used when adding new features
+## Article II: Testing Standards
 
-**Rationale**: High test coverage prevents regressions. TDD ensures requirements are
-understood before implementation and produces testable code by design.
+### Minimum Coverage
+- Unit tests: 80% line coverage for business logic
+- Integration tests: All Convex functions must have convex-test coverage
+- E2E tests: Critical user journeys (auth, course completion, messaging)
 
-### III. User Experience
+### Testing Stack
+| Layer | Tool | Location |
+|-------|------|----------|
+| Unit | Vitest + React Testing Library | `tests/unit/` |
+| Integration | convex-test | `tests/unit/convex/` |
+| E2E | Playwright | `tests/e2e/` |
 
-All interfaces MUST prioritize usability and responsiveness:
+### TDD Workflow (Recommended)
+1. Write failing test
+2. Implement minimum code to pass
+3. Refactor while keeping tests green
 
-- Mobile-first responsive design MUST be implemented for all views
-- Loading states MUST be displayed for all asynchronous operations
-- Error messages MUST be actionable and guide users toward resolution
-- Navigation patterns MUST be consistent across the application
-- Any feature MUST be reachable within a maximum of 3 clicks from the dashboard
+---
 
-**Rationale**: Users on mobile devices represent a significant portion of learners.
-Clear feedback and intuitive navigation reduce friction and support completion.
+## Article III: User Experience
 
-### IV. Accessibility
+### Loading States (MANDATORY)
+- Every async operation must show `<Skeleton />` during loading
+- Use Convex's loading state from `useQuery` hooks
+- No blank screens or layout shifts
 
-All features MUST meet WCAG 2.1 Level AA compliance:
+### Error Handling (MANDATORY)
+- User-facing errors via `toast.error()` from sonner
+- Log errors with context for debugging
+- Graceful degradation where possible
 
-- Keyboard navigation MUST work for all interactive elements
-- Screen reader support MUST be implemented with appropriate ARIA labels
-- Color contrast MUST meet minimum 4.5:1 ratio for normal text
-- Focus indicators MUST be visible on all focusable elements
+### Optimistic Updates
+- Use `useMutation` with `optimisticUpdate` for immediate feedback
+- Rollback on failure with appropriate error message
 
-**Rationale**: Accessibility is both a legal requirement and an ethical imperative.
-An LMS must be usable by all learners regardless of ability.
+---
 
-### V. Security
+## Article IV: Accessibility
 
-All code MUST implement defense-in-depth security practices:
+### WCAG 2.1 Level AA (REQUIRED)
+- Color contrast ratio: minimum 4.5:1 for text
+- All interactive elements keyboard accessible
+- Focus indicators visible and clear
+- ARIA labels on non-semantic interactive elements
 
-- Input validation MUST be performed on all user-provided data (client and server)
-- Rich text content MUST be sanitized before rendering to prevent XSS
-- Role-based access control (RBAC) MUST distinguish admin and user permissions
-- Sensitive data (tokens, keys, PII) MUST NOT appear in client-side code
-- Authentication MUST support multi-factor authentication (MFA)
+### Semantic HTML
+- Use appropriate heading hierarchy (h1 > h2 > h3)
+- Use `<button>` for actions, `<a>` for navigation
+- Use `<nav>`, `<main>`, `<aside>`, `<footer>` landmarks
 
-**Rationale**: An LMS handles personal and potentially sensitive learning data.
-Security failures erode trust and may violate compliance requirements.
+### Testing
+- Run `axe-core` in component tests
+- Playwright accessibility assertions in E2E tests
 
-### VI. Performance
+---
 
-All pages and interactions MUST meet Core Web Vitals thresholds:
+## Article V: Security
 
-- Largest Contentful Paint (LCP) MUST be under 2.5 seconds
-- First Input Delay (FID) MUST be under 100 milliseconds
-- Cumulative Layout Shift (CLS) MUST be under 0.1
-- Initial JavaScript bundle MUST be under 150KB gzipped
-- Heavy components MUST be lazy-loaded
+### Authentication (Clerk)
+- All protected routes use Clerk middleware
+- No custom auth tokens - use Clerk sessions only
+- Organizations for team/tenant isolation
 
-**Rationale**: Performance directly impacts user engagement and learning outcomes.
-Slow applications cause frustration and abandonment.
+### Authorization (RBAC)
+| Role | Permissions |
+|------|-------------|
+| user | Own data, assigned courses |
+| manager | Team data, team reports |
+| admin | All data, system config |
 
-### VII. Documentation
+### Convex Security Rules
+- `requireAuth()` on FIRST LINE of every protected function
+- `requireAdmin()` for admin-only operations
+- Input validation with Zod on all user inputs
+- No secrets in code - use Convex environment variables
 
-Code MUST be self-documenting with strategic supplemental documentation:
+### XSS Prevention
+- Sanitize HTML from Plate.js before rendering
+- Use `DOMPurify` for any user-generated HTML
 
-- Exported functions MUST have JSDoc comments describing purpose, parameters, and returns
-- Each feature folder MUST contain a README explaining its scope and usage
-- TypeScript types MUST be used to make code self-documenting; avoid redundant comments
+---
 
-**Rationale**: Good documentation reduces onboarding time and prevents knowledge silos.
-Types serve as living documentation that cannot drift from implementation.
+## Article VI: Performance
 
-### VIII. Git Workflow
+### Core Web Vitals Targets
+| Metric | Target | Max |
+|--------|--------|-----|
+| LCP | < 2.5s | 4.0s |
+| FID | < 100ms | 300ms |
+| CLS | < 0.1 | 0.25 |
 
-All repository changes MUST follow a structured workflow:
+### Bundle Size
+- Main bundle < 150KB gzipped
+- Use dynamic imports for heavy components
+- Analyze with `@next/bundle-analyzer`
 
-- Commit messages MUST follow Conventional Commits format (feat, fix, docs, refactor, test)
-- Feature branches MUST be created from main for all work
-- Pull requests MUST be approved before merging to main
-- Direct commits to main are forbidden
+### Convex Query Optimization
+- ALWAYS use `.withIndex()` - NEVER `.filter()` on full scans
+- Define indexes in `schema.ts` for query patterns
+- Paginate large result sets
 
-**Rationale**: Conventional commits enable automated changelog generation. PRs ensure
-code review and maintain quality gates.
+---
 
-### IX. File Conventions
+## Article VII: Documentation
 
-All files and identifiers MUST follow consistent naming conventions:
+### Required Documentation
+- JSDoc on all exported functions
+- README.md in each feature directory
+- ADR (Architecture Decision Record) for significant choices
 
-- All files MUST be written in English
-- File names MUST use kebab-case (e.g., `user-profile.tsx`)
-- React component names MUST use PascalCase (e.g., `UserProfile`)
-- Function names MUST use camelCase (e.g., `getUserProfile`)
-- Constants MUST use SCREAMING_SNAKE_CASE (e.g., `MAX_FILE_SIZE`)
+### Documentation Location
+| Type | Location |
+|------|----------|
+| API docs | JSDoc in code |
+| Architecture | `/docs/architecture/` |
+| ADRs | `/docs/adr/` |
+| User guides | `/docs/guides/` |
 
-**Rationale**: Consistent naming eliminates ambiguity, enables predictable file location,
-and reduces cognitive load when navigating the codebase.
+### No Auto-Generated Docs
+- Do not add comments, docstrings, or README files unless explicitly requested
+- Focus on self-documenting code with clear naming
 
-## Quality Standards
+---
 
-This section defines cross-cutting quality gates that apply to all development:
+## Article VIII: Git Workflow
 
-| Category | Metric | Threshold | Enforcement |
-|----------|--------|-----------|-------------|
-| Test Coverage | Line coverage | >= 80% | CI pipeline |
-| Bundle Size | Initial JS | < 150KB gzip | Build step |
-| Accessibility | WCAG level | AA | Automated audit |
-| Performance | LCP | < 2.5s | Lighthouse CI |
-| Performance | FID | < 100ms | Lighthouse CI |
-| Performance | CLS | < 0.1 | Lighthouse CI |
-| Type Safety | Strict mode | Enabled | tsconfig.json |
-| Type Safety | Any usage | 0 | ESLint rule |
+### Branch Naming
+```
+[type]/[issue-number]-[short-description]
+```
+Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`
+Example: `feat/123-add-course-certificates`
 
-## Development Workflow
+### Commit Messages
+```
+type(scope): description
 
-All development MUST follow this process:
+[optional body]
 
-1. **Branch Creation**: Create feature branch from main (`feat/xxx-feature-name`)
-2. **TDD Cycle**: Write failing tests before implementation for new features
-3. **Implementation**: Write minimal code to pass tests
-4. **Refactor**: Clean up while maintaining passing tests
-5. **Self-Review**: Verify all principles are met before PR
-6. **Pull Request**: Submit PR with description and link to requirements
-7. **Code Review**: At least one approval required
-8. **Merge**: Squash merge to main with conventional commit message
+[optional footer with issue references]
+```
+Example: `feat(courses): add certificate generation on completion`
 
-### Pre-Merge Checklist
+### PR Requirements
+- Linked to issue
+- Descriptive title and body
+- All checks passing
+- At least 1 approval (2 for security-sensitive changes)
 
-Before any PR can be merged:
+---
 
-- [ ] TypeScript compiles with zero errors (strict mode)
-- [ ] No `any` types introduced
-- [ ] All new functions have explicit return types
-- [ ] Unit test coverage >= 80% for changed code
-- [ ] Integration tests pass
-- [ ] Accessibility audit passes (axe-core or equivalent)
-- [ ] Performance budget not exceeded
-- [ ] Conventional commit message format used
+## Article IX: Technology Stack (Locked per ADR-001 to ADR-007)
+
+### Frontend
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Next.js | 15.x | App Router, SSR, API routes |
+| React | 19.x | UI components |
+| TypeScript | 5.x | Type safety |
+| Tailwind CSS | 4.x | Styling |
+| shadcn/ui | Latest | Component library |
+| Base UI | Latest | Unstyled primitives |
+| Plate.js | 52.x | Rich text editor |
+
+### Backend
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Convex | Latest | Database, real-time, functions |
+| Clerk | 6.x | Authentication, organizations |
+
+### Testing
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Vitest | 3.x | Unit testing |
+| Playwright | 1.57+ | E2E testing |
+| convex-test | Latest | Convex function testing |
+
+### LOCKED - NO SUBSTITUTIONS WITHOUT ADR AMENDMENT
+
+---
+
+## Article X: Folder Structure (Enforced)
+
+```
+src/
+  app/                    # Next.js App Router pages
+    (auth)/               # Auth routes (sign-in, sign-up)
+    (dashboard)/          # Protected dashboard routes
+      admin/              # Admin pages
+      courses/            # Course pages
+      messages/           # Messaging pages
+    layout.tsx            # Root layout
+    globals.css           # Global styles
+  components/
+    [feature]/            # Feature-specific components
+    layout/               # Layout components (sidebar, header)
+    providers/            # React context providers
+    ui/                   # shadcn/ui components
+    ui-nova/              # Base UI components
+    ui-plate/             # Plate.js editor components
+  hooks/                  # Custom React hooks
+  lib/                    # Utility functions
+  types/                  # TypeScript type definitions
+
+convex/
+  _generated/             # Generated types (DO NOT EDIT)
+  lib/                    # Shared utilities
+    auth.ts               # Auth helpers (requireAuth, requireAdmin)
+  actions/                # External API actions
+  schema.ts               # Database schema
+  *.ts                    # Domain-specific queries/mutations
+
+tests/
+  unit/                   # Vitest unit tests
+    components/           # Component tests
+    convex/               # Convex function tests
+    hooks/                # Hook tests
+  integration/            # Integration tests
+  e2e/                    # Playwright E2E tests
+```
+
+---
+
+## Article XI: Convex Patterns (Enforced)
+
+### Query Pattern
+```typescript
+export const myQuery = query({
+  args: { id: v.id("tableName") },
+  returns: v.union(v.object({ ... }), v.null()),
+  handler: async (ctx, args) => {
+    const identity = await requireAuth(ctx);  // FIRST LINE
+    return await ctx.db.get(args.id);
+  },
+});
+```
+
+### Mutation Pattern
+```typescript
+export const myMutation = mutation({
+  args: { ... },
+  returns: v.id("tableName"),
+  handler: async (ctx, args) => {
+    const identity = await requireAuth(ctx);  // FIRST LINE
+    // Validate ownership/permissions
+    // Perform mutation
+    return await ctx.db.insert("tableName", { ... });
+  },
+});
+```
+
+### Index Usage (MANDATORY)
+```typescript
+// CORRECT
+const results = await ctx.db
+  .query("courses")
+  .withIndex("by_instructor", (q) => q.eq("instructorId", instructorId))
+  .collect();
+
+// WRONG - Full table scan
+const results = await ctx.db
+  .query("courses")
+  .filter((q) => q.eq(q.field("instructorId"), instructorId))
+  .collect();
+```
+
+### Timestamps
+- Use `Date.now()` for all timestamps (milliseconds since epoch)
+- Store as `v.number()` in schema
+
+---
+
+## Article XII: Component Graduation (per ADR-005)
+
+### Component Lifecycle
+
+```
+1. Feature Component (src/components/[feature]/)
+   └── Used in one feature only
+   └── Can be experimental
+
+2. Shared Component (src/components/[feature]/ with exports)
+   └── Used by multiple features
+   └── Requires unit tests
+   └── Requires documentation
+
+3. UI Library Component (src/components/ui/)
+   └── Generic, reusable primitive
+   └── Full test coverage
+   └── Storybook documentation
+   └── Accessibility verified
+```
+
+### Graduation Criteria
+
+| From | To | Requirements |
+|------|----|--------------|
+| Feature | Shared | Used by 2+ features, tests added |
+| Shared | UI Library | Generic API, full tests, a11y verified, documented |
+
+### UI Library Rules
+- Components in `src/components/ui/` must be from shadcn/ui or follow same patterns
+- Custom components go in `src/components/ui-nova/` (Base UI based)
+- Plate.js components go in `src/components/ui-plate/`
+
+---
+
+## Article XIII: Anti-Hallucination Protocol (per ADR-006)
+
+### Mandatory Pre-Work Verification
+
+Before writing ANY code, Claude MUST:
+
+1. **Read existing code** - Use `Read` tool to verify current state
+2. **Search codebase** - Use `Grep`/`Glob` to find related patterns
+3. **Check documentation** - Query Context7 for library APIs
+4. **Read project skills** - Check `.claude/skills/` for conventions
+
+### Forbidden Actions
+
+- DO NOT assume file contents without reading
+- DO NOT guess API signatures without verification
+- DO NOT create duplicate implementations
+- DO NOT ignore existing patterns
+
+### Verification Commands
+
+```bash
+# Before modifying a file
+Read the file first
+
+# Before adding a new component
+Glob for similar components: **/*[ComponentName]*.tsx
+
+# Before using a library API
+Query Context7 for current documentation
+```
+
+### Error Recovery
+
+If Claude makes a mistake:
+1. Acknowledge the error explicitly
+2. Read the actual file/code
+3. Correct based on real state
+4. Explain what was wrong
+
+---
 
 ## Governance
 
-This constitution supersedes all other development practices for the Onboarding BDR
-Team v2 project. All contributors MUST comply with these principles.
+### Constitutional Authority
+- This constitution supersedes all other documentation for development practices
+- Conflicts with external guides resolve in favor of this constitution
+- Amendments require:
+  1. Written proposal with justification
+  2. Impact analysis on existing code
+  3. Migration plan for non-compliant code
+  4. Approval from project maintainers
 
-### Amendment Process
-
-1. Propose amendment via pull request to this file
-2. Document rationale for change
-3. Obtain approval from project lead
-4. Update version number according to semantic versioning:
-   - MAJOR: Principle removal or backward-incompatible redefinition
-   - MINOR: New principle added or material expansion of existing guidance
-   - PATCH: Clarifications, wording improvements, typo fixes
-5. Update `LAST_AMENDED_DATE` to amendment date
-6. Propagate changes to affected templates and documentation
-
-### Compliance Review
-
-- All pull requests MUST be reviewed for constitution compliance
-- Violations MUST be resolved before merge
-- Justified exceptions MUST be documented in the Complexity Tracking section of the
-  implementation plan
+### Enforcement
+- All PRs must verify compliance with applicable articles
+- Code review checklist includes constitutional checks
+- Automated checks in CI/CD where possible
 
 ### Reference Documents
+- Architecture Decision Records: `/docs/adr/`
+- Implementation skills: `.claude/skills/`
+- Agent orchestration: `CLAUDE.md`
 
-- Implementation plans: `/specs/[feature]/plan.md`
-- Feature specifications: `/specs/[feature]/spec.md`
-- Task breakdowns: `/specs/[feature]/tasks.md`
+---
 
-**Version**: 1.0.0 | **Ratified**: 2025-12-06 | **Last Amended**: 2025-12-06
+**Version**: 1.0.0 | **Ratified**: 2026-01-03 | **Last Amended**: 2026-01-03

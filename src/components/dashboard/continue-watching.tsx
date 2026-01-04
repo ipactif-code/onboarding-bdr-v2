@@ -1,5 +1,6 @@
 "use client";
 
+import { type ReactElement } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Play } from "lucide-react";
@@ -21,7 +22,7 @@ interface ContinueWatchingProps {
   items: ContinueWatchingItem[];
 }
 
-export function ContinueWatching({ items }: ContinueWatchingProps) {
+export function ContinueWatching({ items }: ContinueWatchingProps): ReactElement | null {
   if (items.length === 0) {
     return null;
   }

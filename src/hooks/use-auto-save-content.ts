@@ -35,7 +35,7 @@ export function useAutoSaveContent<T = unknown>({
       return;
     }
 
-    const saveContent = async () => {
+    const saveContent = async (): Promise<void> => {
       setIsSaving(true);
       setError(null);
       try {

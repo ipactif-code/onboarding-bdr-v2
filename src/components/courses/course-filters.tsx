@@ -1,5 +1,6 @@
 "use client";
 
+import { type ReactElement } from "react";
 import { useQuery } from "convex/react";
 
 // Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
@@ -28,11 +29,11 @@ export function CourseFilters({
   onOpenChange,
   selectedTag,
   onTagChange,
-}: CourseFiltersProps) {
+}: CourseFiltersProps): ReactElement {
   // Fetch tags for filter options
   const tags = useQuery(api.tags.list, {});
 
-  const handleClear = () => {
+  const handleClear = (): void => {
     onTagChange(null);
   };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactElement } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { Id } from "../../../convex/_generated/dataModel";
 
@@ -48,13 +48,13 @@ const FAILURE_GIFS = [
 ];
 
 // Get random GIF
-const getRandomGif = (isCorrect: boolean): string => {
+const getRandomGif = (isCorrect: boolean): string | undefined => {
   const gifs = isCorrect ? SUCCESS_GIFS : FAILURE_GIFS;
   return gifs[Math.floor(Math.random() * gifs.length)] as string;
 };
 
 // Trigger confetti
-const triggerConfetti = () => {
+const triggerConfetti = (): void => {
   const end = Date.now() + 2000;
   const colors = ["#a786ff", "#fd8bbc", "#eca184", "#f8deb1", "#22c55e"];
 
@@ -116,7 +116,7 @@ interface AnswerResult {
 
 type QuizState = "loading" | "intro" | "in-progress" | "feedback" | "completed";
 
-export function QuizPlayer({ lessonId, quizConfig }: QuizPlayerProps) {
+export function QuizPlayer({ lessonId, quizConfig }: QuizPlayerProps): ReactElement {
   const [quizState, setQuizState] = useState<QuizState>("loading");
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
@@ -152,7 +152,7 @@ export function QuizPlayer({ lessonId, quizConfig }: QuizPlayerProps) {
   }, [quizStatus, quizState]);
 
   // Handle option toggle
-  const handleOptionToggle = (optionIndex: number) => {
+  const handleOptionToggle = (optionIndex: number): void => {
     setSelectedOptions((prev) => {
       if (prev.includes(optionIndex)) {
         return prev.filter((idx) => idx !== optionIndex);
@@ -162,7 +162,7 @@ export function QuizPlayer({ lessonId, quizConfig }: QuizPlayerProps) {
   };
 
   // Handle submit answer
-  const handleSubmitAnswer = async () => {
+  const handleSubmitAnswer = async (): Promise<void> => {
     if (!currentQuestion) return;
 
     setIsChecking(true);
@@ -187,7 +187,7 @@ export function QuizPlayer({ lessonId, quizConfig }: QuizPlayerProps) {
         isCorrect: result.isCorrect,
         correctOptions: result.correctOptions,
         explanation: result.explanation,
-        gifUrl: getRandomGif(result.isCorrect),
+        gifUrl: getRandomGif(result.isCorrect) ?? '',
       });
       setQuizState("feedback");
 
@@ -203,7 +203,7 @@ export function QuizPlayer({ lessonId, quizConfig }: QuizPlayerProps) {
   };
 
   // Handle next question
-  const handleNextQuestion = () => {
+  const handleNextQuestion = (): void => {
     setFeedbackData(null);
     setSelectedOptions([]);
 
@@ -217,7 +217,7 @@ export function QuizPlayer({ lessonId, quizConfig }: QuizPlayerProps) {
   };
 
   // Handle complete quiz
-  const handleCompleteQuiz = async () => {
+  const handleCompleteQuiz = async (): Promise<void> => {
     setIsSubmitting(true);
     try {
       await submitQuiz({
@@ -236,7 +236,7 @@ export function QuizPlayer({ lessonId, quizConfig }: QuizPlayerProps) {
   };
 
   // Handle start quiz
-  const handleStart = () => {
+  const handleStart = (): void => {
     setCurrentQuestionIndex(0);
     setSelectedOptions([]);
     setAnswerResults([]);
@@ -245,7 +245,7 @@ export function QuizPlayer({ lessonId, quizConfig }: QuizPlayerProps) {
   };
 
   // Handle retry
-  const handleRetry = () => {
+  const handleRetry = (): void => {
     setCurrentQuestionIndex(0);
     setSelectedOptions([]);
     setAnswerResults([]);
@@ -466,7 +466,7 @@ interface QuizIntroProps {
   onStart: () => void;
 }
 
-function QuizIntro({ quizConfig, quizStatus, onStart }: QuizIntroProps) {
+function QuizIntro({ quizConfig, quizStatus, onStart }: QuizIntroProps): ReactElement {
   const totalPoints = quizConfig.questions.reduce((sum, q) => sum + q.points, 0);
 
   return (
@@ -575,7 +575,7 @@ function QuizCompleted({
   passingScore,
   canRetry,
   onRetry,
-}: QuizCompletedProps) {
+}: QuizCompletedProps): ReactElement {
   // Trigger confetti if passed
   useEffect(() => {
     if (passed) {
@@ -635,7 +635,7 @@ function QuizCompleted({
   );
 }
 
-function QuizSkeleton() {
+function QuizSkeleton(): ReactElement {
   return (
     <Card>
       <CardHeader>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
@@ -43,7 +43,7 @@ interface ColumnOptions {
   currentClerkId: string;
 }
 
-function getInitials(name: string) {
+function getInitials(name: string): string {
   return name
     .split(" ")
     .map((n) => n[0])
@@ -63,7 +63,7 @@ function UserActionsCell({
   user,
   currentClerkId,
   onDelete,
-}: UserActionsCellProps) {
+}: UserActionsCellProps): ReactElement {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // User cannot delete themselves

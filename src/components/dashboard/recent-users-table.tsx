@@ -1,5 +1,6 @@
 "use client";
 
+import { type ReactElement } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,7 +40,7 @@ const roleConfig = {
   admin: { label: "Administrator", className: "bg-foreground text-background" },
 };
 
-export function RecentUsersTable({ users }: RecentUsersTableProps) {
+export function RecentUsersTable({ users }: RecentUsersTableProps): ReactElement {
   return (
     <div className="rounded-lg border border-border">
       <Table>

@@ -97,6 +97,7 @@ describe("VoicePlayer Component (Phase 10)", () => {
     const { useVoicePlayback } = await import("@/hooks/voice");
 
     // Start with "ready" state by providing onReady callback
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (useVoicePlayback as any).mockImplementationOnce((options: any) => {
       // Simulate ready state immediately
       if (options.onReady) {
@@ -155,6 +156,7 @@ describe("VoicePlayer Component (Phase 10)", () => {
     const { useVoicePlayback } = await import("@/hooks/voice");
 
     // Mock error state by calling onError immediately
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (useVoicePlayback as any).mockImplementationOnce((options: any) => {
       if (options.onError) {
         setTimeout(() => options.onError(new Error("Load failed")), 0);
@@ -320,6 +322,7 @@ describe("VoicePlayer Component (Phase 10)", () => {
     const { useVoicePlayback } = await import("@/hooks/voice");
 
     // Mock ready state so speed selector is enabled
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (useVoicePlayback as any).mockImplementationOnce((options: any) => {
       if (options.onReady) {
         setTimeout(options.onReady, 0);

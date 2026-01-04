@@ -3,9 +3,11 @@ import { mutation } from "../_generated/server";
 import { requireAuth } from "../lib/auth";
 import { MAX_MESSAGE_LENGTH } from "./helpers";
 
-// Type workaround: Use require() to avoid TS2589 deep type instantiation on 'internal'
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { internal } = require("../_generated/api") as { internal: any };
+// Type workaround: Use dynamic import pattern to avoid TS2589 deep type instantiation
+// The internalApi variable is typed as 'any' which breaks the deep type chain
+// This is necessary because Convex's internal API generates very deep types
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports
+const internalApi: any = require("../_generated/api").internal;
 
 // ============================================================================
 // Channel Message Edit/Delete Mutations
@@ -130,7 +132,7 @@ export const deleteChannelMessage = mutation({
     // Update parent thread metadata if this was a reply
     if (message.parentId) {
       await ctx.runMutation(
-        internal.messages.threadInternals.updateThreadMetadata,
+        internalApi.messages.threadInternals.updateThreadMetadata,
         { parentId: message.parentId }
       );
     }

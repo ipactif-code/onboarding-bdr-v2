@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
+import { LucideIcon } from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -49,7 +50,7 @@ function formatFileSize(bytes: number): string {
 /**
  * Get appropriate icon based on file MIME type
  */
-function getFileIcon(mimeType: string) {
+function getFileIcon(mimeType: string): LucideIcon {
   if (mimeType.startsWith("image/")) {
     return FileImage;
   }
@@ -135,15 +136,15 @@ function isCodeFile(mimeType: string, fileName: string): boolean {
   return codeExtensions.includes(ext) || codeMimeTypes.includes(mimeType);
 }
 
-export function FilesList({ lessonId, files }: FilesListProps) {
+export function FilesList({ lessonId: _lessonId, files }: FilesListProps): ReactElement {
   const [downloadedFiles, setDownloadedFiles] = useState<Set<string>>(new Set());
   const [downloadingId, setDownloadingId] = useState<Id<"files"> | null>(null);
 
-  const handleDownloadClick = (fileId: string) => {
+  const handleDownloadClick = (fileId: string): void => {
     setDownloadedFiles((prev) => new Set([...prev, fileId]));
   };
 
-  const forceDownload = async (file: FileItem) => {
+  const forceDownload = async (file: FileItem): Promise<void> => {
     try {
       setDownloadingId(file._id);
       const response = await fetch(file.downloadUrl);

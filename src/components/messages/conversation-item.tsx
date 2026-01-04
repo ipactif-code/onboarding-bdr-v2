@@ -1,5 +1,6 @@
 "use client";
 
+import { type ReactElement } from "react";
 import { Id } from "../../../convex/_generated/dataModel";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -24,7 +25,7 @@ export function ConversationItem({
   conversation,
   isSelected,
   onClick,
-}: ConversationItemProps) {
+}: ConversationItemProps): ReactElement {
   const timeAgo = conversation.lastMessageAt
     ? formatDistanceToNow(new Date(conversation.lastMessageAt), { addSuffix: false })
     : "";

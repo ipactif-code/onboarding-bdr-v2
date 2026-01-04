@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 import {
   ColumnFiltersState,
   SortingState,
@@ -37,7 +37,7 @@ export function CoursesTable({
   onPublish,
   onUnpublish,
   onDelete,
-}: CoursesTableProps) {
+}: CoursesTableProps): ReactElement {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});

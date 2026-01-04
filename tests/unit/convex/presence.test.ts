@@ -133,7 +133,8 @@ describe("presence.ts - User Presence & Online Status", () => {
 
       // Arrange - User active within last 60 seconds
       await t.run(async (ctx) => {
-        const requesterId = await ctx.db.insert("users", {
+        // Create requester user (used for identity, not by ID reference)
+        await ctx.db.insert("users", {
           clerkId: "requester-clerk",
           email: "requester@example.com",
           name: "Requester",
@@ -171,7 +172,8 @@ describe("presence.ts - User Presence & Online Status", () => {
 
       // Arrange - User active 2 minutes ago
       await t.run(async (ctx) => {
-        const requesterId = await ctx.db.insert("users", {
+        // Create requester user (used for identity, not by ID reference)
+        await ctx.db.insert("users", {
           clerkId: "requester-clerk",
           email: "requester@example.com",
           name: "Requester",
@@ -208,7 +210,8 @@ describe("presence.ts - User Presence & Online Status", () => {
 
       // Arrange - User inactive for 10 minutes
       await t.run(async (ctx) => {
-        const requesterId = await ctx.db.insert("users", {
+        // Create requester user (used for identity, not by ID reference)
+        await ctx.db.insert("users", {
           clerkId: "requester-clerk",
           email: "requester@example.com",
           name: "Requester",
@@ -245,7 +248,8 @@ describe("presence.ts - User Presence & Online Status", () => {
 
       // Arrange - User in DND mode but very recently active
       await t.run(async (ctx) => {
-        const requesterId = await ctx.db.insert("users", {
+        // Create requester user (used for identity, not by ID reference)
+        await ctx.db.insert("users", {
           clerkId: "requester-clerk",
           email: "requester@example.com",
           name: "Requester",
@@ -283,7 +287,8 @@ describe("presence.ts - User Presence & Online Status", () => {
 
       // Arrange - Create one valid user and get an invalid ID
       await t.run(async (ctx) => {
-        const requesterId = await ctx.db.insert("users", {
+        // Create requester user (used for identity, not by ID reference)
+        await ctx.db.insert("users", {
           clerkId: "requester-clerk",
           email: "requester@example.com",
           name: "Requester",
@@ -705,7 +710,8 @@ describe("presence.ts - User Presence & Online Status", () => {
 
       // Arrange
       await t.run(async (ctx) => {
-        const requesterId = await ctx.db.insert("users", {
+        // Create requester user (used for identity, not by ID reference)
+        await ctx.db.insert("users", {
           clerkId: "requester-clerk",
           email: "requester@example.com",
           name: "Requester",

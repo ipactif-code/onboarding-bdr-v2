@@ -46,6 +46,22 @@ const eslintConfig = [
       eqeqeq: ["error", "always"],
     },
   },
+  // Plate.js template components - relax strict rules for third-party template code
+  {
+    files: ["src/components/ui/**/*.tsx"],
+    rules: {
+      "@typescript-eslint/explicit-function-return-type": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+      "react/display-name": "off",
+    },
+  },
+  {
+    files: ["src/components/ui-plate/**/*.tsx"],
+    rules: {
+      "@typescript-eslint/explicit-function-return-type": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
 ];
 
 export default eslintConfig;

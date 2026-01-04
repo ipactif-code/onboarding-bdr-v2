@@ -27,7 +27,7 @@ export function TeamSwitcher({
     logo: React.ElementType
     plan: string
   }[]
-}) {
+}): React.ReactElement | null {
   const { isMobile } = useSidebar()
   const [activeTeam, setActiveTeam] = React.useState(teams[0])
 

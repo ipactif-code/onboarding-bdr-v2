@@ -155,7 +155,7 @@ describe("MentionInputMessaging", () => {
   const mockElement = { id: "test-element" } as any;
 
   // Helper to render component with proper type workaround
-  const renderMentionInput = (children: React.ReactNode) => {
+  const renderMentionInput = (children: React.ReactNode): ReturnType<typeof render> => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const Component = MentionInputMessaging as any;
     return render(
@@ -297,7 +297,7 @@ describe("MentionInputMessaging", () => {
 
   it("queries users when search has 2+ characters", async () => {
     // Arrange
-    const { rerender } = renderMentionInput(<span>@</span>);
+    const { rerender: _rerender } = renderMentionInput(<span>@</span>);
 
     // Simulate typing (in real component, this would update search state)
     // For this test, we verify that useQuery is called with proper args

@@ -4,9 +4,11 @@ import { v } from "convex/values";
 import { internalAction } from "./_generated/server";
 import { Webhook } from "svix";
 
-// Type workaround: Use require() to avoid TS2589 deep type instantiation on 'internal'
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { internal } = require("./_generated/api") as { internal: any };
+// Type workaround: Use dynamic import pattern to avoid TS2589 deep type instantiation
+// The internalApi variable is typed as 'any' which breaks the deep type chain
+// This is necessary because Convex's internal API generates very deep types
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports
+const internalApi: any = require("./_generated/api").internal;
 
 interface ClerkWebhookEvent {
   type: string;
@@ -69,7 +71,7 @@ export const verifyAndProcess = internalAction({
           `${firstName} ${lastName}`.trim() ||
           (email.split("@")[0] ?? "User");
 
-        await ctx.runMutation(internal.users.syncFromClerk, {
+        await ctx.runMutation(internalApi.users.syncFromClerk, {
           clerkId: payload.data.id,
           email,
           name,
@@ -79,7 +81,7 @@ export const verifyAndProcess = internalAction({
       }
 
       case "user.deleted": {
-        await ctx.runMutation(internal.users.removeByClerkId, {
+        await ctx.runMutation(internalApi.users.removeByClerkId, {
           clerkId: payload.data.id,
         });
         break;

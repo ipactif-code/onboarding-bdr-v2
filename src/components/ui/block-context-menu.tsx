@@ -1,202 +1,102 @@
 'use client';
 
-import * as React from 'react';
-
-import { AIChatPlugin } from '@platejs/ai/react';
 import {
   BLOCK_CONTEXT_MENU_ID,
   BlockMenuPlugin,
-  BlockSelectionPlugin,
 } from '@platejs/selection/react';
-import { KEYS } from 'platejs';
-import { useEditorPlugin, usePlateState, usePluginOption } from 'platejs/react';
-
+import { MoreHorizontal } from 'lucide-react';
 import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuGroup,
-  ContextMenuItem,
-  ContextMenuSub,
-  ContextMenuSubContent,
-  ContextMenuSubTrigger,
-  ContextMenuTrigger,
-} from '@/components/ui-plate/context-menu';
-import { useIsTouchDevice } from '@/hooks/use-is-touch-device';
+  useEditorPlugin,
+  useEditorRef,
+  useElement,
+  usePluginOption,
+} from 'platejs/react';
+import * as React from 'react';
 
-type Value = 'askAI' | null;
+import { cn } from '@/lib/utils';
+import { useIsTouchDevice } from '@/hooks/use-is-touch-device';
+import { useLockScroll } from '@/hooks/use-lock-scroll';
+
+import { BlockMenu } from './block-menu';
+import { Button, type ButtonProps } from './button';
+import { useContextMenu } from './menu';
 
 export function BlockContextMenu({ children }: { children: React.ReactNode }) {
   const { api, editor } = useEditorPlugin(BlockMenuPlugin);
-  const [value, setValue] = React.useState<Value>(null);
-  const isTouch = useIsTouchDevice();
-  const [readOnly] = usePlateState('readOnly');
+  const anchorRect = usePluginOption(BlockMenuPlugin, 'position');
   const openId = usePluginOption(BlockMenuPlugin, 'openId');
-  const isOpen = openId === BLOCK_CONTEXT_MENU_ID;
+  const isTouch = useIsTouchDevice();
 
-  const handleTurnInto = React.useCallback(
-    (type: string) => {
-      editor
-        .getApi(BlockSelectionPlugin)
-        .blockSelection.getNodes()
-        .forEach(([node, path]) => {
-          if (node[KEYS.listType]) {
-            editor.tf.unsetNodes([KEYS.listType, 'indent'], {
-              at: path,
-            });
-          }
+  useLockScroll(openId === BLOCK_CONTEXT_MENU_ID, `#${editor.meta.uid}`);
 
-          editor.tf.toggleBlock(type, { at: path });
-        });
-    },
-    [editor]
-  );
-
-  const handleAlign = React.useCallback(
-    (align: 'center' | 'left' | 'right') => {
-      editor
-        .getTransforms(BlockSelectionPlugin)
-        .blockSelection.setNodes({ align });
-    },
-    [editor]
-  );
+  const { getAnchorRect, show, store } = useContextMenu(anchorRect);
 
   if (isTouch) {
     return children;
   }
 
   return (
-    <ContextMenu
-      onOpenChange={(open) => {
-        if (!open) {
-          api.blockMenu.hide();
-        }
+    <div
+      className="group/context-menu w-full"
+      data-plate-selectable
+      data-state={openId === BLOCK_CONTEXT_MENU_ID ? 'open' : 'closed'}
+      onContextMenu={(event) => {
+        const dataset = (event.target as HTMLElement).dataset;
+
+        const disabled = dataset?.slateEditor === 'true';
+
+        if (disabled) return;
+
+        event.preventDefault();
+
+        show();
+        api.blockMenu.show(BLOCK_CONTEXT_MENU_ID, {
+          x: event.clientX,
+          y: event.clientY,
+        });
       }}
-      modal={false}
     >
-      <ContextMenuTrigger
-        asChild
-        onContextMenu={(event) => {
-          const dataset = (event.target as HTMLElement).dataset;
-          const disabled =
-            dataset?.slateEditor === 'true' ||
-            readOnly ||
-            dataset?.plateOpenContextMenu === 'false';
+      {children}
 
-          if (disabled) return event.preventDefault();
+      <BlockMenu
+        getAnchorRect={getAnchorRect}
+        open={openId === BLOCK_CONTEXT_MENU_ID}
+        store={store}
+      />
+    </div>
+  );
+}
 
-          setTimeout(() => {
-            api.blockMenu.show(BLOCK_CONTEXT_MENU_ID, {
-              x: event.clientX,
-              y: event.clientY,
-            });
-          }, 0);
-        }}
-      >
-        <div className="w-full">{children}</div>
-      </ContextMenuTrigger>
-      {isOpen && (
-        <ContextMenuContent
-          className="w-64"
-          onCloseAutoFocus={(e) => {
-            e.preventDefault();
-            editor.getApi(BlockSelectionPlugin).blockSelection.focus();
+export function BlockActionButton({
+  className,
+  defaultStyles = true,
+  ...props
+}: Partial<ButtonProps> & { defaultStyles?: boolean }) {
+  const editor = useEditorRef();
+  const element = useElement();
 
-            if (value === 'askAI') {
-              editor.getApi(AIChatPlugin).aiChat.show();
-            }
-
-            setValue(null);
-          }}
-        >
-          <ContextMenuGroup>
-            <ContextMenuItem
-              onClick={() => {
-                setValue('askAI');
-              }}
-            >
-              Ask AI
-            </ContextMenuItem>
-            <ContextMenuItem
-              onClick={() => {
-                editor
-                  .getTransforms(BlockSelectionPlugin)
-                  .blockSelection.removeNodes();
-                editor.tf.focus();
-              }}
-            >
-              Delete
-            </ContextMenuItem>
-            <ContextMenuItem
-              onClick={() => {
-                editor
-                  .getTransforms(BlockSelectionPlugin)
-                  .blockSelection.duplicate();
-              }}
-            >
-              Duplicate
-              {/* <ContextMenuShortcut>⌘ + D</ContextMenuShortcut> */}
-            </ContextMenuItem>
-            <ContextMenuSub>
-              <ContextMenuSubTrigger>Turn into</ContextMenuSubTrigger>
-              <ContextMenuSubContent className="w-48">
-                <ContextMenuItem onClick={() => handleTurnInto(KEYS.p)}>
-                  Paragraph
-                </ContextMenuItem>
-
-                <ContextMenuItem onClick={() => handleTurnInto(KEYS.h1)}>
-                  Heading 1
-                </ContextMenuItem>
-                <ContextMenuItem onClick={() => handleTurnInto(KEYS.h2)}>
-                  Heading 2
-                </ContextMenuItem>
-                <ContextMenuItem onClick={() => handleTurnInto(KEYS.h3)}>
-                  Heading 3
-                </ContextMenuItem>
-                <ContextMenuItem
-                  onClick={() => handleTurnInto(KEYS.blockquote)}
-                >
-                  Blockquote
-                </ContextMenuItem>
-              </ContextMenuSubContent>
-            </ContextMenuSub>
-          </ContextMenuGroup>
-
-          <ContextMenuGroup>
-            <ContextMenuItem
-              onClick={() =>
-                editor
-                  .getTransforms(BlockSelectionPlugin)
-                  .blockSelection.setIndent(1)
-              }
-            >
-              Indent
-            </ContextMenuItem>
-            <ContextMenuItem
-              onClick={() =>
-                editor
-                  .getTransforms(BlockSelectionPlugin)
-                  .blockSelection.setIndent(-1)
-              }
-            >
-              Outdent
-            </ContextMenuItem>
-            <ContextMenuSub>
-              <ContextMenuSubTrigger>Align</ContextMenuSubTrigger>
-              <ContextMenuSubContent className="w-48">
-                <ContextMenuItem onClick={() => handleAlign('left')}>
-                  Left
-                </ContextMenuItem>
-                <ContextMenuItem onClick={() => handleAlign('center')}>
-                  Center
-                </ContextMenuItem>
-                <ContextMenuItem onClick={() => handleAlign('right')}>
-                  Right
-                </ContextMenuItem>
-              </ContextMenuSubContent>
-            </ContextMenuSub>
-          </ContextMenuGroup>
-        </ContextMenuContent>
+  return (
+    <Button
+      className={cn(
+        defaultStyles &&
+          'absolute top-1 right-1 opacity-0 transition-opacity group-hover:opacity-100',
+        className
       )}
-    </ContextMenu>
+      onClick={(e) => {
+        e.stopPropagation();
+        editor
+          .getApi(BlockMenuPlugin)
+          .blockMenu.showContextMenu(element.id as string, {
+            x: e.clientX,
+            y: e.clientY,
+          });
+      }}
+      size="blockAction"
+      title="More actions"
+      variant="blockAction"
+      {...props}
+    >
+      <MoreHorizontal />
+    </Button>
   );
 }

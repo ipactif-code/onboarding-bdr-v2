@@ -6,11 +6,10 @@
  */
 
 import { convexTest } from "convex-test";
-import { describe, expect, it, beforeEach, vi } from "vitest";
-import { api, internal } from "../../../convex/_generated/api";
+import { describe, expect, it, beforeEach } from "vitest";
+import { api } from "../../../convex/_generated/api";
 import schema from "../../../convex/schema";
 import type { Id } from "../../../convex/_generated/dataModel";
-import { ConvexError } from "convex/values";
 import { validateWaveformData } from "../../../convex/voiceMessages/types";
 
 describe("voiceMessages", () => {
@@ -26,8 +25,8 @@ describe("voiceMessages", () => {
     it("should generate upload URL for authenticated user", async () => {
       const t = convexTest(schema);
 
-      // Create authenticated user
-      const userId = await t.run(async (ctx) => {
+      // Create authenticated user (ID not needed, identity uses clerkId)
+      await t.run(async (ctx) => {
         return await ctx.db.insert("users", {
           clerkId: "user_123",
           email: "test@example.com",
@@ -55,7 +54,8 @@ describe("voiceMessages", () => {
     it("should respect rate limits (20/hour)", async () => {
       const t = convexTest(schema);
 
-      const userId = await t.run(async (ctx) => {
+      // Create authenticated user (ID not needed, identity uses clerkId)
+      await t.run(async (ctx) => {
         return await ctx.db.insert("users", {
           clerkId: "user_123",
           email: "test@example.com",
@@ -151,8 +151,8 @@ describe("voiceMessages", () => {
     it("should require channel membership", async () => {
       const t2 = convexTest(schema);
 
-      // Create a different user not in channel
-      const otherUserId = await t2.run(async (ctx) => {
+      // Create a different user not in channel (ID not needed, identity uses clerkId)
+      await t2.run(async (ctx) => {
         return await ctx.db.insert("users", {
           clerkId: "user_456",
           email: "other@example.com",
@@ -259,9 +259,7 @@ describe("voiceMessages", () => {
     });
 
     it("should schedule transcription", async () => {
-      // Mock scheduler to verify it's called
-      const scheduledAction: string | null = null;
-
+      // Transcription scheduling is handled internally by the mutation
       const messageId = await asUser.mutation(
         api.voiceMessages.channelMutations.sendVoiceToChannel,
         {
@@ -289,7 +287,7 @@ describe("voiceMessages", () => {
   describe("sendVoiceToConversation (F028)", () => {
     let t: ReturnType<typeof convexTest>;
     let userId: Id<"users">;
-    let otherUserId: Id<"users">;
+    let _otherUserId: Id<"users">;
     let conversationId: Id<"conversations">;
     let storageId: Id<"_storage">;
     let asUser: ReturnType<typeof t.withIdentity>;
@@ -348,7 +346,7 @@ describe("voiceMessages", () => {
       });
 
       userId = setup.userId;
-      otherUserId = setup.otherUserId;
+      _otherUserId = setup.otherUserId;
       conversationId = setup.conversationId;
       storageId = setup.storageId;
 
@@ -374,7 +372,8 @@ describe("voiceMessages", () => {
     it("should require conversation membership", async () => {
       const t2 = convexTest(schema);
 
-      const strangerUserId = await t2.run(async (ctx) => {
+      // Create stranger user (ID not needed, identity uses clerkId)
+      await t2.run(async (ctx) => {
         return await ctx.db.insert("users", {
           clerkId: "user_789",
           email: "stranger@example.com",
@@ -572,7 +571,7 @@ describe("voiceMessages", () => {
 
   describe("editTranscription (F030)", () => {
     let t: ReturnType<typeof convexTest>;
-    let userId: Id<"users">;
+    let _userId: Id<"users">;
     let messageId: Id<"messages">;
     let asUser: ReturnType<typeof t.withIdentity>;
 
@@ -630,7 +629,7 @@ describe("voiceMessages", () => {
         return { userId: uid, messageId: mid };
       });
 
-      userId = setup.userId;
+      _userId = setup.userId;
       messageId = setup.messageId;
 
       asUser = t.withIdentity({
@@ -721,7 +720,7 @@ describe("voiceMessages", () => {
 
   describe("retryTranscription (F031)", () => {
     let t: ReturnType<typeof convexTest>;
-    let userId: Id<"users">;
+    let _userId: Id<"users">;
     let messageId: Id<"messages">;
     let asUser: ReturnType<typeof t.withIdentity>;
 
@@ -779,7 +778,7 @@ describe("voiceMessages", () => {
         return { userId: uid, messageId: mid };
       });
 
-      userId = setup.userId;
+      _userId = setup.userId;
       messageId = setup.messageId;
 
       asUser = t.withIdentity({

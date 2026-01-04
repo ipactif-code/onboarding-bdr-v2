@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { type ReactElement } from "react"
 import { Toggle as TogglePrimitive } from "@base-ui/react/toggle"
 import { ToggleGroup as ToggleGroupPrimitive } from "@base-ui/react/toggle-group"
 import { type VariantProps } from "class-variance-authority"
@@ -32,7 +33,7 @@ function ToggleGroup({
   VariantProps<typeof toggleVariants> & {
     spacing?: number
     orientation?: "horizontal" | "vertical"
-  }) {
+  }): ReactElement {
   return (
     <ToggleGroupPrimitive
       data-slot="toggle-group"
@@ -62,7 +63,7 @@ function ToggleGroupItem({
   variant = "default",
   size = "default",
   ...props
-}: TogglePrimitive.Props & VariantProps<typeof toggleVariants>) {
+}: TogglePrimitive.Props & VariantProps<typeof toggleVariants>): ReactElement {
   const context = React.useContext(ToggleGroupContext)
 
   return (

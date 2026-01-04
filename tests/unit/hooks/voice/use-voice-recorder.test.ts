@@ -26,12 +26,12 @@ class MockMediaRecorder {
   onresume: (() => void) | null = null;
   onstop: (() => void) | null = null;
 
-  start() {
+  start(): void {
     this.state = "recording";
     this.onstart?.();
   }
 
-  stop() {
+  stop(): void {
     this.state = "inactive";
     // Simulate data available
     const blob = new Blob(["audio data"], { type: "audio/webm" });
@@ -39,17 +39,18 @@ class MockMediaRecorder {
     this.onstop?.();
   }
 
-  pause() {
+  pause(): void {
     this.state = "paused";
     this.onpause?.();
   }
 
-  resume() {
+  resume(): void {
     this.state = "recording";
     this.onresume?.();
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 global.MediaRecorder = MockMediaRecorder as any;
 
 // Mock audio-utils
@@ -71,7 +72,7 @@ Object.defineProperty(global.navigator, "mediaDevices", {
 // Mock MediaStream
 class MockMediaStream {
   private tracks: Array<{ stop: () => void }> = [{ stop: vi.fn() }];
-  getTracks() {
+  getTracks(): Array<{ stop: () => void }> {
     return this.tracks;
   }
 }

@@ -1,180 +1,122 @@
 'use client';
 
-import * as React from 'react';
-
-import type { TPlaceholderElement } from 'platejs';
-import type { PlateElementProps } from 'platejs/react';
-
+import { parseVideoUrl, setMediaNode } from '@platejs/media';
 import {
   PlaceholderPlugin,
   PlaceholderProvider,
-  updateUploadHistory,
+  usePlaceholderElementState,
+  usePlaceholderPopoverState,
 } from '@platejs/media/react';
-import { AudioLines, FileUp, Film, ImageIcon, Loader2Icon } from 'lucide-react';
-import { KEYS } from 'platejs';
-import { PlateElement, useEditorPlugin, withHOC } from 'platejs/react';
+import { AudioLinesIcon, FileUpIcon, FilmIcon, ImageIcon } from 'lucide-react';
+import { KEYS, nanoid } from 'platejs';
+import {
+  PlateElement,
+  type PlateElementProps,
+  useEditorPlugin,
+  withHOC,
+} from 'platejs/react';
+import type { ReactNode } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useFilePicker } from 'use-file-picker';
 
 import { cn } from '@/lib/utils';
 import { useUploadFile } from '@/hooks/use-upload-file';
 
+import { BlockActionButton } from './block-context-menu';
+import { Button } from './button';
+import { Input } from './input';
+import { Popover, PopoverContent, PopoverTrigger } from './popover';
+import { Spinner } from './spinner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs';
+
 const CONTENT: Record<
   string,
   {
-    accept: string[];
-    content: React.ReactNode;
-    icon: React.ReactNode;
+    content: ReactNode;
+    icon: ReactNode;
   }
 > = {
   [KEYS.audio]: {
-    accept: ['audio/*'],
     content: 'Add an audio file',
-    icon: <AudioLines />,
+    icon: <AudioLinesIcon />,
   },
   [KEYS.file]: {
-    accept: ['*'],
     content: 'Add a file',
-    icon: <FileUp />,
+    icon: <FileUpIcon />,
   },
   [KEYS.img]: {
-    accept: ['image/*'],
     content: 'Add an image',
     icon: <ImageIcon />,
   },
   [KEYS.video]: {
-    accept: ['video/*'],
     content: 'Add a video',
-    icon: <Film />,
+    icon: <FilmIcon />,
   },
 };
 
 export const PlaceholderElement = withHOC(
   PlaceholderProvider,
-  function PlaceholderElement(props: PlateElementProps<TPlaceholderElement>) {
-    const { editor, element } = props;
+  (props: PlateElementProps) => {
+    const { mediaType, progresses, progressing, setSize, updatedFiles } =
+      usePlaceholderElementState();
 
-    const { api } = useEditorPlugin(PlaceholderPlugin);
+    const currentContent = CONTENT[mediaType];
 
-    const { isUploading, progress, uploadedFile, uploadFile, uploadingFile } =
-      useUploadFile();
+    const isImage = mediaType === KEYS.img;
 
-    const loading = isUploading && uploadingFile;
+    const file: File | undefined = updatedFiles?.[0];
+    const progress = file ? progresses?.[file.name] : undefined;
 
-    const currentContent = CONTENT[element.mediaType];
+    const imageRef = useRef<HTMLImageElement>(null);
+    useEffect(() => {
+      if (!imageRef.current) return;
 
-    const isImage = element.mediaType === KEYS.img;
+      const { height, width } = imageRef.current;
 
-    const imageRef = React.useRef<HTMLImageElement>(null);
-
-    const { openFilePicker } = useFilePicker({
-      accept: currentContent?.accept ?? [],
-      multiple: true,
-      onFilesSelected: ({ plainFiles: updatedFiles }) => {
-        const firstFile = updatedFiles[0];
-        const restFiles = updatedFiles.slice(1);
-
-        replaceCurrentPlaceholder(firstFile);
-
-        if (restFiles.length > 0) {
-          editor.getTransforms(PlaceholderPlugin).insert.media(restFiles);
-        }
-      },
-    });
-
-    const replaceCurrentPlaceholder = React.useCallback(
-      (file: File) => {
-        void uploadFile(file);
-        api.placeholder.addUploadingFile(element.id as string, file);
-      },
-      [api.placeholder, element.id, uploadFile]
-    );
-
-    React.useEffect(() => {
-      if (!uploadedFile) return;
-
-      const path = editor.api.findPath(element);
-
-      editor.tf.withoutSaving(() => {
-        editor.tf.removeNodes({ at: path });
-
-        const node = {
-          children: [{ text: '' }],
-          initialHeight: imageRef.current?.height,
-          initialWidth: imageRef.current?.width,
-          isUpload: true,
-          name: element.mediaType === KEYS.file ? uploadedFile.name : '',
-          placeholderId: element.id as string,
-          type: element.mediaType!,
-          url: uploadedFile.ufsUrl,
-        };
-
-        editor.tf.insertNodes(node, { at: path });
-
-        updateUploadHistory(editor, node);
+      setSize?.({
+        height,
+        width,
       });
-
-      api.placeholder.removeUploadingFile(element.id as string);
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [uploadedFile, element.id]);
-
-    // React dev mode will call React.useEffect twice
-    const isReplaced = React.useRef(false);
-
-    /** Paste and drop */
-    React.useEffect(() => {
-      if (isReplaced.current) return;
-
-      isReplaced.current = true;
-      const currentFiles = api.placeholder.getUploadingFile(
-        element.id as string
-      );
-
-      if (!currentFiles) return;
-
-      replaceCurrentPlaceholder(currentFiles);
-
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isReplaced]);
+    }, [imageRef.current]);
 
     return (
       <PlateElement className="my-1" {...props}>
-        {(!loading || !isImage) && (
-          <div
-            className={cn(
-              'flex cursor-pointer select-none items-center rounded-sm bg-muted p-3 pr-9 hover:bg-primary/10'
-            )}
-            onClick={() => !loading && openFilePicker()}
-            contentEditable={false}
-          >
-            <div className="relative mr-3 flex text-muted-foreground/80 [&_svg]:size-6">
-              {currentContent?.icon}
-            </div>
-            <div className="whitespace-nowrap text-muted-foreground text-sm">
-              <div>
-                {loading ? uploadingFile?.name : currentContent?.content}
-              </div>
-
-              {loading && !isImage && (
-                <div className="mt-1 flex items-center gap-1.5">
-                  <div>{formatBytes(uploadingFile?.size ?? 0)}</div>
-                  <div>–</div>
-                  <div className="flex items-center">
-                    <Loader2Icon className="mr-1 size-3.5 animate-spin text-muted-foreground" />
-                    {progress ?? 0}%
-                  </div>
-                </div>
+        <MediaPlaceholderPopover>
+          {(!progressing || !isImage) && (
+            <div
+              className={cn(
+                'flex cursor-pointer select-none items-center rounded-sm bg-muted p-3 pr-9 transition-bg-ease hover:bg-primary/10'
               )}
+              contentEditable={false}
+              role="button"
+            >
+              <div className="relative mr-3 flex text-muted-foreground/80 [&_svg]:size-6">
+                {currentContent?.icon}
+              </div>
+              <div className="whitespace-nowrap text-muted-foreground text-sm">
+                <div>{progressing ? file?.name : currentContent?.content}</div>
+
+                {progressing && !isImage && file && (
+                  <div className="mt-1 flex items-center gap-1.5">
+                    <div>{formatBytes(file.size)}</div>
+                    <div>–</div>
+                    <div className="flex items-center">
+                      <Spinner className="mr-1 size-3.5" />
+                      {progress ?? 0}%
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
+        </MediaPlaceholderPopover>
+
+        {isImage && progressing && file && (
+          <ImageProgress file={file} imageRef={imageRef} progress={progress} />
         )}
 
-        {isImage && loading && (
-          <ImageProgress
-            file={uploadingFile}
-            imageRef={imageRef}
-            progress={progress}
-          />
-        )}
+        <BlockActionButton />
 
         {props.children}
       </PlateElement>
@@ -182,7 +124,226 @@ export const PlaceholderElement = withHOC(
   }
 );
 
-export function ImageProgress({
+const MEDIA_CONFIG: Record<
+  string,
+  {
+    accept: string[];
+    buttonText: string;
+    embedText: string;
+  }
+> = {
+  [KEYS.audio]: {
+    accept: ['audio/*'],
+    buttonText: 'Upload Audio',
+    embedText: 'Embed audio',
+  },
+  [KEYS.file]: {
+    accept: ['*'],
+    buttonText: 'Choose a file',
+    embedText: 'Embed file',
+  },
+  [KEYS.img]: {
+    accept: ['image/*'],
+    buttonText: 'Upload file',
+    embedText: 'Embed image',
+  },
+  [KEYS.video]: {
+    accept: ['video/*'],
+    buttonText: 'Upload video',
+    embedText: 'Embed video',
+  },
+};
+
+function MediaPlaceholderPopover({ children }: { children: React.ReactNode }) {
+  const { api, editor, getOption, tf } = useEditorPlugin(PlaceholderPlugin);
+
+  const {
+    id,
+    element,
+    mediaType,
+    readOnly,
+    selected,
+    setIsUploading,
+    setProgresses,
+    setUpdatedFiles,
+    size,
+  } = usePlaceholderPopoverState();
+  const [open, setOpen] = useState(false);
+
+  // Potion-only
+  // const documentId = useDocumentId();
+  // const createFile = trpc.file.createFile.useMutation();
+  const currentMedia = MEDIA_CONFIG[mediaType];
+
+  // const mediaConfig = api.placeholder.getMediaConfig(mediaType as MediaKeys);
+  const multiple = getOption('multiple') ?? true;
+
+  const { isUploading, progress, uploadedFile, uploadFile, uploadingFile } =
+    useUploadFile({
+      onUploadComplete() {
+        // Potion-only
+        // try {
+        //   createFile.mutate({
+        //     id: file.key,
+        //     appUrl: file.appUrl,
+        //     documentId: documentId,
+        //     size: file.size,
+        //     type: file.type,
+        //     url: file.url,
+        //   });
+        // } catch (error) {
+        //   console.error(error, 'error');
+        // }
+      },
+    });
+
+  const replaceCurrentPlaceholder = useCallback(
+    (file: File) => {
+      setUpdatedFiles([file]);
+      void uploadFile(file);
+      api.placeholder.addUploadingFile(element.id as string, file);
+    },
+    [element.id, setUpdatedFiles, uploadFile, api.placeholder]
+  );
+
+  /** Open file picker */
+  const { openFilePicker } = useFilePicker({
+    readFilesContent: false,
+    accept: currentMedia?.accept ?? ['*'],
+    multiple,
+    onFilesSelected: ({ plainFiles: updatedFiles }) => {
+      if (!updatedFiles) return;
+
+      const firstFile = updatedFiles[0];
+      if (!firstFile) return;
+      const restFiles = updatedFiles.slice(1);
+
+      replaceCurrentPlaceholder(firstFile);
+
+      if (restFiles.length > 0) {
+        tf.insert.media(restFiles as unknown as FileList);
+      }
+    },
+  });
+
+  // React dev mode will call useEffect twice
+  const isReplaced = useRef(false);
+  /** Paste and drop */
+  useEffect(() => {
+    if (isReplaced.current) return;
+
+    isReplaced.current = true;
+    const currentFiles = api.placeholder.getUploadingFile(element.id as string);
+
+    if (!currentFiles) return;
+
+    replaceCurrentPlaceholder(currentFiles);
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReplaced]);
+
+  useEffect(() => {
+    if (!uploadedFile) return;
+
+    const path = editor.api.findPath(element);
+
+    setMediaNode(
+      editor,
+      {
+        id: nanoid(),
+        initialHeight: size?.height,
+        initialWidth: size?.width,
+        isUpload: true,
+        name: mediaType === KEYS.file ? uploadedFile.name : '',
+        placeholderId: element.id as string,
+        type: mediaType!,
+        url: uploadedFile.url,
+      },
+      { at: path }
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uploadedFile, element.id, size]);
+
+  const [embedValue, setEmbedValue] = useState('');
+
+  const onEmbed = useCallback(
+    (value: string) => {
+      // For video placeholders with external URLs (YouTube, Vimeo, etc.),
+      // we should create a mediaEmbed node, not a video node.
+      // VideoPlugin is for uploaded video files, MediaEmbedPlugin is for external embeds.
+      const isExternalVideoUrl =
+        mediaType === KEYS.video && parseVideoUrl(value) !== null;
+
+      setMediaNode(editor, {
+        type: isExternalVideoUrl ? KEYS.mediaEmbed : mediaType,
+        url: value,
+      });
+    },
+    [editor, mediaType]
+  );
+
+  useEffect(() => {
+    setOpen(selected);
+  }, [selected, setOpen]);
+
+  useEffect(() => {
+    if (isUploading) {
+      setOpen(false);
+    }
+  }, [isUploading]);
+
+  useEffect(() => {
+    setProgresses({ [uploadingFile?.name ?? '']: progress });
+    setIsUploading(isUploading);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, progress, isUploading, uploadingFile]);
+
+  if (readOnly) return <>{children}</>;
+
+  return (
+    <Popover onOpenChange={setOpen} open={open}>
+      <PopoverTrigger>{children}</PopoverTrigger>
+
+      <PopoverContent className="flex w-[320px] flex-col p-0">
+        <Tabs className="w-full shrink-0" defaultValue="account">
+          <TabsList className="px-2" onMouseDown={(e: React.MouseEvent) => e.preventDefault()}>
+            <TabsTrigger value="account">Upload</TabsTrigger>
+            <TabsTrigger value="password">Embed link</TabsTrigger>
+          </TabsList>
+          <TabsContent className="w-[300px] px-3 py-2" value="account">
+            <Button className="w-full" onClick={openFilePicker} variant="default">
+              {currentMedia?.buttonText ?? 'Upload file'}
+            </Button>
+            <div className="mt-3 text-muted-foreground text-xs">
+              The maximum size per file is 5MB
+            </div>
+          </TabsContent>
+
+          <TabsContent
+            className="w-[300px] px-3 pt-2 pb-3 text-center"
+            value="password"
+          >
+            <Input
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmbedValue(e.target.value)}
+              placeholder="Paste the link..."
+              value={embedValue}
+            />
+
+            <Button
+              className="mt-2 w-full max-w-[300px]"
+              onClick={() => onEmbed(embedValue)}
+              variant="default"
+            >
+              {currentMedia?.embedText ?? 'Embed'}
+            </Button>
+          </TabsContent>
+        </Tabs>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function ImageProgress({
   className,
   file,
   imageRef,
@@ -193,9 +354,10 @@ export function ImageProgress({
   imageRef?: React.RefObject<HTMLImageElement | null>;
   progress?: number;
 }) {
-  const [objectUrl, setObjectUrl] = React.useState<string | null>(null);
+  const [objectUrl, setObjectUrl] = useState<string | null>(null);
 
-  React.useEffect(() => {
+  // Create and manage Object URL lifecycle - valid Effect (external resource with cleanup)
+  useEffect(() => {
     const url = URL.createObjectURL(file);
     setObjectUrl(url);
 
@@ -210,15 +372,16 @@ export function ImageProgress({
 
   return (
     <div className={cn('relative', className)} contentEditable={false}>
+      {/* eslint-disable-next-line @next/next/no-img-element -- blob URL preview, not optimizable */}
       <img
-        ref={imageRef}
-        className="h-auto w-full rounded-sm object-cover"
         alt={file.name}
+        className="h-auto w-full rounded-xs object-cover"
+        ref={imageRef}
         src={objectUrl}
       />
       {progress < 100 && (
         <div className="absolute right-1 bottom-1 flex items-center space-x-2 rounded-full bg-black/50 px-1 py-0.5">
-          <Loader2Icon className="size-3.5 animate-spin text-muted-foreground" />
+          <Spinner />
           <span className="font-medium text-white text-xs">
             {Math.round(progress)}%
           </span>

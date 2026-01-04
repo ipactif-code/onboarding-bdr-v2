@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 import {
   ColumnFiltersState,
   SortingState,
@@ -30,7 +30,7 @@ interface TeamsTableProps {
   onDelete: (id: Id<"teams">) => void;
 }
 
-export function TeamsTable({ teams, onDelete }: TeamsTableProps) {
+export function TeamsTable({ teams, onDelete }: TeamsTableProps): ReactElement {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});

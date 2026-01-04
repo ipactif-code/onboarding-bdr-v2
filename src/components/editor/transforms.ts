@@ -5,13 +5,13 @@ import type { PlateEditor } from 'platejs/react';
 import { insertCallout } from '@platejs/callout';
 import { insertCodeBlock, toggleCodeBlock } from '@platejs/code-block';
 import { insertDate } from '@platejs/date';
-import { insertExcalidraw } from '@platejs/excalidraw';
 import { insertColumnGroup, toggleColumnGroup } from '@platejs/layout';
 import { triggerFloatingLink } from '@platejs/link/react';
 import { insertEquation, insertInlineEquation } from '@platejs/math';
 import {
   insertAudioPlaceholder,
   insertFilePlaceholder,
+  insertImagePlaceholder,
   insertMedia,
   insertVideoPlaceholder,
 } from '@platejs/media';
@@ -26,9 +26,11 @@ import {
   PathApi,
 } from 'platejs';
 
+const ACTION_TWO_COLUMNS = 'action_two_columns';
 const ACTION_THREE_COLUMNS = 'action_three_columns';
+const ACTION_FOUR_COLUMNS = 'action_four_columns';
 
-const insertList = (editor: PlateEditor, type: string) => {
+const insertList = (editor: PlateEditor, type: string): void => {
   editor.tf.insertNodes(
     editor.api.create.block({
       indent: 1,
@@ -45,19 +47,18 @@ const insertBlockMap: Record<
   [KEYS.listTodo]: insertList,
   [KEYS.ol]: insertList,
   [KEYS.ul]: insertList,
+  [ACTION_TWO_COLUMNS]: (editor) =>
+    insertColumnGroup(editor, { columns: 2, select: true }),
   [ACTION_THREE_COLUMNS]: (editor) =>
     insertColumnGroup(editor, { columns: 3, select: true }),
+  [ACTION_FOUR_COLUMNS]: (editor) =>
+    insertColumnGroup(editor, { columns: 4, select: true }),
   [KEYS.audio]: (editor) => insertAudioPlaceholder(editor, { select: true }),
   [KEYS.callout]: (editor) => insertCallout(editor, { select: true }),
   [KEYS.codeBlock]: (editor) => insertCodeBlock(editor, { select: true }),
   [KEYS.equation]: (editor) => insertEquation(editor, { select: true }),
-  [KEYS.excalidraw]: (editor) => insertExcalidraw(editor, {}, { select: true }),
   [KEYS.file]: (editor) => insertFilePlaceholder(editor, { select: true }),
-  [KEYS.img]: (editor) =>
-    insertMedia(editor, {
-      select: true,
-      type: KEYS.img,
-    }),
+  [KEYS.img]: (editor) => insertImagePlaceholder(editor, { select: true }),
   [KEYS.mediaEmbed]: (editor) =>
     insertMedia(editor, {
       select: true,
@@ -87,7 +88,7 @@ export const insertBlock = (
   editor: PlateEditor,
   type: string,
   options: InsertBlockOptions = {}
-) => {
+): void => {
   const { upsert = false } = options;
 
   editor.tf.withoutNormalizing(() => {
@@ -122,7 +123,7 @@ export const insertBlock = (
   });
 };
 
-export const insertInlineElement = (editor: PlateEditor, type: string) => {
+export const insertInlineElement = (editor: PlateEditor, type: string): void => {
   if (insertInlineMap[type]) {
     insertInlineMap[type](editor, type);
   }
@@ -132,7 +133,7 @@ const setList = (
   editor: PlateEditor,
   type: string,
   entry: NodeEntry<TElement>
-) => {
+): void => {
   editor.tf.setNodes(
     editor.api.create.block({
       indent: 1,
@@ -151,7 +152,9 @@ const setBlockMap: Record<
   [KEYS.listTodo]: setList,
   [KEYS.ol]: setList,
   [KEYS.ul]: setList,
+  [ACTION_TWO_COLUMNS]: (editor) => toggleColumnGroup(editor, { columns: 2 }),
   [ACTION_THREE_COLUMNS]: (editor) => toggleColumnGroup(editor, { columns: 3 }),
+  [ACTION_FOUR_COLUMNS]: (editor) => toggleColumnGroup(editor, { columns: 4 }),
   [KEYS.codeBlock]: (editor) => toggleCodeBlock(editor),
 };
 
@@ -159,9 +162,9 @@ export const setBlockType = (
   editor: PlateEditor,
   type: string,
   { at }: { at?: Path } = {}
-) => {
+): void => {
   editor.tf.withoutNormalizing(() => {
-    const setEntry = (entry: NodeEntry<TElement>) => {
+    const setEntry = (entry: NodeEntry<TElement>): void => {
       const [node, path] = entry;
 
       if (node[KEYS.listType]) {
@@ -193,7 +196,7 @@ export const setBlockType = (
   });
 };
 
-export const getBlockType = (block: TElement) => {
+export const getBlockType = (block: TElement): string | undefined => {
   if (block[KEYS.listType]) {
     if (block[KEYS.listType] === KEYS.ol) {
       return KEYS.ol;

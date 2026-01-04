@@ -3,11 +3,11 @@ import { action, internalAction } from "../_generated/server";
 import { Id } from "../_generated/dataModel";
 import { parseBuffer } from "music-metadata";
 
-// Type workaround: Use require() to avoid TS2589 deep type instantiation on 'internal'
-// The actual runtime value is still the properly typed internal API, but TypeScript
-// won't try to evaluate the deep FilterApi type
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { internal } = require("../_generated/api") as { internal: any };
+// Type workaround: Use dynamic import pattern to avoid TS2589 deep type instantiation
+// The internalApi variable is typed as 'any' which breaks the deep type chain
+// This is necessary because Convex's internal API generates very deep types
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports
+const internalApi: any = require("../_generated/api").internal;
 
 // ============================================================================
 // Admin Migration Actions
@@ -38,7 +38,7 @@ export const migratePublishedCoursesToChannels = action({
   }> => {
     // Use an internal query to get all published courses without channels
     const coursesToMigrate = await ctx.runQuery(
-      internal.admin.migrationsQueries.getPublishedCoursesWithoutChannels
+      internalApi.admin.migrationsQueries.getPublishedCoursesWithoutChannels
     ) as Array<{ _id: Id<"courses">; title: string; creatorId: Id<"users"> }>;
 
     let processed = 0;
@@ -51,7 +51,7 @@ export const migratePublishedCoursesToChannels = action({
       try {
         // Step 1: Create the course channel
         const channelId = await ctx.runMutation(
-          internal.channels.courseMutations.createCourseChannel,
+          internalApi.channels.courseMutations.createCourseChannel,
           {
             courseId: course._id,
             creatorId: course.creatorId,
@@ -62,7 +62,7 @@ export const migratePublishedCoursesToChannels = action({
 
         // Step 2: Grant course creator admin rights on the channel
         await ctx.runMutation(
-          internal.channels.courseMutations.grantCourseInstructorAdmin,
+          internalApi.channels.courseMutations.grantCourseInstructorAdmin,
           {
             courseId: course._id,
             userId: course.creatorId,
@@ -71,7 +71,7 @@ export const migratePublishedCoursesToChannels = action({
 
         // Step 3: Get all course assignments and add users to the channel
         const enrolledUsers = await ctx.runQuery(
-          internal.admin.migrationsQueries.getCourseEnrolledUsers,
+          internalApi.admin.migrationsQueries.getCourseEnrolledUsers,
           { courseId: course._id }
         ) as Id<"users">[];
 
@@ -79,7 +79,7 @@ export const migratePublishedCoursesToChannels = action({
         for (const userId of enrolledUsers) {
           try {
             await ctx.runMutation(
-              internal.channels.courseMutations.addCourseEnrollee,
+              internalApi.channels.courseMutations.addCourseEnrollee,
               {
                 courseId: course._id,
                 userId: userId as Id<"users">,
@@ -144,7 +144,7 @@ export const syncAllTeamsChannelMembersMigration = action({
     console.warn("[Migration] Starting syncAllTeamsChannelMembersMigration...");
 
     const result = await ctx.runMutation(
-      internal.admin.migrationsMutations.syncAllTeamsChannelMembers
+      internalApi.admin.migrationsMutations.syncAllTeamsChannelMembers
     ) as {
       coursesProcessed: number;
       channelsUpdated: number;
@@ -224,7 +224,7 @@ export const auditVoiceMessageDurations = internalAction({
 
     // Get all voice messages
     const voiceMessages = (await ctx.runQuery(
-      internal.admin.migrationsQueries.listVoiceMessagesForAudit,
+      internalApi.admin.migrationsQueries.listVoiceMessagesForAudit,
       {}
     )) as Array<{
       _id: Id<"voiceMessages">;
@@ -248,7 +248,7 @@ export const auditVoiceMessageDurations = internalAction({
     // Fetch audio URLs for each voice message
     for (const vm of voiceMessages) {
       const audioUrl = (await ctx.runQuery(
-        internal.admin.migrationsQueries.getVoiceMessageAudioUrl,
+        internalApi.admin.migrationsQueries.getVoiceMessageAudioUrl,
         { storageId: vm.storageId }
       )) as string | null;
 
@@ -331,7 +331,7 @@ export const fixAllVoiceDurations = internalAction({
 
     // 1. Get all voice messages
     const messages = (await ctx.runQuery(
-      internal.admin.migrationsQueries.listVoiceMessagesForAudit,
+      internalApi.admin.migrationsQueries.listVoiceMessagesForAudit,
       {}
     )) as Array<{
       _id: Id<"voiceMessages">;
@@ -367,7 +367,7 @@ export const fixAllVoiceDurations = internalAction({
       try {
         // Get audio URL from storage
         const url = (await ctx.runQuery(
-          internal.admin.migrationsQueries.getVoiceMessageAudioUrl,
+          internalApi.admin.migrationsQueries.getVoiceMessageAudioUrl,
           { storageId: msg.storageId }
         )) as string | null;
 
@@ -425,7 +425,7 @@ export const fixAllVoiceDurations = internalAction({
 
         // Update DB via mutation
         const updateResult = (await ctx.runMutation(
-          internal.admin.migrationsMutations.fixVoiceMessageDuration,
+          internalApi.admin.migrationsMutations.fixVoiceMessageDuration,
           {
             voiceMessageId: msg._id,
             correctDuration: actualDuration,

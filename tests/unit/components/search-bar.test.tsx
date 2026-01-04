@@ -29,9 +29,9 @@ const mockUseMessageSearch = {
   setFilters: vi.fn(),
   clearFilters: vi.fn(),
   results: [] as Array<{
-    _id: any;
+    _id: unknown;
     content: string;
-    senderId: any;
+    senderId: unknown;
     senderName: string;
     createdAt: number;
     contentType: string;
@@ -77,12 +77,14 @@ vi.mock("@/components/messaging/search-results", () => ({
 }));
 
 // Mock UI components
-vi.mock("@/components/ui/input", () => ({
-  Input: React.forwardRef<
+vi.mock("@/components/ui/input", () => {
+  const MockInput = React.forwardRef<
     HTMLInputElement,
     React.InputHTMLAttributes<HTMLInputElement>
-  >((props, ref) => <input ref={ref} {...props} />),
-}));
+  >((props, ref) => <input ref={ref} {...props} />);
+  MockInput.displayName = "MockInput";
+  return { Input: MockInput };
+});
 
 vi.mock("@/components/ui/button", () => ({
   Button: ({
@@ -128,7 +130,7 @@ vi.mock("@/components/ui/popover", () => ({
   Popover: ({
     children,
     open,
-    onOpenChange,
+    onOpenChange: _onOpenChange,
   }: {
     children: React.ReactNode;
     open?: boolean;
@@ -217,6 +219,7 @@ vi.mock("lucide-react", () => ({
 // Tests
 // ============================================================================
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 describe("SearchBar", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -671,3 +674,4 @@ describe("SearchBar", () => {
     expect(onResultSelect).toHaveBeenCalledWith("msg1");
   });
 });
+/* eslint-enable @typescript-eslint/no-explicit-any */

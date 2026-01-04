@@ -1,10 +1,12 @@
+import { type ReactElement } from "react"
+
 import { cn } from "@/lib/utils"
 
 function AspectRatio({
   ratio,
   className,
   ...props
-}: React.ComponentProps<"div"> & { ratio: number }) {
+}: React.ComponentProps<"div"> & { ratio: number }): ReactElement {
   return (
     <div
       data-slot="aspect-ratio"

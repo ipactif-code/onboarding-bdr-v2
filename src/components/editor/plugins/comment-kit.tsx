@@ -28,7 +28,7 @@ export const commentPlugin = toTPlatePlugin<CommentConfig>(BaseCommentPlugin, {
       let leaf = event.target as HTMLElement;
       let isSet = false;
 
-      const unsetActiveSuggestion = () => {
+      const unsetActiveSuggestion = (): void => {
         setOption('activeId', null);
         isSet = true;
       };

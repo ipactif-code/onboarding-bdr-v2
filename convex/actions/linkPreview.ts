@@ -11,11 +11,11 @@ import {
   FETCH_TIMEOUT_MS,
 } from "../lib/metadataExtractor";
 
-// Type workaround: Use require() to avoid TS2589 deep type instantiation on 'internal'
-// The actual runtime value is still the properly typed internal API, but TypeScript
-// won't try to evaluate the deep FilterApi type
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { internal } = require("../_generated/api") as { internal: any };
+// Type workaround: Use dynamic import pattern to avoid TS2589 deep type instantiation
+// The internalApi variable is typed as 'any' which breaks the deep type chain
+// This is necessary because Convex's internal API generates very deep types
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports
+const internalApi: any = require("../_generated/api").internal;
 
 /**
  * Link preview result type.
@@ -76,7 +76,7 @@ export const generateLinkPreview = action({
 
     // Step 3: Get user from database (needed for rate limiting)
     const user: { _id: Id<"users"> } | null = await ctx.runQuery(
-      internal.users.getByClerkIdInternal,
+      internalApi.users.getByClerkIdInternal,
       { clerkId: identity.subject }
     );
 
@@ -88,7 +88,7 @@ export const generateLinkPreview = action({
 
     // Step 4: Check rate limit (AFTER validation, so invalid URLs don't consume quota)
     const rateLimit: { allowed: boolean; resetAt: number } = await ctx.runMutation(
-      internal.rateLimits.consumeLinkPreviewRateLimit,
+      internalApi.rateLimits.consumeLinkPreviewRateLimit,
       { userId }
     );
 

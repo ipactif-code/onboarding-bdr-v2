@@ -24,6 +24,7 @@ const mockSendVoiceToChannel = vi.fn();
 const mockSendVoiceToConversation = vi.fn();
 
 vi.mock("convex/react", () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   useMutation: vi.fn((fn: any) => {
     if (fn.toString().includes("generateUploadUrl")) {
       return mockGenerateUploadUrl;
@@ -51,6 +52,7 @@ vi.mock("sonner", () => ({
 // Mock fetch
 global.fetch = vi.fn();
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 describe("useVoiceSender (F036)", () => {
   const channelId = "k175xp9v5vkmxekqnjspm53jz574r9r1" as Id<"channels">;
   const conversationId = "k275xp9v5vkmxekqnjspm53jz574r9r2" as Id<"conversations">;
@@ -333,10 +335,10 @@ describe("useVoiceSender (F036)", () => {
     });
 
     it("should prevent concurrent uploads", async () => {
-      let resolveUpload: any;
+      let _resolveUpload: any;
       (global.fetch as any).mockReturnValue(
         new Promise((resolve) => {
-          resolveUpload = resolve;
+          _resolveUpload = resolve;
         })
       );
 
@@ -388,3 +390,4 @@ describe("useVoiceSender (F036)", () => {
     });
   });
 });
+/* eslint-enable @typescript-eslint/no-explicit-any */

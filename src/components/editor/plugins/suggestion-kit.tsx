@@ -44,7 +44,7 @@ export const suggestionPlugin = toTPlatePlugin<SuggestionConfig>(
 
       const isBlockLeaf = leaf.dataset.blockSuggestion === 'true';
 
-      const unsetActiveSuggestion = () => {
+      const unsetActiveSuggestion = (): void => {
         setOption('activeId', null);
         isSet = true;
       };
@@ -82,6 +82,7 @@ export const suggestionPlugin = toTPlatePlugin<SuggestionConfig>(
     },
   },
   render: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Plate.js render config requires any cast
     belowNodes: SuggestionLineBreak as any,
     node: SuggestionLeaf,
   },

@@ -1,9 +1,11 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 
-// Type workaround: Use require() to avoid TS2589 deep type instantiation on 'internal'
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { internal } = require("./_generated/api") as { internal: any };
+// Type workaround: Use dynamic import pattern to avoid TS2589 deep type instantiation
+// The internalApi variable is typed as 'any' which breaks the deep type chain
+// This is necessary because Convex's internal API generates very deep types
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports
+const internalApi: any = require("./_generated/api").internal;
 
 const http = httpRouter();
 
@@ -24,7 +26,7 @@ http.route({
     const body = await request.text();
 
     // Call the Node.js action to verify and process the webhook
-    const result = await ctx.runAction(internal.clerkWebhook.verifyAndProcess, {
+    const result = await ctx.runAction(internalApi.clerkWebhook.verifyAndProcess, {
       body,
       svixId,
       svixTimestamp,

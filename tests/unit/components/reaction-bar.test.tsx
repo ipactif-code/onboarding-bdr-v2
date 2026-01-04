@@ -17,7 +17,7 @@ const mockRemoveReaction = vi.fn();
 
 // Mock Convex React hooks
 vi.mock("convex/react", () => ({
-  useMutation: vi.fn((api) => {
+  useMutation: vi.fn((_api) => {
     // Return mockAddReaction for both mutations (they're called from same hook)
     return mockAddReaction;
   }),
@@ -70,7 +70,7 @@ vi.mock("@/components/ui/button", () => ({
 vi.mock("@/components/ui-plate/tooltip", () => ({
   Tooltip: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   TooltipTrigger: ({
-    asChild,
+    asChild: _asChild,
     children,
   }: {
     asChild?: boolean;

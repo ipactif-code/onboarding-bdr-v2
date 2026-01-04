@@ -1,7 +1,7 @@
 import { BaseCalloutPlugin } from '@platejs/callout';
 
-import { CalloutElementStatic } from '@/components/ui/callout-node-static';
+import { CalloutElement } from '@/components/ui/callout-node';
 
 export const BaseCalloutKit = [
-  BaseCalloutPlugin.withComponent(CalloutElementStatic),
+  BaseCalloutPlugin.withComponent(CalloutElement),
 ];

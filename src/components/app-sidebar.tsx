@@ -42,7 +42,7 @@ const getNavigationItems = (isAdmin: boolean): NavigationItem[] => [
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3, showFor: "admin" },
 ]
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): React.ReactElement {
   const pathname = usePathname()
   const router = useRouter()
   const { isAdmin } = useUserContext()

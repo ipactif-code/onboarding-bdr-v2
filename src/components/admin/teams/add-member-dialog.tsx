@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { Id } from "../../../../convex/_generated/dataModel";
 
@@ -29,7 +29,7 @@ interface AddMemberDialogProps {
   existingMemberIds: Id<"users">[];
 }
 
-export function AddMemberDialog({ teamId, existingMemberIds }: AddMemberDialogProps) {
+export function AddMemberDialog({ teamId, existingMemberIds }: AddMemberDialogProps): ReactElement {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [selectedUserIds, setSelectedUserIds] = useState<Id<"users">[]>([]);
@@ -47,7 +47,7 @@ export function AddMemberDialog({ teamId, existingMemberIds }: AddMemberDialogPr
   );
 
   // Toggle user selection
-  const toggleUser = (userId: Id<"users">) => {
+  const toggleUser = (userId: Id<"users">): void => {
     setSelectedUserIds((prev) =>
       prev.includes(userId)
         ? prev.filter((id) => id !== userId)
@@ -56,7 +56,7 @@ export function AddMemberDialog({ teamId, existingMemberIds }: AddMemberDialogPr
   };
 
   // Add selected members
-  const handleAddMembers = async () => {
+  const handleAddMembers = async (): Promise<void> => {
     if (selectedUserIds.length === 0) return;
 
     setIsAdding(true);

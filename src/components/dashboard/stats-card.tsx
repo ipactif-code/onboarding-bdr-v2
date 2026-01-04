@@ -1,3 +1,4 @@
+import { type ReactElement } from "react";
 import { LucideIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -21,7 +22,7 @@ export function StatsCard({
   icon: Icon,
   trend,
   className,
-}: StatsCardProps) {
+}: StatsCardProps): ReactElement {
   return (
     <Card className={cn("", className)}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">

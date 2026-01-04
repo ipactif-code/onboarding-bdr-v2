@@ -1,5 +1,6 @@
 "use client";
 
+import { type ReactElement } from "react";
 import { format } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -25,7 +26,7 @@ interface MessageBubbleProps {
   isOwn: boolean;
 }
 
-export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
+export function MessageBubble({ message, isOwn }: MessageBubbleProps): ReactElement {
   const initials = message.senderName
     .split(" ")
     .map((n) => n[0])

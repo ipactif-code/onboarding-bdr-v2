@@ -1,5 +1,6 @@
 "use client";
 
+import { type ReactElement } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface ChatHeaderProps {
@@ -8,7 +9,7 @@ interface ChatHeaderProps {
   isOnline?: boolean;
 }
 
-export function ChatHeader({ name, avatar, isOnline }: ChatHeaderProps) {
+export function ChatHeader({ name, avatar, isOnline }: ChatHeaderProps): ReactElement {
   const initials = name
     .split(" ")
     .map((n) => n[0])

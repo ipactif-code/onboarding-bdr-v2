@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Id } from "../../../../convex/_generated/dataModel";
 import Link from "next/link";
@@ -44,7 +44,7 @@ interface TeamActionsCellProps {
   onDelete: (id: Id<"teams">) => void;
 }
 
-function TeamActionsCell({ team, onDelete }: TeamActionsCellProps) {
+function TeamActionsCell({ team, onDelete }: TeamActionsCellProps): ReactElement {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   return (

@@ -1,5 +1,6 @@
 "use client";
 
+import { type ReactElement } from "react";
 import { Id } from "../../../convex/_generated/dataModel";
 import { MessageBubble } from "./message-bubble";
 
@@ -17,7 +18,7 @@ interface MessageListProps {
   messages: Message[];
 }
 
-export function MessageList({ messages }: MessageListProps) {
+export function MessageList({ messages }: MessageListProps): ReactElement {
   if (messages.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">

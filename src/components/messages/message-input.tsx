@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, type ReactElement } from "react";
 import { Paperclip, Send, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,13 +9,13 @@ interface MessageInputProps {
   onSend: (content: string, attachments?: File[]) => Promise<void>;
 }
 
-export function MessageInput({ onSend }: MessageInputProps) {
+export function MessageInput({ onSend }: MessageInputProps): ReactElement {
   const [content, setContent] = useState("");
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isSending, setIsSending] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     if (!content.trim() && attachments.length === 0) return;
 
@@ -29,14 +29,14 @@ export function MessageInput({ onSend }: MessageInputProps) {
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent): void => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSubmit(e);
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const files = Array.from(e.target.files || []);
     setAttachments((prev) => [...prev, ...files]);
     if (fileInputRef.current) {
@@ -44,7 +44,7 @@ export function MessageInput({ onSend }: MessageInputProps) {
     }
   };
 
-  const removeAttachment = (index: number) => {
+  const removeAttachment = (index: number): void => {
     setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 

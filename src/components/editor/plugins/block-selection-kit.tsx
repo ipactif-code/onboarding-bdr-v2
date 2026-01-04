@@ -25,6 +25,7 @@ export const BlockSelectionKit = [
         if (!props.attributes.className?.includes('slate-selectable'))
           return null;
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Plate.js render prop typing requires any cast
         return <BlockSelection {...(props as any)} />;
       },
     },

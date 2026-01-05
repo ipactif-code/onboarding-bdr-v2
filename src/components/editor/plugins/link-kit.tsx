@@ -76,7 +76,7 @@ export const linkPlugin = toTPlatePlugin<LinkConfig>(BaseLinkPlugin, {
     },
   });
 
-export const useActiveLink = () => {
+export const useActiveLink = (): ReturnType<typeof useEditorSelector> => {
   const mode = usePluginOption(linkPlugin, 'mode');
   const activeLinkId = usePluginOption(linkPlugin, 'activeId');
 

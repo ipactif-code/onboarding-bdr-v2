@@ -217,7 +217,7 @@ function MediaPlaceholderPopover({ children }: { children: React.ReactNode }) {
       const firstFile = updatedFiles[0];
       const restFiles = updatedFiles.slice(1);
 
-      replaceCurrentPlaceholder(firstFile);
+      if (firstFile) { replaceCurrentPlaceholder(firstFile); }
 
       if (restFiles.length > 0) {
         tf.insert.media(restFiles as unknown as FileList);

@@ -29,7 +29,7 @@ function ScrollArea({
 }
 
 function ScrollBar({
-  className,
+  className: _className,
   orientation = "vertical",
   ...props
 }: ScrollAreaPrimitive.Scrollbar.Props) {

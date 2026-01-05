@@ -66,7 +66,7 @@ export function MessageInput({
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (): Promise<void> => {
     const trimmedValue = value.trim();
     if (!trimmedValue || isSubmitting || disabled) return;
 
@@ -93,7 +93,7 @@ export function MessageInput({
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
     // Submit on Enter (without Shift)
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -101,7 +101,7 @@ export function MessageInput({
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
     setValue(e.target.value);
     onTyping?.();
   };

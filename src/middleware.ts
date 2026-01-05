@@ -8,7 +8,7 @@ const isProtectedRoute = createRouteMatcher([
   "/profile(.*)",
 ]);
 
-const isPublicRoute = createRouteMatcher([
+const _isPublicRoute = createRouteMatcher([
   "/",
   "/sign-in(.*)",
   "/sign-up(.*)",

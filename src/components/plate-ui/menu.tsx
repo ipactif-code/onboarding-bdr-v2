@@ -230,7 +230,7 @@ export function MenuShortcut({ ...props }: React.ComponentProps<'span'>) {
 }
 
 const menuItemVariants = cva(
-  'group/menu-item relative flex min-h-[28px] select-none items-center justify-between gap-2 px-2.5 text-accent-foreground text-sm outline-hidden transition-bg-ease data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:size-4',
+  'group/menu-item relative flex min-h-[28px] select-none items-center justify-between gap-2 px-2.5 text-popover-foreground text-sm outline-hidden transition-bg-ease data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:size-4',
   {
     defaultVariants: {
       isEmpty: false,
@@ -239,7 +239,7 @@ const menuItemVariants = cva(
     variants: {
       isEmpty: {
         false:
-          'cursor-pointer hover:bg-accent aria-expanded:bg-accent aria-selected:bg-accent data-active-item:bg-accent data-active-item:text-accent-foreground',
+          'cursor-pointer hover:bg-accent aria-expanded:bg-accent aria-selected:bg-accent data-active-item:bg-accent data-active-item:text-popover-foreground',
         true: 'text-muted-foreground',
       },
       variant: {

@@ -124,7 +124,7 @@ export function LessonEditor({
   lesson: initialLesson,
   courseId,
   courseTitle,
-}: LessonEditorProps) {
+}: LessonEditorProps): React.ReactElement {
   const router = useRouter();
 
   // Fetch fresh lesson data
@@ -155,7 +155,7 @@ export function LessonEditor({
 
   // Embed settings state (only used when lesson.type === "embed")
   const [embedUrl, setEmbedUrl] = useState(lesson.embedConfig?.url ?? "");
-  const [embedProvider, setEmbedProvider] = useState<"youtube" | "vimeo" | "loom" | "figma" | "other">(
+  const [_embedProvider, setEmbedProvider] = useState<"youtube" | "vimeo" | "loom" | "figma" | "other">(
     lesson.embedConfig?.provider ?? "other"
   );
 
@@ -235,7 +235,7 @@ export function LessonEditor({
   };
 
   // Save basic info (and quiz/embed config if applicable)
-  const handleSaveInfo = async () => {
+  const handleSaveInfo = async (): Promise<void> => {
     setIsSaving(true);
     try {
       // Save basic lesson info
@@ -269,21 +269,21 @@ export function LessonEditor({
 
       setHasUnsavedChanges(false);
       toast.success("Lesson saved");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to save lesson");
+    } catch (_error) {
+      toast.error(_error instanceof Error ? _error.message : "Failed to save lesson");
     } finally {
       setIsSaving(false);
     }
   };
 
   // Delete lesson
-  const handleDelete = async () => {
+  const handleDelete = async (): Promise<void> => {
     try {
       await removeLesson({ lessonId: lesson._id });
       toast.success("Lesson deleted");
       router.push(`/admin/courses/${courseId}`);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to delete lesson");
+    } catch (_error) {
+      toast.error(_error instanceof Error ? _error.message : "Failed to delete lesson");
     }
   };
 
@@ -773,7 +773,7 @@ interface QuizLessonEditorProps {
   };
 }
 
-function QuizLessonEditor({ lessonId, quizConfig }: QuizLessonEditorProps) {
+function QuizLessonEditor({ lessonId, quizConfig }: QuizLessonEditorProps): React.ReactElement {
   // Questions from props (included in lessons.get response)
   const questions = quizConfig?.questions ?? [];
 
@@ -800,7 +800,7 @@ function QuizLessonEditor({ lessonId, quizConfig }: QuizLessonEditorProps) {
   const updateQuestion = useMutation(api.lessons.updateQuestion);
   const removeQuestion = useMutation(api.lessons.removeQuestion);
 
-  const handleAddQuestion = async () => {
+  const handleAddQuestion = async (): Promise<void> => {
     if (!newQuestionText.trim()) {
       toast.error("Please enter a question");
       return;
@@ -837,24 +837,24 @@ function QuizLessonEditor({ lessonId, quizConfig }: QuizLessonEditorProps) {
       setNewPoints("1");
       setShowNewQuestion(false);
       toast.success("Question added");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to add question");
+    } catch (_error) {
+      toast.error(_error instanceof Error ? _error.message : "Failed to add question");
     } finally {
       setIsAddingQuestion(false);
     }
   };
 
-  const handleDeleteQuestion = async (questionId: Id<"quizQuestions">) => {
+  const handleDeleteQuestion = async (questionId: Id<"quizQuestions">): Promise<void> => {
     try {
       await removeQuestion({ questionId });
       toast.success("Question deleted");
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete question");
     }
   };
 
   // Start editing a question
-  const handleStartEdit = (question: typeof questions[0]) => {
+  const handleStartEdit = (question: typeof questions[0]): void => {
     setEditingQuestionId(question._id);
     setEditQuestionText(question.questionText);
     setEditOptions([...question.options]);
@@ -864,7 +864,7 @@ function QuizLessonEditor({ lessonId, quizConfig }: QuizLessonEditorProps) {
   };
 
   // Cancel editing
-  const handleCancelEdit = () => {
+  const handleCancelEdit = (): void => {
     setEditingQuestionId(null);
     setEditQuestionText("");
     setEditOptions([]);
@@ -873,7 +873,7 @@ function QuizLessonEditor({ lessonId, quizConfig }: QuizLessonEditorProps) {
   };
 
   // Save edited question
-  const handleSaveEdit = async () => {
+  const handleSaveEdit = async (): Promise<void> => {
     if (!editingQuestionId) return;
 
     if (!editQuestionText.trim()) {
@@ -903,8 +903,8 @@ function QuizLessonEditor({ lessonId, quizConfig }: QuizLessonEditorProps) {
       });
       handleCancelEdit();
       toast.success("Question updated");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to update question");
+    } catch (_error) {
+      toast.error(_error instanceof Error ? _error.message : "Failed to update question");
     } finally {
       setIsSavingQuestion(false);
     }
@@ -1324,14 +1324,14 @@ function FilesLessonEditor({ lessonId, initialContent, files }: FilesLessonEdito
   );
 
   // Format file size
-  const formatFileSize = (bytes: number) => {
+  const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   // Handle file upload via UploadThing
-  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
     const selectedFiles = event.target.files;
     if (!selectedFiles || selectedFiles.length === 0) return;
 
@@ -1369,22 +1369,22 @@ function FilesLessonEditor({ lessonId, initialContent, files }: FilesLessonEdito
 
       // Reset input
       event.target.value = "";
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to upload file");
-      console.error(error);
+    } catch (_error) {
+      toast.error(_error instanceof Error ? _error.message : "Failed to upload file");
+      console.error(_error);
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
     }
   };
 
-  const handleDeleteFile = async (fileId: Id<"files">) => {
+  const handleDeleteFile = async (fileId: Id<"files">): Promise<void> => {
     try {
       await removeAttachment({ fileId });
       toast.success("File deleted");
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to delete file");
-      console.error(error);
+      console.error(_error);
     }
   };
 

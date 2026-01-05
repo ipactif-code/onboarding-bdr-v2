@@ -1,3 +1,4 @@
+import type { ReactElement } from "react";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { ConvexHttpClient } from "convex/browser";
@@ -14,7 +15,7 @@ interface PageProps {
   params: Promise<{ teamId: string }>;
 }
 
-export default async function TeamDetailPage({ params }: PageProps) {
+export default async function TeamDetailPage({ params }: PageProps): Promise<ReactElement> {
   const { userId } = await auth();
 
   if (!userId) {

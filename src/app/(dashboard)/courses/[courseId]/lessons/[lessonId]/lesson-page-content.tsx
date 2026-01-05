@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactElement } from "react";
 import { useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { Id } from "../../../../../../../convex/_generated/dataModel";
@@ -19,7 +20,7 @@ interface LessonPageContentProps {
   lessonId: string;
 }
 
-export function LessonPageContent({ courseId, lessonId }: LessonPageContentProps) {
+export function LessonPageContent({ courseId, lessonId }: LessonPageContentProps): ReactElement {
   // Fetch lesson data
   const lesson = useQuery(api.lessons.get, {
     lessonId: lessonId as Id<"lessons">,
@@ -143,7 +144,7 @@ export function LessonPageContent({ courseId, lessonId }: LessonPageContentProps
   );
 }
 
-function LessonPageSkeleton() {
+function LessonPageSkeleton(): ReactElement {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex-1 p-6 max-w-4xl mx-auto w-full space-y-6">

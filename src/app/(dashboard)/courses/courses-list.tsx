@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactElement } from "react";
 import { useState, useMemo } from "react";
 import { useQuery } from "convex/react";
 
@@ -20,7 +21,7 @@ import { CourseCard } from "@/components/courses/course-card";
 
 type StatusFilter = "all" | "not-started" | "in-progress" | "completed";
 
-export function CoursesList() {
+export function CoursesList(): ReactElement {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [tagFilter, setTagFilter] = useState<string>("all");
@@ -160,7 +161,7 @@ export function CoursesList() {
   );
 }
 
-function CoursesListSkeleton() {
+function CoursesListSkeleton(): ReactElement {
   return (
     <div className="space-y-6">
       {/* Header skeleton */}

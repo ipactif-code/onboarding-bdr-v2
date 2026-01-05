@@ -1,3 +1,4 @@
+import type { ReactElement } from "react";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { CoursePageContent } from "./course-page-content";
@@ -6,7 +7,7 @@ interface CoursePageProps {
   params: Promise<{ courseId: string }>;
 }
 
-export default async function CoursePage({ params }: CoursePageProps) {
+export default async function CoursePage({ params }: CoursePageProps): Promise<ReactElement> {
   const { courseId } = await params;
   const { userId } = await auth();
 

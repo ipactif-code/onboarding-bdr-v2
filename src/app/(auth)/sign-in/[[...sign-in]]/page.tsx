@@ -1,6 +1,7 @@
+import type { ReactElement } from "react";
 import { SignIn } from "@clerk/nextjs";
 
-export default function SignInPage() {
+export default function SignInPage(): ReactElement {
   return (
     <div className="flex min-h-screen items-center justify-center">
       <SignIn

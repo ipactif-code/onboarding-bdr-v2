@@ -1,3 +1,4 @@
+import type { ReactElement } from "react";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { ConvexHttpClient } from "convex/browser";
@@ -9,7 +10,7 @@ const api: any = require("../../../../../convex/_generated/api").api;
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
-export default async function AdminTeamsPage() {
+export default async function AdminTeamsPage(): Promise<ReactElement> {
   const { userId } = await auth();
 
   if (!userId) {

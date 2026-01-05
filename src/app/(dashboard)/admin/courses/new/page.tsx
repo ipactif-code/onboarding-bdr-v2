@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactElement } from "react";
 import { useState } from "react";
 import { useMutation } from "convex/react";
 import { useRouter } from "next/navigation";
@@ -15,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
-export default function NewCoursePage() {
+export default function NewCoursePage(): ReactElement {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -23,7 +24,7 @@ export default function NewCoursePage() {
 
   const createCourse = useMutation(api.courses.create);
 
-  const handleCreate = async () => {
+  const handleCreate = async (): Promise<void> => {
     if (!title.trim()) {
       toast.error("Please enter a course title");
       return;
@@ -37,8 +38,8 @@ export default function NewCoursePage() {
       });
       toast.success("Course created");
       router.push(`/admin/courses/${courseId}`);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to create course");
+    } catch (_error) {
+      toast.error(_error instanceof Error ? _error.message : "Failed to create course");
       setIsCreating(false);
     }
   };

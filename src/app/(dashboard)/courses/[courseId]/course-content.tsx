@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactElement } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Flag, ChevronLeft, ChevronRight, Check } from "lucide-react";
@@ -11,7 +12,7 @@ interface CourseContentProps {
   course: CourseWithProgress;
 }
 
-export function CourseContent({ course }: CourseContentProps) {
+export function CourseContent({ course }: CourseContentProps): ReactElement {
   // Build a map of lesson completion status
   const lessonStatusMap = new Map(
     course.userProgress.lessonStatuses.map((s) => [s.lessonId, s.status])
@@ -143,7 +144,7 @@ interface LessonCheckItemProps {
   courseId: string;
 }
 
-function LessonCheckItem({ lesson, courseId }: LessonCheckItemProps) {
+function LessonCheckItem({ lesson, courseId }: LessonCheckItemProps): ReactElement {
   return (
     <Link
       href={`/courses/${courseId}/lessons/${lesson._id}`}

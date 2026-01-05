@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactElement } from "react";
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { Id } from "../../../../../convex/_generated/dataModel";
@@ -29,7 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useUser } from "@clerk/nextjs";
 
-export function TeamsList() {
+export function TeamsList(): ReactElement {
   const [activeTab, setActiveTab] = useState("teams");
   const [search, setSearch] = useState("");
   const [newTeamOpen, setNewTeamOpen] = useState(false);
@@ -54,7 +55,7 @@ export function TeamsList() {
   const removeTeam = useMutation(api.teams.remove);
 
   // Create team handler
-  const handleCreateTeam = async () => {
+  const handleCreateTeam = async (): Promise<void> => {
     if (!newTeamName.trim()) return;
 
     setIsCreating(true);
@@ -67,9 +68,9 @@ export function TeamsList() {
       setNewTeamDescription("");
       setNewTeamOpen(false);
       toast.success("Team created");
-    } catch (error) {
+    } catch (_error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to create team"
+        _error instanceof Error ? _error.message : "Failed to create team"
       );
     } finally {
       setIsCreating(false);
@@ -77,19 +78,19 @@ export function TeamsList() {
   };
 
   // Delete team handler
-  const handleDeleteTeam = async (teamId: Id<"teams">) => {
+  const handleDeleteTeam = async (teamId: Id<"teams">): Promise<void> => {
     try {
       await removeTeam({ teamId });
       toast.success("Team deleted");
-    } catch (error) {
+    } catch (_error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to delete team"
+        _error instanceof Error ? _error.message : "Failed to delete team"
       );
     }
   };
 
   // Delete user handler - calls API route to delete from Clerk
-  const handleDeleteUser = async (userId: Id<"users">, clerkId: string) => {
+  const handleDeleteUser = async (userId: Id<"users">, clerkId: string): Promise<void> => {
     try {
       const response = await fetch(`/api/users/${userId}`, {
         method: "DELETE",
@@ -104,9 +105,9 @@ export function TeamsList() {
       }
 
       toast.success("User deleted successfully");
-    } catch (error) {
+    } catch (_error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to delete user"
+        _error instanceof Error ? _error.message : "Failed to delete user"
       );
     }
   };
@@ -233,7 +234,7 @@ export function TeamsList() {
   );
 }
 
-function TableSkeleton() {
+function TableSkeleton(): ReactElement {
   return (
     <div className="space-y-4">
       <Skeleton className="h-10 w-full" />

@@ -5,7 +5,7 @@ interface LessonPageProps {
   params: Promise<{ courseId: string; lessonId: string }>;
 }
 
-export default async function LessonPage({ params }: LessonPageProps) {
+export default async function LessonPage({ params }: LessonPageProps): Promise<never> {
   const { courseId, lessonId } = await params;
   const { userId } = await auth();
 

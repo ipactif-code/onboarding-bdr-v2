@@ -31,7 +31,7 @@ export type ControlFunctions<ReturnT> = {
  * invocation. Note, that if there are no previous invocations you will get
  * undefined. You should check it in your code properly.
  */
-export interface DebouncedState<T extends (...args: any) => ReturnType<T>>
+export interface DebouncedState<T extends (...args: Parameters<T>) => ReturnType<T>>
   extends ControlFunctions<ReturnType<T>> {
   (...args: Parameters<T>): ReturnType<T> | undefined;
 }
@@ -116,15 +116,15 @@ export interface Options extends CallOptions {
  * @param {boolean} [options.trailing=true] Default is `true`
  * @returns {Function} Returns the new debounced function.
  */
-export function useDebouncedCallback<T extends (...args: any) => ReturnType<T>>(
+export function useDebouncedCallback<T extends (...args: Parameters<T>) => ReturnType<T>>(
   func: T,
   wait?: number,
   options?: Options
 ): DebouncedState<T> {
-  const lastCallTime = useRef<any>(null);
+  const lastCallTime = useRef<number | null>(null);
   const lastInvokeTime = useRef(0);
-  const timerId = useRef<any>(null);
-  const lastArgs = useRef<any>([]);
+  const timerId = useRef<ReturnType<typeof setTimeout> | number | null>(null);
+  const lastArgs = useRef<Parameters<T> | null>(null);
   const lastThis = useRef<unknown>(undefined);
   const result = useRef<ReturnType<T>>(undefined);
   const funcRef = useRef(func);
@@ -174,26 +174,26 @@ export function useDebouncedCallback<T extends (...args: any) => ReturnType<T>>(
   // And the last reason, that the code without lots of useCallback with deps is easier to read.
   // You have only one place for that.
   const debounced = useMemo(() => {
-    const invokeFunc = (time: number) => {
+    const invokeFunc = (time: number): ReturnType<T> => {
       const args = lastArgs.current;
       const thisArg = lastThis.current;
 
       lastArgs.current = lastThis.current = null;
       lastInvokeTime.current = time;
 
-      result.current = funcRef.current.apply(thisArg, args);
+      result.current = funcRef.current.apply(thisArg, args as Parameters<T>);
       return result.current;
     };
 
-    const startTimer = (pendingFunc: () => void, wait: number) => {
-      if (useRAF) cancelAnimationFrame(timerId.current);
+    const startTimer = (pendingFunc: () => void, waitTime: number): void => {
+      if (useRAF) cancelAnimationFrame(timerId.current as number);
 
       timerId.current = useRAF
         ? requestAnimationFrame(pendingFunc)
-        : setTimeout(pendingFunc, wait);
+        : setTimeout(pendingFunc, waitTime);
     };
 
-    const shouldInvoke = (time: number) => {
+    const shouldInvoke = (time: number): boolean => {
       if (!mounted.current) return false;
 
       const timeSinceLastCall = time - (lastCallTime.current ?? 0);
@@ -210,7 +210,7 @@ export function useDebouncedCallback<T extends (...args: any) => ReturnType<T>>(
       );
     };
 
-    const trailingEdge = (time: number) => {
+    const trailingEdge = (time: number): ReturnType<T> | undefined => {
       timerId.current = null;
 
       // Only invoke if we have `lastArgs` which means `func` has been
@@ -282,15 +282,15 @@ export function useDebouncedCallback<T extends (...args: any) => ReturnType<T>>(
         startTimer(timerExpired, actualWait);
       }
 
-      return result.current as any;
+      return result.current as ReturnType<T>;
     };
 
     func.cancel = () => {
       if (timerId.current) {
         if (useRAF) {
-          cancelAnimationFrame(timerId.current);
+          cancelAnimationFrame(timerId.current as number);
         } else {
-          clearTimeout(timerId.current);
+          clearTimeout(timerId.current as ReturnType<typeof setTimeout>);
         }
       }
 

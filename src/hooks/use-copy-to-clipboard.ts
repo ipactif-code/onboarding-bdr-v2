@@ -6,13 +6,16 @@ export const useCopyToClipboard = ({
   timeout = 2000,
 }: {
   timeout?: number;
-} = {}) => {
+} = {}): {
+  copyToClipboard: (value: string, options?: { data?: ExternalToast; tooltip?: string }) => void;
+  isCopied: boolean;
+} => {
   const [isCopied, setIsCopied] = React.useState(false);
 
   const copyToClipboard = (
     value: string,
     { data, tooltip }: { data?: ExternalToast; tooltip?: string } = {}
-  ) => {
+  ): void => {
     if (typeof window === 'undefined' || !navigator.clipboard?.writeText) {
       return;
     }

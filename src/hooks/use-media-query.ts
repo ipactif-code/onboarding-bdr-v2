@@ -13,7 +13,7 @@ export const useMediaQuery = (query: string): boolean => {
 
   const [matches, setMatches] = useState<boolean>(getMatches(query));
 
-  function handleChange() {
+  function handleChange(): void {
     setMatches(getMatches(query));
   }
 

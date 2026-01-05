@@ -60,7 +60,7 @@ export function useEventListener<
   ) => void,
   element?: React.RefObject<T>,
   options?: AddEventListenerOptions | boolean
-) {
+): void {
   // Create a ref that stores handler
   const savedHandler = useRef(handler);
 

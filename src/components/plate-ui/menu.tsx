@@ -239,7 +239,7 @@ const menuItemVariants = cva(
     variants: {
       isEmpty: {
         false:
-          'cursor-pointer hover:bg-accent aria-expanded:bg-accent aria-selected:bg-accent data-active-item:bg-accent data-active-item:text-popover-foreground',
+          'cursor-pointer hover:bg-accent hover:text-accent-foreground aria-expanded:bg-accent aria-selected:bg-accent data-active-item:bg-accent data-active-item:text-accent-foreground',
         true: 'text-muted-foreground',
       },
       variant: {

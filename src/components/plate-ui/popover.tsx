@@ -21,7 +21,7 @@ const popoverVariants = cva(
         default: 'w-72',
         equation: 'w-[400px] rounded-lg px-2.5 py-2',
         equationInline: 'w-[400px] rounded-lg px-2.5 py-2',
-        media: 'max-h-[70vh] min-w-[180px] rounded-lg',
+        media: 'max-h-[70vh] min-w-[180px] rounded-lg border border-border',
       },
     },
   }

@@ -308,7 +308,7 @@ function MediaPlaceholderPopover({ children }: { children: React.ReactNode }) {
             <TabsTrigger value="password">Embed link</TabsTrigger>
           </TabsList>
           <TabsContent className="w-[300px] px-3 py-2" value="account">
-            <Button className="w-full" onClick={openFilePicker} variant="brand">
+            <Button className="w-full" onClick={openFilePicker} variant="default">
               {currentMedia?.buttonText}
             </Button>
             <div className="mt-3 text-muted-foreground text-xs">
@@ -329,7 +329,7 @@ function MediaPlaceholderPopover({ children }: { children: React.ReactNode }) {
             <Button
               className="mt-2 w-full max-w-[300px]"
               onClick={() => onEmbed(embedValue)}
-              variant="brand"
+              variant="default"
             >
               {currentMedia?.embedText}
             </Button>

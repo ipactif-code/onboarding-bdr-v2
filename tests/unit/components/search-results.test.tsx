@@ -92,6 +92,7 @@ vi.mock("@/lib/utils", () => ({
 // Test Data
 // ============================================================================
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 const createMockResult = (overrides?: Partial<SearchResult>): SearchResult => ({
   _id: "msg1" as any,
   content: "Hello world",
@@ -103,11 +104,13 @@ const createMockResult = (overrides?: Partial<SearchResult>): SearchResult => ({
   contentType: "text",
   ...overrides,
 });
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 // ============================================================================
 // Tests
 // ============================================================================
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 describe("SearchResults", () => {
   const mockOnLoadMore = vi.fn();
   const mockOnResultClick = vi.fn();
@@ -783,3 +786,4 @@ describe("SearchResults", () => {
     expect(ariaBusyElements.length).toBeGreaterThan(0);
   });
 });
+/* eslint-enable @typescript-eslint/no-explicit-any */

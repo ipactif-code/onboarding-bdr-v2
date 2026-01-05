@@ -1,10 +1,8 @@
 'use client';
 
-import type { TComment } from '@/components/ui/comment';
-
 import { createPlatePlugin } from 'platejs/react';
-
-import { BlockDiscussion } from '@/components/ui/block-discussion';
+import { BlockDiscussion } from '@/components/plate-ui/block-discussion';
+import type { TComment } from '@/components/plate-ui/comment';
 
 export type TDiscussion = {
   id: string;
@@ -25,6 +23,92 @@ const discussionsData: TDiscussion[] = [
           {
             children: [
               {
+                text: 'This is a comment',
+              },
+            ],
+            type: 'p',
+          },
+        ],
+        createdAt: new Date(Date.now() - 900_000),
+        discussionId: 'discussion1',
+        isEdited: false,
+        userId: 'alice',
+      },
+    ],
+    createdAt: new Date(),
+    documentContent: 'comments to your content',
+    isResolved: false,
+    userId: 'alice',
+  },
+  {
+    id: 'discussion2',
+    comments: [
+      {
+        id: 'comment1',
+        contentRich: [
+          {
+            children: [
+              {
+                text: 'Hey, what do you think about this approach?',
+              },
+            ],
+            type: 'p',
+          },
+        ],
+        createdAt: new Date(Date.now() - 900_000),
+        discussionId: 'discussion1',
+        isEdited: false,
+        userId: 'alice',
+      },
+      {
+        id: 'comment2',
+        contentRich: [
+          {
+            children: [
+              {
+                text: 'Looks good!',
+              },
+            ],
+            type: 'p',
+          },
+        ],
+        createdAt: new Date(Date.now() - 800_000),
+        discussionId: 'discussion1',
+        isEdited: false,
+        userId: 'bob',
+      },
+      {
+        id: 'comment3',
+        contentRich: [
+          {
+            children: [
+              {
+                text: 'Thanks for the feedback!',
+              },
+            ],
+            type: 'p',
+          },
+        ],
+        createdAt: new Date(Date.now() - 700_000),
+        discussionId: 'discussion1',
+        isEdited: false,
+        userId: 'alice',
+      },
+    ],
+    createdAt: new Date(),
+    documentContent: 'collaborate',
+    isResolved: false,
+    userId: 'bob',
+  },
+  {
+    id: 'discussion4',
+    comments: [
+      {
+        id: 'comment1',
+        contentRich: [
+          {
+            children: [
+              {
                 text: 'Comments are a great way to provide feedback and discuss changes.',
               },
             ],
@@ -32,7 +116,7 @@ const discussionsData: TDiscussion[] = [
           },
         ],
         createdAt: new Date(Date.now() - 600_000),
-        discussionId: 'discussion1',
+        discussionId: 'discussion4',
         isEdited: false,
         userId: 'charlie',
       },
@@ -49,7 +133,7 @@ const discussionsData: TDiscussion[] = [
           },
         ],
         createdAt: new Date(Date.now() - 500_000),
-        discussionId: 'discussion1',
+        discussionId: 'discussion4',
         isEdited: false,
         userId: 'bob',
       },
@@ -60,7 +144,33 @@ const discussionsData: TDiscussion[] = [
     userId: 'charlie',
   },
   {
-    id: 'discussion2',
+    id: 'discussion5',
+    comments: [
+      {
+        id: 'comment1',
+        contentRich: [
+          {
+            children: [
+              {
+                text: 'This is a good example of how to use comments.',
+              },
+            ],
+            type: 'p',
+          },
+        ],
+        createdAt: new Date(Date.now() - 400_000),
+        discussionId: 'discussion5',
+        isEdited: false,
+        userId: 'alice',
+      },
+    ],
+    createdAt: new Date(),
+    documentContent: 'comments on many text segments',
+    isResolved: false,
+    userId: 'alice',
+  },
+  {
+    id: 'discussion6',
     comments: [
       {
         id: 'comment1',
@@ -75,7 +185,7 @@ const discussionsData: TDiscussion[] = [
           },
         ],
         createdAt: new Date(Date.now() - 300_000),
-        discussionId: 'discussion2',
+        discussionId: 'discussion6',
         isEdited: false,
         userId: 'bob',
       },
@@ -92,7 +202,7 @@ const discussionsData: TDiscussion[] = [
           },
         ],
         createdAt: new Date(Date.now() - 200_000),
-        discussionId: 'discussion2',
+        discussionId: 'discussion6',
         isEdited: false,
         userId: 'charlie',
       },

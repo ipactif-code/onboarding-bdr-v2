@@ -751,4 +751,363 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_status", ["status"])
     .index("by_requested", ["requestedAt"]),
+
+  // ============================================================================
+  // KNOWLEDGE BASE TABLES
+  // ============================================================================
+
+  /**
+   * Knowledge Base Workspaces - Top-level organizational container for documentation.
+   * Acts as the root container for folders and documents.
+   */
+  kbWorkspaces: defineTable({
+    // Identity
+    name: v.string(),
+    slug: v.string(), // URL-safe identifier
+    description: v.optional(v.string()),
+
+    // Appearance
+    icon: v.optional(v.string()), // Emoji or icon name
+    coverImageId: v.optional(v.id("_storage")),
+
+    // Ownership
+    ownerId: v.id("users"),
+
+    // Default permissions for new items
+    defaultPermission: v.union(
+      v.literal("none"),
+      v.literal("read"),
+      v.literal("write")
+    ),
+
+    // State
+    isArchived: v.boolean(),
+    archivedAt: v.optional(v.number()),
+    archivedBy: v.optional(v.id("users")),
+
+    // Timestamps (milliseconds)
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_owner", ["ownerId"])
+    .index("by_slug", ["slug"])
+    .index("by_archived", ["isArchived"])
+    .searchIndex("search_name", {
+      searchField: "name",
+      filterFields: ["ownerId", "isArchived"],
+    }),
+
+  /**
+   * Knowledge Base Folders - Hierarchical container within workspaces.
+   * Supports unlimited nesting with self-referential parentId.
+   */
+  kbFolders: defineTable({
+    // Identity
+    name: v.string(),
+
+    // Hierarchy
+    workspaceId: v.id("kbWorkspaces"),
+    parentId: v.optional(v.id("kbFolders")), // null = root level
+
+    // Appearance
+    icon: v.optional(v.string()),
+
+    // Ordering
+    displayOrder: v.number(),
+
+    // State
+    isArchived: v.boolean(),
+    archivedAt: v.optional(v.number()),
+    archivedBy: v.optional(v.id("users")),
+
+    // Timestamps (milliseconds)
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_workspace", ["workspaceId"])
+    .index("by_parent", ["parentId"])
+    .index("by_workspace_parent", ["workspaceId", "parentId"])
+    .index("by_workspace_order", ["workspaceId", "displayOrder"])
+    .index("by_archived", ["isArchived"]),
+
+  /**
+   * Knowledge Base Documents - Document metadata.
+   * Content is stored separately in kbDocumentContent for performance.
+   */
+  kbDocuments: defineTable({
+    // Identity
+    title: v.string(),
+
+    // Hierarchy
+    folderId: v.id("kbFolders"),
+
+    // Appearance
+    icon: v.optional(v.string()),
+    coverImageId: v.optional(v.id("_storage")),
+
+    // Ownership
+    creatorId: v.id("users"),
+
+    // Status
+    status: v.union(
+      v.literal("draft"),
+      v.literal("published"),
+      v.literal("archived")
+    ),
+    publishedAt: v.optional(v.number()),
+
+    // Ordering
+    displayOrder: v.number(),
+
+    // Metadata
+    wordCount: v.optional(v.number()),
+    lastEditedBy: v.optional(v.id("users")),
+
+    // State
+    archivedAt: v.optional(v.number()),
+    archivedBy: v.optional(v.id("users")),
+    permanentDeleteAt: v.optional(v.number()), // 90 days after archive
+
+    // Timestamps (milliseconds)
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_folder", ["folderId"])
+    .index("by_creator", ["creatorId"])
+    .index("by_status", ["status"])
+    .index("by_folder_status", ["folderId", "status"])
+    .index("by_folder_order", ["folderId", "displayOrder"])
+    .index("by_permanent_delete", ["permanentDeleteAt"])
+    .searchIndex("search_title", {
+      searchField: "title",
+      filterFields: ["folderId", "status", "creatorId"],
+    }),
+
+  /**
+   * Knowledge Base Document Content - Separated content storage.
+   * Plate.js JSON content stored separately for performance and versioning.
+   */
+  kbDocumentContent: defineTable({
+    // Reference
+    documentId: v.id("kbDocuments"),
+
+    // Content
+    content: v.any(), // Plate.js JSON structure
+    contentText: v.optional(v.string()), // Extracted plain text for search
+
+    // Size tracking (10MB limit)
+    contentSize: v.number(), // Bytes
+
+    // Timestamps (milliseconds)
+    updatedAt: v.number(),
+  })
+    .index("by_document", ["documentId"])
+    .searchIndex("search_content", {
+      searchField: "contentText",
+      filterFields: ["documentId"],
+    }),
+
+  /**
+   * Knowledge Base Document Versions - Point-in-time snapshots.
+   * Stores version history for documents with auto and manual saves.
+   */
+  kbDocumentVersions: defineTable({
+    // Reference
+    documentId: v.id("kbDocuments"),
+
+    // Version info
+    versionNumber: v.number(),
+    versionType: v.union(
+      v.literal("auto"), // Auto-saved every 5 min
+      v.literal("manual"), // User-triggered save
+      v.literal("restore") // Restored from previous version
+    ),
+    description: v.optional(v.string()), // For manual versions
+
+    // Content snapshot
+    content: v.any(), // Plate.js JSON at this point
+    contentSize: v.number(),
+
+    // Author
+    authorId: v.id("users"),
+
+    // Retention
+    expiresAt: v.optional(v.number()), // For auto-versions (7 days)
+
+    // Timestamps (milliseconds)
+    createdAt: v.number(),
+  })
+    .index("by_document", ["documentId"])
+    .index("by_document_version", ["documentId", "versionNumber"])
+    .index("by_document_time", ["documentId", "createdAt"])
+    .index("by_expires", ["expiresAt"]),
+
+  /**
+   * Knowledge Base Resource Permissions - RBAC grants for KB resources.
+   * Polymorphic: links to workspaces, folders, or documents.
+   */
+  kbResourcePermissions: defineTable({
+    // Resource reference (polymorphic)
+    resourceType: v.union(
+      v.literal("workspace"),
+      v.literal("folder"),
+      v.literal("document")
+    ),
+    workspaceId: v.optional(v.id("kbWorkspaces")),
+    folderId: v.optional(v.id("kbFolders")),
+    documentId: v.optional(v.id("kbDocuments")),
+
+    // Grantee (one must be set)
+    userId: v.optional(v.id("users")),
+    teamId: v.optional(v.id("teams")),
+
+    // Permission level
+    level: v.union(
+      v.literal("none"),
+      v.literal("read"),
+      v.literal("write"),
+      v.literal("admin")
+    ),
+
+    // Source
+    isInherited: v.boolean(), // Computed from parent
+    inheritedFrom: v.optional(v.string()), // "workspace:xxx" or "folder:xxx"
+
+    // Metadata
+    grantedBy: v.id("users"),
+    grantedAt: v.number(),
+  })
+    .index("by_workspace", ["workspaceId"])
+    .index("by_folder", ["folderId"])
+    .index("by_document", ["documentId"])
+    .index("by_user", ["userId"])
+    .index("by_team", ["teamId"])
+    .index("by_resource_user", ["resourceType", "userId"])
+    .index("by_resource_team", ["resourceType", "teamId"]),
+
+  /**
+   * Knowledge Base Audit Logs - Permission changes and lifecycle events.
+   * Tracks all significant actions for compliance and debugging.
+   */
+  kbAuditLogs: defineTable({
+    // Event type
+    eventType: v.union(
+      // Lifecycle events
+      v.literal("document_created"),
+      v.literal("document_published"),
+      v.literal("document_archived"),
+      v.literal("document_deleted"),
+      v.literal("document_restored"),
+      v.literal("folder_created"),
+      v.literal("folder_archived"),
+      v.literal("workspace_created"),
+      v.literal("workspace_archived"),
+      // Permission events
+      v.literal("permission_granted"),
+      v.literal("permission_revoked"),
+      v.literal("permission_changed")
+    ),
+
+    // Resource reference
+    resourceType: v.union(
+      v.literal("workspace"),
+      v.literal("folder"),
+      v.literal("document")
+    ),
+    resourceId: v.string(), // Convex ID as string
+    resourceName: v.string(), // Name at time of event
+
+    // Actor
+    actorId: v.id("users"),
+
+    // Event details
+    details: v.optional(v.any()), // JSON with event-specific data
+
+    // For permission events
+    targetUserId: v.optional(v.id("users")),
+    targetTeamId: v.optional(v.id("teams")),
+    previousLevel: v.optional(v.string()),
+    newLevel: v.optional(v.string()),
+
+    // Timestamps (milliseconds)
+    timestamp: v.number(),
+  })
+    .index("by_resource", ["resourceType", "resourceId"])
+    .index("by_actor", ["actorId"])
+    .index("by_event_type", ["eventType"])
+    .index("by_timestamp", ["timestamp"])
+    .index("by_resource_time", ["resourceType", "resourceId", "timestamp"]),
+
+  /**
+   * Knowledge Base Document Comments - Comment threads on documents.
+   * Supports both page-level and inline (text selection) comments.
+   */
+  kbDocumentComments: defineTable({
+    // Reference
+    documentId: v.id("kbDocuments"),
+
+    // Comment type
+    type: v.union(
+      v.literal("page"), // Page-level comment
+      v.literal("inline") // Attached to text selection
+    ),
+
+    // For inline comments
+    selectionStart: v.optional(v.number()), // Slate point
+    selectionEnd: v.optional(v.number()),
+    selectedText: v.optional(v.string()), // Quoted text
+
+    // Threading
+    parentId: v.optional(v.id("kbDocumentComments")), // Reply to
+
+    // Content
+    content: v.string(),
+
+    // Author
+    authorId: v.id("users"),
+
+    // State
+    isResolved: v.boolean(),
+    resolvedAt: v.optional(v.number()),
+    resolvedBy: v.optional(v.id("users")),
+
+    // Edit tracking
+    isEdited: v.boolean(),
+    editedAt: v.optional(v.number()),
+
+    // Timestamps (milliseconds)
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_document", ["documentId"])
+    .index("by_document_type", ["documentId", "type"])
+    .index("by_parent", ["parentId"])
+    .index("by_author", ["authorId"])
+    .index("by_resolved", ["documentId", "isResolved"]),
+
+  /**
+   * Knowledge Base User Favorites - User-starred documents.
+   * Allows users to bookmark frequently accessed documents.
+   */
+  kbUserFavorites: defineTable({
+    userId: v.id("users"),
+    documentId: v.id("kbDocuments"),
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_document", ["userId", "documentId"])
+    .index("by_user_time", ["userId", "createdAt"]),
+
+  /**
+   * Knowledge Base User Recents - Recently accessed documents.
+   * Tracks document access for "Recent Documents" feature.
+   */
+  kbUserRecents: defineTable({
+    userId: v.id("users"),
+    documentId: v.id("kbDocuments"),
+    accessedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_document", ["userId", "documentId"])
+    .index("by_user_time", ["userId", "accessedAt"]),
 });

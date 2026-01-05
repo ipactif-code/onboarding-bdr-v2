@@ -13,6 +13,7 @@ const mockMediaRecorder = {
   isTypeSupported: vi.fn(),
 };
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 describe("Audio Utils", () => {
   describe("isMediaRecorderSupported", () => {
     it("should return false in SSR context (no window)", () => {
@@ -410,3 +411,4 @@ describe("Audio Utils", () => {
     });
   });
 });
+/* eslint-enable @typescript-eslint/no-explicit-any */

@@ -149,20 +149,20 @@ export const syncAllTeamsChannelMembers = internalMutation({
           });
           channelsUpdated++;
 
-          console.log(
-            `Synced channel "${channel.name}" for course "${course.title}": ` +
+          console.warn(
+            `[Migration] Synced channel "${channel.name}" for course "${course.title}": ` +
               `added ${channelMembersAdded}, reactivated ${channelMembersReactivated}`
           );
         }
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
         errors.push(`Course "${course.title}" (${course._id}): ${errorMsg}`);
-        console.error(`Error syncing course ${course._id}:`, error);
+        console.warn(`[Migration] Error syncing course ${course._id}:`, error);
       }
     }
 
-    console.log(
-      `Sync complete: ${coursesProcessed} courses processed, ` +
+    console.warn(
+      `[Migration] Sync complete: ${coursesProcessed} courses processed, ` +
         `${channelsUpdated} channels updated, ` +
         `${membersAdded} members added, ` +
         `${membersReactivated} members reactivated, ` +
@@ -220,7 +220,7 @@ export const fixVoiceMessageDuration = internalMutation({
     }
 
     // Try multiple lookup strategies to find the voice message
-    console.log(
+    console.warn(
       `[internal:fixVoiceMessageDuration] Looking up voice message: ${args.voiceMessageId}`
     );
 
@@ -231,7 +231,7 @@ export const fixVoiceMessageDuration = internalMutation({
       const voiceMessageId = args.voiceMessageId as Id<"voiceMessages">;
       voiceMessage = await ctx.db.get(voiceMessageId);
       if (voiceMessage) {
-        console.log(
+        console.warn(
           `[internal:fixVoiceMessageDuration] Found by voiceMessages._id (duration: ${voiceMessage.duration})`
         );
       }
@@ -248,7 +248,7 @@ export const fixVoiceMessageDuration = internalMutation({
           .withIndex("by_message", (q) => q.eq("messageId", messageId))
           .unique();
         if (voiceMessage) {
-          console.log(
+          console.warn(
             `[internal:fixVoiceMessageDuration] Found by messages._id lookup (duration: ${voiceMessage.duration})`
           );
         }
@@ -258,7 +258,7 @@ export const fixVoiceMessageDuration = internalMutation({
     }
 
     if (!voiceMessage) {
-      console.log(`[internal:fixVoiceMessageDuration] NOT FOUND`);
+      console.warn(`[internal:fixVoiceMessageDuration] NOT FOUND`);
       return {
         success: false,
         reason: `Voice message not found (id: ${args.voiceMessageId})`,

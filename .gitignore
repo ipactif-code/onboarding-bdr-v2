@@ -64,3 +64,6 @@ Thumbs.db
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+# Potion template source (reference only - DO NOT COMMIT)
+/potion-source/

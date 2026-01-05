@@ -24,6 +24,7 @@ vi.mock("../../../convex/_generated/api", () => ({
   },
 }));
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 describe("useMessageSearch hook", () => {
   const mockUseQuery = vi.mocked(useQuery);
   const mockUseMutation = vi.mocked(useMutation);
@@ -395,3 +396,4 @@ describe("useMessageSearch hook", () => {
     });
   });
 });
+/* eslint-enable @typescript-eslint/no-explicit-any */

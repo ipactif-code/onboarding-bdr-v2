@@ -2,9 +2,11 @@ import { v } from "convex/values";
 import { mutation } from "../_generated/server";
 import { requireAdmin } from "../lib/auth";
 
-// Type workaround: Use require() to avoid TS2589 deep type instantiation on 'internal'
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { internal } = require("../_generated/api") as { internal: any };
+// Type workaround: Use dynamic import pattern to avoid TS2589 deep type instantiation
+// The internalApi variable is typed as 'any' which breaks the deep type chain
+// This is necessary because Convex's internal API generates very deep types
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports
+const internalApi: any = require("../_generated/api").internal;
 
 // ============================================================================
 // Course Publish Mutations
@@ -100,13 +102,13 @@ export const publish = mutation({
     // T065: Create course channel for messaging.
     // Channel creation should not fail the publish operation - log and continue if it fails.
     try {
-      await ctx.runMutation(internal.channels.courseMutations.createCourseChannel, {
+      await ctx.runMutation(internalApi.channels.courseMutations.createCourseChannel, {
         courseId: args.courseId,
         creatorId: course.creatorId,
       });
 
       // Grant the course creator admin rights on the channel
-      await ctx.runMutation(internal.channels.courseMutations.grantCourseInstructorAdmin, {
+      await ctx.runMutation(internalApi.channels.courseMutations.grantCourseInstructorAdmin, {
         courseId: args.courseId,
         userId: course.creatorId,
       });

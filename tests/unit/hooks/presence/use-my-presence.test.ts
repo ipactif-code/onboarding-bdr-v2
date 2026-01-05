@@ -23,6 +23,7 @@ vi.mock("../../../../convex/_generated/api", () => ({
   },
 }));
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 describe("useMyPresence hook", () => {
   const mockUseQuery = vi.mocked(useQuery);
   const mockUseMutation = vi.mocked(useMutation);
@@ -433,3 +434,4 @@ describe("useMyPresence hook", () => {
     });
   });
 });
+/* eslint-enable @typescript-eslint/no-explicit-any */

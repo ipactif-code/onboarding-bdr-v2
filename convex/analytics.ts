@@ -3,9 +3,11 @@ import { query, mutation, internalMutation } from "./_generated/server";
 import { requireAuth, requireAdmin } from "./lib/auth";
 import { Id } from "./_generated/dataModel";
 
-// Type workaround: Use require() to avoid TS2589 deep type instantiation on 'internal'
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { internal } = require("./_generated/api") as { internal: any };
+// Type workaround: Use dynamic import pattern to avoid TS2589 deep type instantiation
+// The internalApi variable is typed as 'any' which breaks the deep type chain
+// This is necessary because Convex's internal API generates very deep types
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports
+const internalApi: any = require("./_generated/api").internal;
 
 // ============================================================================
 // Types
@@ -800,7 +802,7 @@ export const startSession = mutation({
     });
 
     // Log activity
-    await ctx.scheduler.runAfter(0, internal.analytics.logActivity, {
+    await ctx.scheduler.runAfter(0, internalApi.analytics.logActivity, {
       userId: user._id,
       actionType: "login",
       category: "user",
@@ -844,7 +846,7 @@ export const endSession = mutation({
     });
 
     // Log activity
-    await ctx.scheduler.runAfter(0, internal.analytics.logActivity, {
+    await ctx.scheduler.runAfter(0, internalApi.analytics.logActivity, {
       userId: user._id,
       actionType: "logout",
       category: "user",

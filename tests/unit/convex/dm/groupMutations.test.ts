@@ -11,7 +11,6 @@ describe("dm/groupMutations.ts - Group DM Mutations", () => {
 
       let user2Id!: Id<"users">;
       let user3Id!: Id<"users">;
-      let conversationId!: Id<"conversations">;
 
       // Setup database
       await t.run(async (ctx) => {
@@ -44,7 +43,7 @@ describe("dm/groupMutations.ts - Group DM Mutations", () => {
       const asCreator = t.withIdentity({ subject: "creator-clerk" });
 
       // Act
-      conversationId = await asCreator.mutation(
+      const conversationId = await asCreator.mutation(
         api.directMessages.createGroup,
         {
           participantIds: [user2Id, user3Id],
@@ -169,7 +168,6 @@ describe("dm/groupMutations.ts - Group DM Mutations", () => {
 
       let user2Id!: Id<"users">;
       let user3Id!: Id<"users">;
-      let conversationId!: Id<"conversations">;
 
       await t.run(async (ctx) => {
         await ctx.db.insert("users", {
@@ -200,7 +198,7 @@ describe("dm/groupMutations.ts - Group DM Mutations", () => {
       const asCreator = t.withIdentity({ subject: "creator-clerk" });
 
       // Act - name is optional, but this tests the implementation
-      conversationId = await asCreator.mutation(
+      const conversationId = await asCreator.mutation(
         api.directMessages.createGroup,
         {
           participantIds: [user2Id, user3Id],
@@ -220,7 +218,6 @@ describe("dm/groupMutations.ts - Group DM Mutations", () => {
 
       let user2Id!: Id<"users">;
       let user3Id!: Id<"users">;
-      let conversationId!: Id<"conversations">;
 
       await t.run(async (ctx) => {
         await ctx.db.insert("users", {
@@ -253,7 +250,7 @@ describe("dm/groupMutations.ts - Group DM Mutations", () => {
       const longName = "a".repeat(101);
 
       // Act - the mutation should succeed (name validation is in updateGroupName)
-      conversationId = await asCreator.mutation(
+      const conversationId = await asCreator.mutation(
         api.directMessages.createGroup,
         {
           participantIds: [user2Id, user3Id],
@@ -270,7 +267,6 @@ describe("dm/groupMutations.ts - Group DM Mutations", () => {
 
       let user2Id!: Id<"users">;
       let user3Id!: Id<"users">;
-      let conversationId!: Id<"conversations">;
 
       await t.run(async (ctx) => {
         await ctx.db.insert("users", {
@@ -303,7 +299,7 @@ describe("dm/groupMutations.ts - Group DM Mutations", () => {
       const beforeTime = Date.now();
 
       // Act
-      conversationId = await asCreator.mutation(
+      const conversationId = await asCreator.mutation(
         api.directMessages.createGroup,
         {
           participantIds: [user2Id, user3Id],
@@ -328,7 +324,6 @@ describe("dm/groupMutations.ts - Group DM Mutations", () => {
       let creatorId!: Id<"users">;
       let user2Id!: Id<"users">;
       let user3Id!: Id<"users">;
-      let conversationId!: Id<"conversations">;
 
       await t.run(async (ctx) => {
         creatorId = await ctx.db.insert("users", {
@@ -359,7 +354,7 @@ describe("dm/groupMutations.ts - Group DM Mutations", () => {
       const asCreator = t.withIdentity({ subject: "creator-clerk" });
 
       // Act
-      conversationId = await asCreator.mutation(
+      const conversationId = await asCreator.mutation(
         api.directMessages.createGroup,
         {
           participantIds: [user2Id, user3Id],
@@ -389,7 +384,6 @@ describe("dm/groupMutations.ts - Group DM Mutations", () => {
 
       let user2Id!: Id<"users">;
       let user3Id!: Id<"users">;
-      let conversationId!: Id<"conversations">;
 
       await t.run(async (ctx) => {
         await ctx.db.insert("users", {
@@ -422,7 +416,7 @@ describe("dm/groupMutations.ts - Group DM Mutations", () => {
       const beforeTime = Date.now();
 
       // Act
-      conversationId = await asCreator.mutation(
+      const conversationId = await asCreator.mutation(
         api.directMessages.createGroup,
         {
           participantIds: [user2Id, user3Id],
@@ -450,7 +444,6 @@ describe("dm/groupMutations.ts - Group DM Mutations", () => {
 
       let user2Id!: Id<"users">;
       let user3Id!: Id<"users">;
-      let conversationId!: Id<"conversations">;
 
       await t.run(async (ctx) => {
         await ctx.db.insert("users", {
@@ -481,7 +474,7 @@ describe("dm/groupMutations.ts - Group DM Mutations", () => {
       const asCreator = t.withIdentity({ subject: "creator-clerk" });
 
       // Act
-      conversationId = await asCreator.mutation(
+      const conversationId = await asCreator.mutation(
         api.directMessages.createGroup,
         {
           participantIds: [user2Id, user3Id],
@@ -521,6 +514,7 @@ describe("dm/groupMutations.ts - Group DM Mutations", () => {
 
       const asCreator = t.withIdentity({ subject: "creator-clerk" });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const fakeId = "kg2e35v6yb5w9eqgwdzxyzqn4n74wvjr" as any;
 
       // Act & Assert
@@ -899,6 +893,7 @@ describe("dm/groupMutations.ts - Group DM Mutations", () => {
 
       const asCreator = t.withIdentity({ subject: "creator-clerk" });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const fakeId = "kg2e35v6yb5w9eqgwdzxyzqn4n74wvjr" as any;
 
       // Act & Assert

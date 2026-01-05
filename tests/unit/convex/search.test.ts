@@ -17,9 +17,8 @@ describe("messages.search - Search Functionality", () => {
       const t = convexTest(schema);
 
       // Arrange - Create authenticated user
-      let userId: Id<"users">;
       await t.run(async (ctx) => {
-        userId = await ctx.db.insert("users", {
+        await ctx.db.insert("users", {
           clerkId: "test-clerk-123",
           email: "test@example.com",
           name: "Test User",
@@ -494,6 +493,7 @@ describe("messages.search - Search Functionality", () => {
 
       // Assert - Should only see 2 recent messages
       expect(result.results).toHaveLength(2);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(result.results.every((r: any) => r.createdAt >= twoDaysAgo)).toBe(true);
     });
 
@@ -1161,14 +1161,14 @@ describe("messages.search - Search Functionality", () => {
     it("should validate user has access to channel", async () => {
       const t = convexTest(schema);
 
-      let userId: Id<"users">;
       let otherUserId: Id<"users">;
       let channelId: Id<"channels">;
       let messageId: Id<"messages">;
 
       // Arrange - Create channel user does not have access to
       await t.run(async (ctx) => {
-        userId = await ctx.db.insert("users", {
+        // Create test user (used for identity, not by ID reference)
+        await ctx.db.insert("users", {
           clerkId: "test-clerk-123",
           email: "test@example.com",
           name: "Test User",

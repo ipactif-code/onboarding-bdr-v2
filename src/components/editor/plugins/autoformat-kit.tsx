@@ -3,16 +3,17 @@
 import type { AutoformatRule } from '@platejs/autoformat';
 
 import {
+  AutoformatPlugin,
   autoformatArrow,
   autoformatLegal,
   autoformatLegalHtml,
   autoformatMath,
-  AutoformatPlugin,
   autoformatPunctuation,
   autoformatSmartQuotes,
 } from '@platejs/autoformat';
 import { insertEmptyCodeBlock } from '@platejs/code-block';
 import { toggleList } from '@platejs/list';
+import { openNextToggles } from '@platejs/toggle/react';
 import { KEYS } from 'platejs';
 
 const autoformatMarks: AutoformatRule[] = [
@@ -72,16 +73,6 @@ const autoformatMarks: AutoformatRule[] = [
     type: KEYS.sub,
   },
   {
-    match: '==',
-    mode: 'mark',
-    type: KEYS.highlight,
-  },
-  {
-    match: '≡',
-    mode: 'mark',
-    type: KEYS.highlight,
-  },
-  {
     match: '`',
     mode: 'mark',
     type: KEYS.code,
@@ -105,21 +96,6 @@ const autoformatBlocks: AutoformatRule[] = [
     type: KEYS.h3,
   },
   {
-    match: '#### ',
-    mode: 'block',
-    type: KEYS.h4,
-  },
-  {
-    match: '##### ',
-    mode: 'block',
-    type: KEYS.h5,
-  },
-  {
-    match: '###### ',
-    mode: 'block',
-    type: KEYS.h6,
-  },
-  {
     match: '> ',
     mode: 'block',
     type: KEYS.blockquote,
@@ -135,12 +111,12 @@ const autoformatBlocks: AutoformatRule[] = [
       });
     },
   },
-  // {
-  //   match: '+ ',
-  //   mode: 'block',
-  //   preFormat: openNextToggles,
-  //   type: KEYS.toggle,
-  // },
+  {
+    match: '+ ',
+    mode: 'block',
+    preFormat: openNextToggles,
+    type: KEYS.toggle,
+  },
   {
     match: ['---', '—-', '___ '],
     mode: 'block',

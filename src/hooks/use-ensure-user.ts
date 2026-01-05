@@ -20,7 +20,7 @@ const api: any = require("../../convex/_generated/api").api;
  * Without this, queries that use requireAuth would fail because
  * the user doesn't exist in the database yet.
  */
-export function useEnsureUser() {
+export function useEnsureUser(): void {
   const { isSignedIn, isLoaded } = useAuth();
   const ensureCurrentUser = useMutation(api.users.ensureCurrentUser);
   const hasEnsured = useRef(false);

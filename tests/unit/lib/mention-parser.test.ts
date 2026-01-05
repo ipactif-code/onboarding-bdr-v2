@@ -8,6 +8,7 @@ import {
   ParsedMention,
 } from "@/lib/mention-parser";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 describe("Mention Parser Utility", () => {
   describe("parseMentions", () => {
     it("should find single @username mention", () => {
@@ -679,3 +680,4 @@ describe("Mention Parser Utility", () => {
     });
   });
 });
+/* eslint-enable @typescript-eslint/no-explicit-any */

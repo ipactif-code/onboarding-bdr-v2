@@ -1,5 +1,6 @@
 "use client"
 
+import { type ReactElement } from "react"
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip"
 
 import { cn } from "@/lib/utils"
@@ -7,7 +8,7 @@ import { cn } from "@/lib/utils"
 function TooltipProvider({
   delay = 0,
   ...props
-}: TooltipPrimitive.Provider.Props) {
+}: TooltipPrimitive.Provider.Props): ReactElement {
   return (
     <TooltipPrimitive.Provider
       data-slot="tooltip-provider"
@@ -17,7 +18,7 @@ function TooltipProvider({
   )
 }
 
-function Tooltip({ ...props }: TooltipPrimitive.Root.Props) {
+function Tooltip({ ...props }: TooltipPrimitive.Root.Props): ReactElement {
   return (
     <TooltipProvider>
       <TooltipPrimitive.Root data-slot="tooltip" {...props} />
@@ -25,7 +26,17 @@ function Tooltip({ ...props }: TooltipPrimitive.Root.Props) {
   )
 }
 
-function TooltipTrigger({ ...props }: TooltipPrimitive.Trigger.Props) {
+interface TooltipTriggerProps extends TooltipPrimitive.Trigger.Props {
+  /**
+   * @deprecated Use render prop instead. Kept for backwards compatibility.
+   * In Base UI, the Trigger already renders children directly.
+   */
+  asChild?: boolean
+}
+
+function TooltipTrigger({ asChild: _asChild, ...props }: TooltipTriggerProps): ReactElement {
+  // Base UI's Trigger already renders children directly, so asChild is not needed
+  // We accept it for backwards compatibility but ignore it
   return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />
 }
 
@@ -41,7 +52,7 @@ function TooltipContent({
   Pick<
     TooltipPrimitive.Positioner.Props,
     "align" | "alignOffset" | "side" | "sideOffset"
-  >) {
+  >): ReactElement {
   return (
     <TooltipPrimitive.Portal>
       <TooltipPrimitive.Positioner

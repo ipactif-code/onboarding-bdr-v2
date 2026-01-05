@@ -1,5 +1,6 @@
 "use client";
 
+import { type ReactElement } from "react";
 import { useQuery } from "convex/react";
 
 // Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
@@ -20,7 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StatsCard } from "./stats-card";
 import { RecentUsersTable } from "./recent-users-table";
 
-export function AdminDashboard() {
+export function AdminDashboard(): ReactElement {
   // Fetch analytics overview
   const analytics = useQuery(api.analytics.getOverview, {});
   const usersResult = useQuery(api.users.list, { pageSize: 5 });
@@ -31,7 +32,7 @@ export function AdminDashboard() {
   }
 
   // Calculate completion rate from analytics data
-  const completionRate = analytics.totalLessonsCompleted > 0
+  const _completionRate = analytics.totalLessonsCompleted > 0
     ? Math.round((analytics.totalLessonsCompleted / (analytics.totalUsers * 10)) * 100)
     : 0;
 
@@ -134,7 +135,7 @@ export function AdminDashboard() {
   );
 }
 
-function AdminDashboardSkeleton() {
+function AdminDashboardSkeleton(): ReactElement {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

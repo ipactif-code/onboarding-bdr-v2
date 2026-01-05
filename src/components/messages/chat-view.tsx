@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactElement } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { Id } from "../../../convex/_generated/dataModel";
 
@@ -16,7 +16,7 @@ interface ChatViewProps {
   conversationId: Id<"conversations">;
 }
 
-export function ChatView({ conversationId }: ChatViewProps) {
+export function ChatView({ conversationId }: ChatViewProps): ReactElement {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Fetch conversation with messages from Convex
@@ -44,7 +44,7 @@ export function ChatView({ conversationId }: ChatViewProps) {
     }
   }, [data?.messages]);
 
-  const handleSend = async (content: string) => {
+  const handleSend = async (content: string): Promise<void> => {
     if (!content.trim()) return;
 
     await sendMessage({
@@ -107,7 +107,7 @@ export function ChatView({ conversationId }: ChatViewProps) {
   );
 }
 
-function ChatViewSkeleton() {
+function ChatViewSkeleton(): ReactElement {
   return (
     <div className="flex flex-col h-full bg-background">
       <div className="p-4 border-b border-border">

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import * as Collapsible from "@radix-ui/react-collapsible";
+import { Collapsible } from "@base-ui/react/collapsible";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -80,7 +80,7 @@ export function CollapsibleSection({
       <div className="flex items-center justify-between px-2 py-1">
         <Collapsible.Trigger
           className={cn(
-            "flex flex-1 items-center gap-1 rounded-sm px-1 py-0.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+            "group flex flex-1 items-center gap-1 rounded-sm px-1 py-0.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground",
             "hover:bg-accent hover:text-accent-foreground",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           )}
@@ -88,7 +88,7 @@ export function CollapsibleSection({
           <ChevronRight
             className={cn(
               "size-3 transition-transform duration-200",
-              effectiveOpen && "rotate-90"
+              "group-data-[panel-open]:rotate-90"
             )}
           />
           <span>{title}</span>
@@ -99,15 +99,16 @@ export function CollapsibleSection({
       </div>
 
       {/* Content */}
-      <Collapsible.Content
+      <Collapsible.Panel
         className={cn(
-          "overflow-hidden",
-          "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1",
-          "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-1"
+          "flex h-[var(--collapsible-panel-height)] flex-col justify-end overflow-hidden",
+          "transition-all duration-150 ease-out",
+          "data-[starting-style]:h-0 data-[ending-style]:h-0",
+          "[&[hidden]:not([hidden='until-found'])]:hidden"
         )}
       >
         <div className="px-2 py-1">{children}</div>
-      </Collapsible.Content>
+      </Collapsible.Panel>
     </Collapsible.Root>
   );
 }

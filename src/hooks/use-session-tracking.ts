@@ -42,7 +42,15 @@ interface SessionTrackingOptions {
  * @param options - Configuration options
  * @returns Session control functions
  */
-export function useSessionTracking(options: SessionTrackingOptions = {}) {
+interface UseSessionTrackingReturn {
+  sessionId: Id<'sessions'> | null;
+  startSession: () => Promise<Id<'sessions'> | null>;
+  endSession: () => Promise<void>;
+  sendHeartbeat: () => Promise<void>;
+  isActive: boolean;
+}
+
+export function useSessionTracking(options: SessionTrackingOptions = {}): UseSessionTrackingReturn {
   const {
     heartbeatInterval = 30000, // 30 seconds
     autoStart = true,
@@ -155,7 +163,7 @@ export function useSessionTracking(options: SessionTrackingOptions = {}) {
       return;
     }
 
-    const handleVisibilityChange = () => {
+    const handleVisibilityChange = (): void => {
       if (document.hidden) {
         // Page is hidden - optionally end session
         endSession();
@@ -174,7 +182,7 @@ export function useSessionTracking(options: SessionTrackingOptions = {}) {
 
   // Handle beforeunload to end session when user leaves
   useEffect(() => {
-    const handleBeforeUnload = () => {
+    const handleBeforeUnload = (): void => {
       // Use sendBeacon for reliable delivery on page unload
       if (sessionIdRef.current) {
         // Note: We can't use Convex mutation here since it's async
@@ -204,7 +212,13 @@ export function useSessionTracking(options: SessionTrackingOptions = {}) {
  * This is a lighter-weight alternative that just tracks activity
  * without full session management.
  */
-export function useActivityTracking() {
+interface UseActivityTrackingReturn {
+  trackActivity: () => void;
+  setSessionId: (id: Id<'sessions'> | null) => void;
+  getLastActivityTime: () => number;
+}
+
+export function useActivityTracking(): UseActivityTrackingReturn {
   const heartbeatMutation = useMutation(api.analytics.heartbeat);
   const lastActivityRef = useRef<number>(Date.now());
   const sessionIdRef = useRef<Id<'sessions'> | null>(null);
@@ -223,7 +237,7 @@ export function useActivityTracking() {
   useEffect(() => {
     const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
 
-    const handleActivity = () => {
+    const handleActivity = (): void => {
       trackActivity();
     };
 

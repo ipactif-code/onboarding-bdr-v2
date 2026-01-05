@@ -1007,3 +1007,11 @@ Add this to code review checklist:
 - [ ] No deprecated methods or patterns used
 - [ ] Project skills were referenced where applicable
 ```
+
+## Recent Changes
+- 004-ai-sales-trainer: Added TypeScript 5.x (strict mode) for frontend/Convex, Python 3.11+ for LiveKit agen + Next.js 15, React 19, Convex, Clerk, LiveKit SDK, Deepgram, Anthropic Claude, Cartesia, Simli
+- 001-ai-sales-trainer: Added [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
+
+## Active Technologies
+- TypeScript 5.x (strict mode) for frontend/Convex, Python 3.11+ for LiveKit agen + Next.js 15, React 19, Convex, Clerk, LiveKit SDK, Deepgram, Anthropic Claude, Cartesia, Simli (004-ai-sales-trainer)
+- Convex (real-time database), Convex `_storage` for audio recordings (004-ai-sales-trainer)

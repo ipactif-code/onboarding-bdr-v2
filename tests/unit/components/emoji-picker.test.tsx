@@ -84,7 +84,7 @@ vi.mock("@/components/ui/popover", () => ({
   Popover: ({
     children,
     open,
-    onOpenChange,
+    onOpenChange: _onOpenChange,
   }: {
     children: React.ReactNode;
     open: boolean;
@@ -287,6 +287,7 @@ describe("EmojiPicker", () => {
 
   it("defaults to light theme when resolvedTheme is undefined", async () => {
     // Arrange
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mockResolvedTheme.mockReturnValue(undefined as any);
 
     // Act

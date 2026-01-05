@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactElement } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { Id } from "../../../convex/_generated/dataModel";
 
@@ -33,9 +33,9 @@ export function VisibilityModal({
   open,
   onOpenChange,
   courseId,
-  currentVisibility,
+  currentVisibility: _currentVisibility,
   currentTeamIds,
-}: VisibilityModalProps) {
+}: VisibilityModalProps): ReactElement {
   const [selectedTeamIds, setSelectedTeamIds] = useState<Set<Id<"teams">>>(
     new Set(currentTeamIds)
   );
@@ -55,7 +55,7 @@ export function VisibilityModal({
     }
   }, [open, currentTeamIds]);
 
-  const handleToggleTeam = (teamId: Id<"teams">) => {
+  const handleToggleTeam = (teamId: Id<"teams">): void => {
     setSelectedTeamIds((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(teamId)) {
@@ -67,7 +67,7 @@ export function VisibilityModal({
     });
   };
 
-  const handleSave = async () => {
+  const handleSave = async (): Promise<void> => {
     setIsSaving(true);
 
     try {

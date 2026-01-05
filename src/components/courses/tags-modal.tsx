@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactElement } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { Id } from "../../../convex/_generated/dataModel";
 
@@ -37,7 +37,7 @@ export function TagsModal({
   onOpenChange,
   courseId,
   currentTags,
-}: TagsModalProps) {
+}: TagsModalProps): ReactElement {
   const [searchQuery, setSearchQuery] = useState("");
   const [newTagName, setNewTagName] = useState("");
   const [isAdding, setIsAdding] = useState<string | null>(null);
@@ -63,7 +63,7 @@ export function TagsModal({
     (tag: { _id: Id<"tags"> }) => !currentTags.some((ct) => ct._id === tag._id)
   );
 
-  const handleAddTag = async (tagName: string) => {
+  const handleAddTag = async (tagName: string): Promise<void> => {
     setIsAdding(tagName);
     try {
       await addTag({ courseId, tagName });
@@ -76,7 +76,7 @@ export function TagsModal({
     }
   };
 
-  const handleCreateTag = async () => {
+  const handleCreateTag = async (): Promise<void> => {
     if (!newTagName.trim()) return;
 
     setIsCreating(true);
@@ -92,7 +92,7 @@ export function TagsModal({
     }
   };
 
-  const handleRemoveTag = async (tagId: Id<"tags">) => {
+  const handleRemoveTag = async (tagId: Id<"tags">): Promise<void> => {
     setIsRemoving(tagId);
     try {
       await removeTag({ courseId, tagId });

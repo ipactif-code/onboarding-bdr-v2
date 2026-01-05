@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import * as React from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { Id } from "../../../../../../../../convex/_generated/dataModel";
 
@@ -46,8 +47,11 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { PlateEditor } from "@/components/editor/plate-editor";
-import { useAutoSaveContent } from "@/hooks/use-auto-save-content";
+import { type Value } from "platejs";
+import { Plate, usePlateEditor } from "platejs/react";
+import { EditorKit } from "@/components/editor/editor-kit";
+import { Editor, EditorContainer } from "@/components/plate-ui/editor";
+import { useDebouncedCallback } from "@/hooks/use-debounce-callback";
 import { sanitizeEditorContent } from "@/lib/sanitize-editor-content";
 import { uploadFiles } from "@/hooks/use-upload-file";
 
@@ -568,56 +572,87 @@ interface TextLessonEditorProps {
   initialContent?: unknown;
 }
 
-function TextLessonEditor({ lessonId, initialContent }: TextLessonEditorProps) {
+type SaveStatus = "idle" | "saving" | "saved" | "error";
+
+function TextLessonEditor({ lessonId, initialContent }: TextLessonEditorProps): React.ReactElement {
   const updateContent = useMutation(api.lessons.updateContent);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
 
-  // Auto-save callback
-  const handleSaveContent = useCallback(
-    async (newContent: unknown[]) => {
-      await updateContent({ lessonId, content: sanitizeEditorContent(newContent) });
-    },
-    [lessonId, updateContent]
-  );
+  // Determine initial value for editor
+  const initialValue: Value = React.useMemo(() => {
+    if (initialContent && Array.isArray(initialContent) && initialContent.length > 0) {
+      return initialContent as Value;
+    }
+    // Default empty paragraph
+    return [{ type: "p", children: [{ text: "" }] }] as Value;
+  }, [initialContent]);
 
-  const { content, setContent, isSaving, lastSaved, error } = useAutoSaveContent({
-    initialContent: (initialContent as unknown[]) || [],
-    onSave: handleSaveContent,
+  const editor = usePlateEditor({
+    plugins: EditorKit,
+    value: initialValue,
   });
 
-  // Show error toast
-  useEffect(() => {
-    if (error) {
-      toast.error("Failed to auto-save content");
-    }
-  }, [error]);
+  // Debounced save handler
+  const debouncedSave = useDebouncedCallback(
+    async (value: Value) => {
+      setSaveStatus("saving");
+      try {
+        await updateContent({
+          lessonId,
+          content: sanitizeEditorContent(value),
+        });
+        setSaveStatus("saved");
+
+        // Reset to idle after a delay
+        setTimeout(() => {
+          setSaveStatus("idle");
+        }, 2000);
+      } catch (error) {
+        console.error("Failed to save lesson content:", error);
+        setSaveStatus("error");
+        toast.error("Failed to save lesson content");
+      }
+    },
+    500,
+    { maxWait: 2000 }
+  );
 
   return (
     <Card className="rounded-2xl border-border py-0 gap-0 flex-1 flex flex-col min-h-0 overflow-hidden">
       <div className="flex items-center justify-between border-b border-border bg-muted/50 px-6 py-4 rounded-t-2xl shrink-0">
         <h2 className="text-lg font-semibold text-foreground">Content</h2>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          {isSaving && (
+          {saveStatus === "saving" && (
             <>
               <Loader2 className="size-3 animate-spin" />
               <span>Saving...</span>
             </>
           )}
-          {!isSaving && lastSaved && (
+          {saveStatus === "saved" && (
             <>
               <Check className="size-3 text-green-600" />
               <span>Saved</span>
             </>
           )}
+          {saveStatus === "error" && (
+            <>
+              <X className="size-3 text-red-500" />
+              <span>Save failed</span>
+            </>
+          )}
         </div>
       </div>
       <CardContent className="p-0 flex-1 flex flex-col min-h-0 overflow-hidden">
-        <PlateEditor
-          value={content}
-          onChange={setContent}
-          placeholder="Start writing your lesson content..."
-          className="flex-1 min-h-0 overflow-y-auto border-0 rounded-t-none"
-          autoFocus
-        />
+        <Plate
+          editor={editor}
+          onChange={({ value }) => {
+            debouncedSave(value);
+          }}
+        >
+          <EditorContainer className="flex-1 overflow-auto">
+            <Editor placeholder="Start writing your lesson content..." />
+          </EditorContainer>
+        </Plate>
       </CardContent>
     </Card>
   );
@@ -632,57 +667,85 @@ interface EmbedLessonEditorProps {
   initialContent?: unknown;
 }
 
-function EmbedLessonEditor({ lessonId, initialContent }: EmbedLessonEditorProps) {
-  // Mutations
+function EmbedLessonEditor({ lessonId, initialContent }: EmbedLessonEditorProps): React.ReactElement {
   const updateContent = useMutation(api.lessons.updateContent);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
 
-  // Auto-save callback
-  const handleSaveContent = useCallback(
-    async (newContent: unknown[]) => {
-      await updateContent({ lessonId, content: sanitizeEditorContent(newContent) });
-    },
-    [lessonId, updateContent]
-  );
+  // Determine initial value for editor
+  const initialValue: Value = React.useMemo(() => {
+    if (initialContent && Array.isArray(initialContent) && initialContent.length > 0) {
+      return initialContent as Value;
+    }
+    // Default empty paragraph
+    return [{ type: "p", children: [{ text: "" }] }] as Value;
+  }, [initialContent]);
 
-  // Use auto-save hook for content
-  const { content, setContent, isSaving: isContentSaving, lastSaved, error } = useAutoSaveContent({
-    initialContent: (initialContent as unknown[]) || [],
-    onSave: handleSaveContent,
+  const editor = usePlateEditor({
+    plugins: EditorKit,
+    value: initialValue,
   });
 
-  // Show error toast
-  useEffect(() => {
-    if (error) {
-      toast.error("Failed to auto-save content");
-    }
-  }, [error]);
+  // Debounced save handler
+  const debouncedSave = useDebouncedCallback(
+    async (value: Value) => {
+      setSaveStatus("saving");
+      try {
+        await updateContent({
+          lessonId,
+          content: sanitizeEditorContent(value),
+        });
+        setSaveStatus("saved");
+
+        // Reset to idle after a delay
+        setTimeout(() => {
+          setSaveStatus("idle");
+        }, 2000);
+      } catch (error) {
+        console.error("Failed to save lesson content:", error);
+        setSaveStatus("error");
+        toast.error("Failed to save lesson content");
+      }
+    },
+    500,
+    { maxWait: 2000 }
+  );
 
   return (
     <Card className="rounded-2xl border-border py-0 gap-0 flex-1 flex flex-col min-h-0 overflow-hidden">
       <div className="flex items-center justify-between border-b border-border bg-muted/50 px-6 py-4 rounded-t-2xl shrink-0">
         <h2 className="text-lg font-semibold text-foreground">Additional Content</h2>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          {isContentSaving && (
+          {saveStatus === "saving" && (
             <>
               <Loader2 className="size-3 animate-spin" />
               <span>Saving...</span>
             </>
           )}
-          {!isContentSaving && lastSaved && (
+          {saveStatus === "saved" && (
             <>
               <Check className="size-3 text-green-600" />
               <span>Saved</span>
             </>
           )}
+          {saveStatus === "error" && (
+            <>
+              <X className="size-3 text-red-500" />
+              <span>Save failed</span>
+            </>
+          )}
         </div>
       </div>
       <CardContent className="p-0 flex-1 flex flex-col min-h-0 overflow-hidden">
-        <PlateEditor
-          value={content}
-          onChange={setContent}
-          placeholder="Add notes, instructions, or additional context for this video..."
-          className="flex-1 min-h-0 overflow-y-auto border-0 rounded-t-none"
-        />
+        <Plate
+          editor={editor}
+          onChange={({ value }) => {
+            debouncedSave(value);
+          }}
+        >
+          <EditorContainer className="flex-1 overflow-auto">
+            <Editor placeholder="Add notes, instructions, or additional context for this video..." />
+          </EditorContainer>
+        </Plate>
       </CardContent>
     </Card>
   );
@@ -1211,35 +1274,54 @@ interface FilesLessonEditorProps {
   }>;
 }
 
-function FilesLessonEditor({ lessonId, initialContent, files }: FilesLessonEditorProps) {
+function FilesLessonEditor({ lessonId, initialContent, files }: FilesLessonEditorProps): React.ReactElement {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
 
   // Mutations
   const updateContent = useMutation(api.lessons.updateContent);
   const saveAttachment = useMutation(api.files.saveAttachment);
   const removeAttachment = useMutation(api.files.removeAttachment);
 
-  // Auto-save callback
-  const handleSaveContent = useCallback(
-    async (newContent: unknown[]) => {
-      await updateContent({ lessonId, content: sanitizeEditorContent(newContent) });
-    },
-    [lessonId, updateContent]
-  );
+  // Determine initial value for editor
+  const initialValue: Value = React.useMemo(() => {
+    if (initialContent && Array.isArray(initialContent) && initialContent.length > 0) {
+      return initialContent as Value;
+    }
+    // Default empty paragraph
+    return [{ type: "p", children: [{ text: "" }] }] as Value;
+  }, [initialContent]);
 
-  // Use auto-save hook for content
-  const { content, setContent, isSaving: isContentSaving, lastSaved, error } = useAutoSaveContent({
-    initialContent: (initialContent as unknown[]) || [],
-    onSave: handleSaveContent,
+  const editor = usePlateEditor({
+    plugins: EditorKit,
+    value: initialValue,
   });
 
-  // Show error toast
-  useEffect(() => {
-    if (error) {
-      toast.error("Failed to auto-save content");
-    }
-  }, [error]);
+  // Debounced save handler
+  const debouncedSave = useDebouncedCallback(
+    async (value: Value) => {
+      setSaveStatus("saving");
+      try {
+        await updateContent({
+          lessonId,
+          content: sanitizeEditorContent(value),
+        });
+        setSaveStatus("saved");
+
+        // Reset to idle after a delay
+        setTimeout(() => {
+          setSaveStatus("idle");
+        }, 2000);
+      } catch (error) {
+        console.error("Failed to save lesson content:", error);
+        setSaveStatus("error");
+        toast.error("Failed to save lesson content");
+      }
+    },
+    500,
+    { maxWait: 2000 }
+  );
 
   // Format file size
   const formatFileSize = (bytes: number) => {
@@ -1328,16 +1410,22 @@ function FilesLessonEditor({ lessonId, initialContent, files }: FilesLessonEdito
 
           {/* Auto-save indicator */}
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            {isContentSaving && (
+            {saveStatus === "saving" && (
               <>
                 <Loader2 className="size-3 animate-spin" />
                 <span>Saving...</span>
               </>
             )}
-            {!isContentSaving && lastSaved && (
+            {saveStatus === "saved" && (
               <>
                 <Check className="size-3 text-green-600" />
                 <span>Saved</span>
+              </>
+            )}
+            {saveStatus === "error" && (
+              <>
+                <X className="size-3 text-red-500" />
+                <span>Save failed</span>
               </>
             )}
           </div>
@@ -1434,12 +1522,16 @@ function FilesLessonEditor({ lessonId, initialContent, files }: FilesLessonEdito
 
         {/* Description Tab */}
         <TabsContent value="description" className="flex-1 flex flex-col m-0 min-h-0 overflow-hidden">
-          <PlateEditor
-            value={content}
-            onChange={setContent}
-            placeholder="Add instructions on how to use these files, what learners should do with them..."
-            className="flex-1 min-h-0 overflow-y-auto border-0 rounded-none"
-          />
+          <Plate
+            editor={editor}
+            onChange={({ value }) => {
+              debouncedSave(value);
+            }}
+          >
+            <EditorContainer className="flex-1 overflow-auto">
+              <Editor placeholder="Add instructions on how to use these files, what learners should do with them..." />
+            </EditorContainer>
+          </Plate>
         </TabsContent>
       </Tabs>
     </Card>

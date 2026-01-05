@@ -1,16 +1,18 @@
 'use client';
 
-import type { ExtendConfig, Path } from 'platejs';
-
 import {
   type BaseCommentConfig,
   BaseCommentPlugin,
   getDraftCommentKey,
 } from '@platejs/comment';
-import { isSlateString } from 'platejs';
-import { toTPlatePlugin } from 'platejs/react';
 
-import { CommentLeaf } from '@/components/ui/comment-node';
+import type { ExtendConfig, Path } from 'platejs';
+import { isSlateElement, isSlateString } from 'platejs';
+import { toTPlatePlugin, useEditorContainerRef } from 'platejs/react';
+import { useEffect } from 'react';
+
+import { CommentLeaf } from '@/components/plate-ui/comment-node';
+import { FloatingDiscussion } from '@/components/plate-ui/floating-discussion';
 
 type CommentConfig = ExtendConfig<
   BaseCommentConfig,
@@ -18,7 +20,9 @@ type CommentConfig = ExtendConfig<
     activeId: string | null;
     commentingBlock: Path | null;
     hoverId: string | null;
+    isOverlapWithEditor: boolean;
     uniquePathMap: Map<string, Path>;
+    updateTimestamp: number | null;
   }
 >;
 
@@ -35,7 +39,7 @@ export const commentPlugin = toTPlatePlugin<CommentConfig>(BaseCommentPlugin, {
 
       if (!isSlateString(leaf)) unsetActiveSuggestion();
 
-      while (leaf.parentElement) {
+      while (leaf.parentElement && !isSlateElement(leaf.parentElement)) {
         if (leaf.classList.contains(`slate-${type}`)) {
           const commentsEntry = api.comment!.node();
 
@@ -45,9 +49,10 @@ export const commentPlugin = toTPlatePlugin<CommentConfig>(BaseCommentPlugin, {
             break;
           }
 
-          const id = api.comment!.nodeId(commentsEntry[0]);
+          const id = api.comment!.nodeId(commentsEntry[0]) ?? null;
+          const isDraft = commentsEntry[0][getDraftCommentKey()];
 
-          setOption('activeId', id ?? null);
+          setOption('activeId', isDraft ? getDraftCommentKey() : id);
           isSet = true;
 
           break;
@@ -63,7 +68,33 @@ export const commentPlugin = toTPlatePlugin<CommentConfig>(BaseCommentPlugin, {
     activeId: null,
     commentingBlock: null,
     hoverId: null,
+    isOverlapWithEditor: false,
     uniquePathMap: new Map(),
+    updateTimestamp: null,
+  },
+  useHooks: ({ editor, setOption }) => {
+    const editorContainerRef = useEditorContainerRef();
+
+    useEffect(() => {
+      if (!editorContainerRef.current) return;
+
+      const editable = editor.api.toDOMNode(editor);
+
+      if (!editable) return;
+
+      const observer = new ResizeObserver((entries) => {
+        const width = entries[0]?.contentRect.width ?? 0;
+        const isOverlap = width < 700;
+
+        setOption('isOverlapWithEditor', isOverlap);
+      });
+
+      observer.observe(editable);
+
+      return () => {
+        observer.disconnect();
+      };
+    }, [editor, editorContainerRef, setOption]);
   },
 })
   .extendTransforms(
@@ -87,10 +118,52 @@ export const commentPlugin = toTPlatePlugin<CommentConfig>(BaseCommentPlugin, {
       },
     })
   )
-  .configure({
-    node: { component: CommentLeaf },
+  .overrideEditor(
+    ({ editor, setOption, tf: { apply, insertBreak }, tf, type }) => ({
+      transforms: {
+        apply(operation) {
+          if (
+            operation.type !== 'set_selection' &&
+            operation.type !== 'set_node' &&
+            operation.type !== 'split_node' &&
+            operation.type !== 'merge_node'
+          ) {
+            const { newProperties, properties } = operation as Record<string, unknown>;
+
+            if (
+              (properties as Record<string, unknown>)?.[getDraftCommentKey()] ||
+              (newProperties as Record<string, unknown>)?.[getDraftCommentKey()]
+            ) {
+              return;
+            }
+
+            setOption('updateTimestamp', Date.now());
+          }
+
+          apply(operation);
+        },
+        insertBreak() {
+          setOption('updateTimestamp', Date.now());
+
+          tf.comment.removeMark();
+          insertBreak();
+          editor.tf.unsetNodes([type], {
+            at: editor.selection?.focus,
+            mode: 'lowest',
+          });
+        },
+      },
+    })
+  )
+  .extend({
     shortcuts: {
       setDraft: { keys: 'mod+shift+m' },
+    },
+  })
+  .configure({
+    render: {
+      afterEditable: FloatingDiscussion,
+      node: CommentLeaf,
     },
   });
 

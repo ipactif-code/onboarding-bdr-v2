@@ -30,7 +30,7 @@ const UserContext = createContext<UserContextType>({
   isAdmin: false,
 });
 
-export function UserProvider({ children }: { children: ReactNode }) {
+export function UserProvider({ children }: { children: ReactNode }): ReactNode {
   const data = useQuery(api.users.me);
   const isLoading = data === undefined;
 
@@ -56,7 +56,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useUserContext() {
+export function useUserContext(): UserContextType {
   const context = useContext(UserContext);
   if (!context) {
     throw new Error("useUserContext must be used within a UserProvider");

@@ -4,9 +4,11 @@ import { requireChannelMember } from "../lib/auth";
 import { checkRateLimit } from "../lib/rateLimits";
 import { MAX_MESSAGE_LENGTH, extractAndStoreMentions } from "./helpers";
 
-// Type workaround: Use require() to avoid TS2589 deep type instantiation on 'internal'
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { internal } = require("../_generated/api") as { internal: any };
+// Type workaround: Use dynamic import pattern to avoid TS2589 deep type instantiation
+// The internalApi variable is typed as 'any' which breaks the deep type chain
+// This is necessary because Convex's internal API generates very deep types
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports
+const internalApi: any = require("../_generated/api").internal;
 
 // ============================================================================
 // Channel Message Send Mutation
@@ -238,7 +240,7 @@ export const sendToChannel = mutation({
       ) {
         await ctx.scheduler.runAfter(
           0,
-          internal.channels.courseMutations.notifyInstructors,
+          internalApi.channels.courseMutations.notifyInstructors,
           {
             channelId: args.channelId,
             courseId: channel.courseId,

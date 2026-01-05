@@ -12,7 +12,6 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useVoicePlayback } from "@/hooks/voice/use-voice-playback";
-import { useRef } from "react";
 
 // ============================================================================
 // Mocks
@@ -35,13 +34,15 @@ vi.mock("wavesurfer.js", () => ({
   },
 }));
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 describe("useVoicePlayback (F035)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("should initialize WaveSurfer with correct options", () => {
-    const WaveSurfer = require("wavesurfer.js").default;
+  it("should initialize WaveSurfer with correct options", async () => {
+    const WaveSurferModule = await import("wavesurfer.js");
+    const WaveSurfer = WaveSurferModule.default;
     const containerRef = { current: document.createElement("div") };
 
     renderHook(() =>
@@ -415,3 +416,4 @@ describe("useVoicePlayback (F035)", () => {
     // WaveSurfer.create would be called again for new instance
   });
 });
+/* eslint-enable @typescript-eslint/no-explicit-any */

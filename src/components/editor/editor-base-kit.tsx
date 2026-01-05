@@ -1,47 +1,39 @@
-import { BaseAlignKit } from './plugins/align-base-kit';
 import { BaseBasicBlocksKit } from './plugins/basic-blocks-base-kit';
 import { BaseBasicMarksKit } from './plugins/basic-marks-base-kit';
 import { BaseCalloutKit } from './plugins/callout-base-kit';
 import { BaseCodeBlockKit } from './plugins/code-block-base-kit';
-import { ColumnKit } from './plugins/column-kit';
-import { CommentKit } from './plugins/comment-kit';
+import { BaseColumnKit } from './plugins/column-base-kit';
+import { BaseCommentKit } from './plugins/comment-base-kit';
 import { BaseDateKit } from './plugins/date-base-kit';
-import { EmojiKit } from './plugins/emoji-kit';
-import { ExcalidrawKit } from './plugins/excalidraw-kit';
 import { BaseFontKit } from './plugins/font-base-kit';
-import { BaseLineHeightKit } from './plugins/line-height-base-kit';
-import { LinkKit } from './plugins/link-kit';
+import { BaseLinkKit } from './plugins/link-base-kit';
 import { BaseListKit } from './plugins/list-base-kit';
 import { MarkdownKit } from './plugins/markdown-kit';
 import { BaseMathKit } from './plugins/math-base-kit';
-import { MediaKit } from './plugins/media-kit';
+import { BaseMediaKit } from './plugins/media-base-kit';
 import { BaseMentionKit } from './plugins/mention-base-kit';
-import { SuggestionKit } from './plugins/suggestion-kit';
-import { TableKit } from './plugins/table-kit';
+import { BaseSuggestionKit } from './plugins/suggestion-base-kit';
+import { BaseTableKit } from './plugins/table-base-kit';
 import { BaseTocKit } from './plugins/toc-base-kit';
 import { BaseToggleKit } from './plugins/toggle-base-kit';
 
 export const BaseEditorKit = [
   ...BaseBasicBlocksKit,
   ...BaseCodeBlockKit,
-  ...TableKit,
+  ...BaseTableKit,
   ...BaseToggleKit,
   ...BaseTocKit,
-  ...MediaKit,
+  ...BaseMediaKit,
   ...BaseCalloutKit,
-  ...ColumnKit,
+  ...BaseColumnKit,
   ...BaseMathKit,
   ...BaseDateKit,
-  ...LinkKit,
+  ...BaseLinkKit,
   ...BaseMentionKit,
   ...BaseBasicMarksKit,
   ...BaseFontKit,
   ...BaseListKit,
-  ...BaseAlignKit,
-  ...BaseLineHeightKit,
-  ...CommentKit,
-  ...SuggestionKit,
+  ...BaseCommentKit,
+  ...BaseSuggestionKit,
   ...MarkdownKit,
-  ...EmojiKit,
-  ...ExcalidrawKit,
 ];

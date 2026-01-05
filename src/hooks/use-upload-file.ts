@@ -21,17 +21,25 @@ interface UseUploadFileProps
   onUploadError?: (error: unknown) => void;
 }
 
+interface UseUploadFileReturn {
+  isUploading: boolean;
+  progress: number;
+  uploadedFile: UploadedFile | undefined;
+  uploadFile: (file: File) => Promise<UploadedFile | undefined>;
+  uploadingFile: File | undefined;
+}
+
 export function useUploadFile({
   onUploadComplete,
   onUploadError,
   ...props
-}: UseUploadFileProps = {}) {
+}: UseUploadFileProps = {}): UseUploadFileReturn {
   const [uploadedFile, setUploadedFile] = React.useState<UploadedFile>();
   const [uploadingFile, setUploadingFile] = React.useState<File>();
   const [progress, setProgress] = React.useState<number>(0);
   const [isUploading, setIsUploading] = React.useState(false);
 
-  async function uploadThing(file: File) {
+  async function uploadThing(file: File): Promise<UploadedFile | undefined> {
     setIsUploading(true);
     setUploadingFile(file);
 
@@ -77,7 +85,7 @@ export function useUploadFile({
       // Simulate upload progress
       let progress = 0;
 
-      const simulateProgress = async () => {
+      const simulateProgress = async (): Promise<void> => {
         while (progress < 100) {
           await new Promise((resolve) => setTimeout(resolve, 50));
           progress += 2;
@@ -109,7 +117,7 @@ export function useUploadFile({
 export const { uploadFiles, useUploadThing } =
   generateReactHelpers<OurFileRouter>();
 
-export function getErrorMessage(err: unknown) {
+export function getErrorMessage(err: unknown): string {
   const unknownError = 'Something went wrong, please try again later.';
 
   if (err instanceof z.ZodError) {
@@ -123,7 +131,7 @@ export function getErrorMessage(err: unknown) {
   return unknownError;
 }
 
-export function showErrorToast(err: unknown) {
+export function showErrorToast(err: unknown): string | number {
   const errorMessage = getErrorMessage(err);
 
   return toast.error(errorMessage);

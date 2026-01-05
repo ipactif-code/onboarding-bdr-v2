@@ -3,9 +3,11 @@ import { query, mutation, internalMutation, internalQuery } from "./_generated/s
 import { Id } from "./_generated/dataModel";
 import { requireAuth, requireAdmin, requireSelfOrAdmin, ensureUser } from "./lib/auth";
 
-// Type workaround: Use require() to avoid TS2589 deep type instantiation on 'internal'
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { internal } = require("./_generated/api") as { internal: any };
+// Type workaround: Use dynamic import pattern to avoid TS2589 deep type instantiation
+// The internalApi variable is typed as 'any' which breaks the deep type chain
+// This is necessary because Convex's internal API generates very deep types
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports
+const internalApi: any = require("./_generated/api").internal;
 
 // ============================================================================
 // Queries
@@ -687,7 +689,7 @@ export const createFromClerk = mutation({
     // T008: Enroll new user in all "all_teams" course channels
     await ctx.scheduler.runAfter(
       0,
-      internal.channels.courseChannelCreation.enrollUserInAllTeamsChannels,
+      internalApi.channels.courseChannelCreation.enrollUserInAllTeamsChannels,
       { userId }
     );
 
@@ -780,7 +782,7 @@ export const syncFromClerk = internalMutation({
     // T008: Enroll new user in all "all_teams" course channels
     await ctx.scheduler.runAfter(
       0,
-      internal.channels.courseChannelCreation.enrollUserInAllTeamsChannels,
+      internalApi.channels.courseChannelCreation.enrollUserInAllTeamsChannels,
       { userId }
     );
 

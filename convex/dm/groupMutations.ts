@@ -4,7 +4,7 @@ import { requireAuth } from "../lib/auth";
 import {
   MAX_GROUP_PARTICIPANTS,
   MIN_GROUP_PARTICIPANTS,
-  MAX_GROUP_NAME_LENGTH,
+  // MAX_GROUP_NAME_LENGTH is defined but reserved for future group name validation
 } from "./helpers";
 
 // ============================================================================

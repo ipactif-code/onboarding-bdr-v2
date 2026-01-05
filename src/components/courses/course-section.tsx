@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, type ReactElement } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -25,16 +25,16 @@ export function CourseSection({
   title,
   courses,
   showProgress = false,
-}: CourseSectionProps) {
+}: CourseSectionProps): ReactElement {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const scrollLeft = () => {
+  const scrollLeft = (): void => {
     if (scrollRef.current) {
       scrollRef.current.scrollBy({ left: -344, behavior: "smooth" });
     }
   };
 
-  const scrollRight = () => {
+  const scrollRight = (): void => {
     if (scrollRef.current) {
       scrollRef.current.scrollBy({ left: 344, behavior: "smooth" });
     }

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { type ReactElement } from "react"
 import {
   DayPicker,
   getDefaultClassNames,
@@ -22,7 +23,7 @@ function Calendar({
   ...props
 }: React.ComponentProps<typeof DayPicker> & {
   buttonVariant?: React.ComponentProps<typeof Button>["variant"]
-}) {
+}): ReactElement {
   const defaultClassNames = getDefaultClassNames()
 
   return (
@@ -180,7 +181,7 @@ function CalendarDayButton({
   day,
   modifiers,
   ...props
-}: React.ComponentProps<typeof DayButton>) {
+}: React.ComponentProps<typeof DayButton>): ReactElement {
   const defaultClassNames = getDefaultClassNames()
 
   const ref = React.useRef<HTMLButtonElement>(null)

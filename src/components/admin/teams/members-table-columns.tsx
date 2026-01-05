@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { format } from "date-fns";
@@ -43,7 +43,7 @@ interface ColumnOptions {
   currentLeadId?: Id<"users">;
 }
 
-function getInitials(name: string) {
+function getInitials(name: string): string {
   return name
     .split(" ")
     .map((n) => n[0])
@@ -63,7 +63,7 @@ function MemberActionsCell({
   member,
   onSetLead,
   onRemove,
-}: MemberActionsCellProps) {
+}: MemberActionsCellProps): ReactElement {
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
 
   return (

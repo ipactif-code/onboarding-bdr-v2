@@ -1,5 +1,6 @@
 "use client";
 
+import { type ReactElement } from "react";
 import { useQuery } from "convex/react";
 
 // Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
@@ -10,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StatsCard } from "./stats-card";
 import { CourseSection } from "@/components/courses/course-section";
 
-export function UserDashboard() {
+export function UserDashboard(): ReactElement {
   const courses = useQuery(api.courses.listForUser);
   const stats = useQuery(api.analytics.getUserDashboardStats);
 
@@ -125,7 +126,7 @@ export function UserDashboard() {
   );
 }
 
-function UserDashboardSkeleton() {
+function UserDashboardSkeleton(): ReactElement {
   return (
     <div className="space-y-6">
       {/* Header skeleton */}

@@ -132,9 +132,9 @@ vi.mock("@/lib/utils", () => ({
 // Test Data
 // ============================================================================
 
-const createMockMessage = (overrides = {}) => ({
-  _id: "msg1" as any,
-  senderId: "user1" as any,
+const createMockMessage = (overrides = {}): Record<string, unknown> => ({
+  _id: "msg1" as unknown,
+  senderId: "user1" as unknown,
   senderName: "John Doe",
   senderAvatarUrl: undefined as string | undefined,
   content: "Test message content",
@@ -144,19 +144,19 @@ const createMockMessage = (overrides = {}) => ({
   ...overrides,
 });
 
-const createMockContextData = (overrides = {}) => ({
+const createMockContextData = (overrides = {}): Record<string, unknown> => ({
   before: [
-    createMockMessage({ _id: "msg-before-1" as any, content: "Message before 1" }),
-    createMockMessage({ _id: "msg-before-2" as any, content: "Message before 2" }),
+    createMockMessage({ _id: "msg-before-1" as unknown, content: "Message before 1" }),
+    createMockMessage({ _id: "msg-before-2" as unknown, content: "Message before 2" }),
   ],
-  target: createMockMessage({ _id: "msg-target" as any, content: "Target message" }),
+  target: createMockMessage({ _id: "msg-target" as unknown, content: "Target message" }),
   after: [
-    createMockMessage({ _id: "msg-after-1" as any, content: "Message after 1" }),
-    createMockMessage({ _id: "msg-after-2" as any, content: "Message after 2" }),
+    createMockMessage({ _id: "msg-after-1" as unknown, content: "Message after 1" }),
+    createMockMessage({ _id: "msg-after-2" as unknown, content: "Message after 2" }),
   ],
-  channelId: "ch1" as any,
+  channelId: "ch1" as unknown,
   channelName: "general",
-  conversationId: undefined as any,
+  conversationId: undefined as unknown,
   ...overrides,
 });
 
@@ -164,6 +164,7 @@ const createMockContextData = (overrides = {}) => ({
 // Tests
 // ============================================================================
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 describe("MessageContextDialog", () => {
   const mockOnClose = vi.fn();
 
@@ -756,3 +757,4 @@ describe("MessageContextDialog", () => {
     expect(fallbacks[0]).toHaveTextContent("J");
   });
 });
+/* eslint-enable @typescript-eslint/no-explicit-any */

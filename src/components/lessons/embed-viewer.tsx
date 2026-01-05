@@ -1,5 +1,6 @@
 "use client";
 
+import { type ReactElement } from "react";
 import LiteYouTubeEmbed from "react-lite-youtube-embed";
 import "react-lite-youtube-embed/dist/LiteYouTubeEmbed.css";
 
@@ -46,7 +47,7 @@ function extractLoomId(url: string): string | null {
   return match?.[1] || null;
 }
 
-export function EmbedViewer({ url, provider, title = "Embedded content" }: EmbedViewerProps) {
+export function EmbedViewer({ url, provider, title = "Embedded content" }: EmbedViewerProps): ReactElement {
   switch (provider) {
     case "youtube": {
       const videoId = extractYouTubeId(url);
@@ -139,7 +140,7 @@ export function EmbedViewer({ url, provider, title = "Embedded content" }: Embed
   }
 }
 
-function EmbedError({ message, url }: { message: string; url: string }) {
+function EmbedError({ message, url }: { message: string; url: string }): ReactElement {
   return (
     <div className="aspect-video w-full rounded-lg border border-destructive/50 bg-destructive/10 flex flex-col items-center justify-center p-6">
       <p className="text-destructive font-medium">{message}</p>

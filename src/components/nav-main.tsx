@@ -1,5 +1,6 @@
 "use client"
 
+import { type ReactElement } from "react"
 import { useRouter } from "next/navigation"
 import { type LucideIcon } from "lucide-react"
 
@@ -18,7 +19,7 @@ export function NavMain({
     url: string
     icon?: LucideIcon
   }[]
-}) {
+}): ReactElement {
   const router = useRouter()
 
   return (

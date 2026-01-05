@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, type ReactElement } from "react";
 import { useMutation } from "convex/react";
 import { Id } from "../../../convex/_generated/dataModel";
 
@@ -21,7 +21,7 @@ export function ThumbnailUpload({
   currentImageUrl,
   onUploadComplete,
   onRemove,
-}: ThumbnailUploadProps) {
+}: ThumbnailUploadProps): ReactElement {
   const [isUploading, setIsUploading] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);

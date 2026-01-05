@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 import { Id } from "../../../convex/_generated/dataModel";
 import { Search, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -29,11 +29,11 @@ export function ConversationList({
   conversations,
   selectedId,
   onSelect,
-}: ConversationListProps) {
+}: ConversationListProps): ReactElement {
   const [search, setSearch] = useState("");
   const [newMessageOpen, setNewMessageOpen] = useState(false);
 
-  const handleConversationCreated = (conversationId: Id<"conversations">) => {
+  const handleConversationCreated = (conversationId: Id<"conversations">): void => {
     onSelect(conversationId);
   };
 

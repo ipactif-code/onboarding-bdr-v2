@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactElement } from "react";
 import { Mail, Loader2, UserPlus } from "lucide-react";
 import {
   Dialog,
@@ -32,7 +32,7 @@ export function InviteUserModal({
   open,
   onOpenChange,
   onSuccess,
-}: InviteUserModalProps) {
+}: InviteUserModalProps): ReactElement {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"user" | "admin">("user");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -46,7 +46,7 @@ export function InviteUserModal({
   }, [open]);
 
   // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
 
     if (!email.trim()) {

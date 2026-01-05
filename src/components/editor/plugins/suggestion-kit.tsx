@@ -1,20 +1,22 @@
 'use client';
 
-import type { ExtendConfig, Path } from 'platejs';
-
 import {
   type BaseSuggestionConfig,
   BaseSuggestionPlugin,
 } from '@platejs/suggestion';
-import { isSlateEditor, isSlateString } from 'platejs';
+import {
+  type ExtendConfig,
+  isSlateEditor,
+  isSlateString,
+  type Path,
+} from 'platejs';
 import { toTPlatePlugin } from 'platejs/react';
 
+import { discussionPlugin } from '@/components/editor/plugins/discussion-kit';
 import {
   SuggestionLeaf,
   SuggestionLineBreak,
-} from '@/components/ui/suggestion-node';
-
-import { discussionPlugin } from './discussion-kit';
+} from '@/components/plate-ui/suggestion-node';
 
 export type SuggestionConfig = ExtendConfig<
   BaseSuggestionConfig,
@@ -28,6 +30,51 @@ export type SuggestionConfig = ExtendConfig<
 export const suggestionPlugin = toTPlatePlugin<SuggestionConfig>(
   BaseSuggestionPlugin,
   ({ editor }) => ({
+    handlers: {
+      // unset active suggestion when clicking outside of suggestion
+      onClick: ({ api, event, setOption, type }) => {
+        let leaf = event.target as HTMLElement;
+        let isSet = false;
+
+        const isBlockLeaf = leaf.dataset.blockSuggestion === 'true';
+
+        const unsetActiveSuggestion = () => {
+          setOption('activeId', null);
+          isSet = true;
+        };
+
+        if (!isSlateString(leaf) && !isBlockLeaf) {
+          unsetActiveSuggestion();
+        }
+
+        while (leaf.parentElement && !isSlateEditor(leaf.parentElement)) {
+          const isBlockSuggestion = leaf.dataset.blockSuggestion === 'true';
+
+          if (leaf.classList.contains(`slate-${type}`) || isBlockSuggestion) {
+            const suggestionEntry = api.suggestion!.node({
+              isText: !isBlockSuggestion,
+            });
+
+            if (!suggestionEntry) {
+              unsetActiveSuggestion();
+
+              break;
+            }
+
+            const id = api.suggestion!.nodeId(suggestionEntry[0]);
+            setOption('activeId', id ?? null);
+
+            isSet = true;
+
+            break;
+          }
+
+          leaf = leaf.parentElement;
+        }
+
+        if (!isSet) unsetActiveSuggestion();
+      },
+    },
     options: {
       activeId: null,
       currentUserId: editor.getOption(discussionPlugin, 'currentUserId'),
@@ -36,53 +83,9 @@ export const suggestionPlugin = toTPlatePlugin<SuggestionConfig>(
     },
   })
 ).configure({
-  handlers: {
-    // unset active suggestion when clicking outside of suggestion
-    onClick: ({ api, event, setOption, type }) => {
-      let leaf = event.target as HTMLElement;
-      let isSet = false;
-
-      const isBlockLeaf = leaf.dataset.blockSuggestion === 'true';
-
-      const unsetActiveSuggestion = () => {
-        setOption('activeId', null);
-        isSet = true;
-      };
-
-      if (!isSlateString(leaf) && !isBlockLeaf) {
-        unsetActiveSuggestion();
-      }
-
-      while (leaf.parentElement && !isSlateEditor(leaf.parentElement)) {
-        const isBlockSuggestion = leaf.dataset.blockSuggestion === 'true';
-
-        if (leaf.classList.contains(`slate-${type}`) || isBlockSuggestion) {
-          const suggestionEntry = api.suggestion!.node({
-            isText: !isBlockSuggestion,
-          });
-
-          if (!suggestionEntry) {
-            unsetActiveSuggestion();
-
-            break;
-          }
-
-          const id = api.suggestion!.nodeId(suggestionEntry[0]);
-          setOption('activeId', id ?? null);
-
-          isSet = true;
-
-          break;
-        }
-
-        leaf = leaf.parentElement;
-      }
-
-      if (!isSet) unsetActiveSuggestion();
-    },
-  },
   render: {
-    belowNodes: SuggestionLineBreak as any,
+    // @ts-expect-error - Type compatibility issue with RenderNodeWrapper
+    belowNodes: SuggestionLineBreak,
     node: SuggestionLeaf,
   },
 });

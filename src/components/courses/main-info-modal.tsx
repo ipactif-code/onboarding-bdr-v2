@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactElement } from "react";
 import { useMutation } from "convex/react";
 import { Id } from "../../../convex/_generated/dataModel";
 
@@ -38,7 +38,7 @@ export function MainInfoModal({
   currentTitle,
   currentDescription,
   currentThumbnailUrl,
-}: MainInfoModalProps) {
+}: MainInfoModalProps): ReactElement {
   const [title, setTitle] = useState(currentTitle);
   const [description, setDescription] = useState(currentDescription);
   const [thumbnailStorageId, setThumbnailStorageId] = useState<Id<"_storage"> | null>(null);
@@ -59,7 +59,7 @@ export function MainInfoModal({
     }
   }, [open, currentTitle, currentDescription]);
 
-  const handleSave = async () => {
+  const handleSave = async (): Promise<void> => {
     if (!title.trim()) {
       toast.error("Title is required");
       return;

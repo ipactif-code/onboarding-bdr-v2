@@ -47,10 +47,11 @@ const mockAudioContext = {
 };
 
 // Mock global AudioContext
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 global.AudioContext = vi.fn(() => mockAudioContext as any) as any;
 
 // Mock MediaStream
-const createMockMediaStream = () => ({
+const createMockMediaStream = (): Record<string, unknown> => ({
   getTracks: vi.fn(() => []),
   getAudioTracks: vi.fn(() => []),
   getVideoTracks: vi.fn(() => []),
@@ -61,6 +62,7 @@ const createMockMediaStream = () => ({
   id: "mock-stream-id",
 });
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 describe("useWaveformAnalyzer Hook (Phase 10)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -456,3 +458,4 @@ describe("useWaveformAnalyzer Hook (Phase 10)", () => {
     expect(result.current.analyserRef.current).toBe(mockAnalyserNode);
   });
 });
+/* eslint-enable @typescript-eslint/no-explicit-any */

@@ -11,7 +11,7 @@ interface ConvexAuthContextType {
 
 const ConvexAuthContext = createContext<ConvexAuthContextType>({ isAuthReady: false });
 
-export function useConvexAuth() {
+export function useConvexAuth(): ConvexAuthContextType {
   return useContext(ConvexAuthContext);
 }
 
@@ -19,7 +19,7 @@ interface ConvexClientProviderProps {
   children: ReactNode;
 }
 
-function ConvexProviderWithAuth({ children }: { children: ReactNode }) {
+function ConvexProviderWithAuth({ children }: { children: ReactNode }): ReactNode {
   const { getToken, isLoaded, isSignedIn } = useAuth();
   const [isAuthReady, setIsAuthReady] = useState(false);
 
@@ -45,7 +45,7 @@ function ConvexProviderWithAuth({ children }: { children: ReactNode }) {
       });
 
       // Fetch token once to ensure it's ready, then mark auth as ready
-      const initializeAuth = async () => {
+      const initializeAuth = async (): Promise<void> => {
         try {
           await getToken({ template: "convex" });
           setIsAuthReady(true);

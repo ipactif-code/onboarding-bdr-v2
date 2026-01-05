@@ -1,7 +1,8 @@
 import { convexTest } from "convex-test";
 import { describe, it, expect } from "vitest";
 import schema from "../../../convex/schema";
-import { Doc } from "../../../convex/_generated/dataModel";
+// Doc type used for type documentation purposes
+import type { Doc as _Doc } from "../../../convex/_generated/dataModel";
 
 describe("Messaging Schema Validation", () => {
 

@@ -1,11 +1,12 @@
 import * as React from "react"
+import { type ReactElement } from "react"
 import { mergeProps } from "@base-ui/react/merge-props"
 import { useRender } from "@base-ui/react/use-render"
 
 import { cn } from "@/lib/utils"
 import { ChevronRightIcon, MoreHorizontalIcon } from "lucide-react"
 
-function Breadcrumb({ className, ...props }: React.ComponentProps<"nav">) {
+function Breadcrumb({ className, ...props }: React.ComponentProps<"nav">): ReactElement {
   return (
     <nav
       aria-label="breadcrumb"
@@ -16,7 +17,7 @@ function Breadcrumb({ className, ...props }: React.ComponentProps<"nav">) {
   )
 }
 
-function BreadcrumbList({ className, ...props }: React.ComponentProps<"ol">) {
+function BreadcrumbList({ className, ...props }: React.ComponentProps<"ol">): ReactElement {
   return (
     <ol
       data-slot="breadcrumb-list"
@@ -29,7 +30,7 @@ function BreadcrumbList({ className, ...props }: React.ComponentProps<"ol">) {
   )
 }
 
-function BreadcrumbItem({ className, ...props }: React.ComponentProps<"li">) {
+function BreadcrumbItem({ className, ...props }: React.ComponentProps<"li">): ReactElement {
   return (
     <li
       data-slot="breadcrumb-item"
@@ -43,7 +44,7 @@ function BreadcrumbLink({
   className,
   render,
   ...props
-}: useRender.ComponentProps<"a">) {
+}: useRender.ComponentProps<"a">): ReactElement {
   return useRender({
     defaultTagName: "a",
     props: mergeProps<"a">(
@@ -59,7 +60,7 @@ function BreadcrumbLink({
   })
 }
 
-function BreadcrumbPage({ className, ...props }: React.ComponentProps<"span">) {
+function BreadcrumbPage({ className, ...props }: React.ComponentProps<"span">): ReactElement {
   return (
     <span
       data-slot="breadcrumb-page"
@@ -76,7 +77,7 @@ function BreadcrumbSeparator({
   children,
   className,
   ...props
-}: React.ComponentProps<"li">) {
+}: React.ComponentProps<"li">): ReactElement {
   return (
     <li
       data-slot="breadcrumb-separator"
@@ -96,7 +97,7 @@ function BreadcrumbSeparator({
 function BreadcrumbEllipsis({
   className,
   ...props
-}: React.ComponentProps<"span">) {
+}: React.ComponentProps<"span">): ReactElement {
   return (
     <span
       data-slot="breadcrumb-ellipsis"

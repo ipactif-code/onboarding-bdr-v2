@@ -4,7 +4,7 @@ import schema from "../../../convex/schema";
 import { Id } from "../../../convex/_generated/dataModel";
 
 // Type workaround: Use require() to avoid TS2589 deep type instantiation on 'api'
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports
 const { api } = require("../../../convex/_generated/api") as { api: any };
 
 describe("mentions.ts - Message Mentions", () => {

@@ -3,9 +3,11 @@ import { mutation } from "../_generated/server";
 import { Id } from "../_generated/dataModel";
 import { requireAdmin } from "../lib/auth";
 
-// Type workaround: Use require() to avoid TS2589 deep type instantiation on 'internal'
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { internal } = require("../_generated/api") as { internal: any };
+// Type workaround: Use dynamic import pattern to avoid TS2589 deep type instantiation
+// The internalApi variable is typed as 'any' which breaks the deep type chain
+// This is necessary because Convex's internal API generates very deep types
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports
+const internalApi: any = require("../_generated/api").internal;
 
 // ============================================================================
 // Course Unassign Mutation
@@ -71,7 +73,7 @@ export const unassign = mutation({
 
       for (const userIdStr of uniqueUserIds) {
         try {
-          await ctx.runMutation(internal.channels.courseMutations.removeCourseEnrollee, {
+          await ctx.runMutation(internalApi.channels.courseMutations.removeCourseEnrollee, {
             courseId: args.courseId,
             userId: userIdStr as Id<"users">,
           });

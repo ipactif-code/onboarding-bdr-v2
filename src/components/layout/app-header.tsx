@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, type ReactElement } from "react";
 import Link from "next/link";
 import {
   Breadcrumb,
@@ -25,7 +25,7 @@ import { useBreadcrumbs } from "@/hooks/use-breadcrumbs";
  * - Proper link handling (last item is not a link)
  * - `/admin` prefix is never shown in breadcrumb
  */
-export function AppHeader() {
+export function AppHeader(): ReactElement {
   const breadcrumbs = useBreadcrumbs();
 
   return (

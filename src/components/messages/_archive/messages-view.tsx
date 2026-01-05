@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactElement } from "react";
 import { useQuery } from "convex/react";
 import { Id } from "../../../../convex/_generated/dataModel";
 
@@ -11,7 +11,7 @@ import { ConversationList } from "@/components/messages/conversation-list";
 import { ChatView } from "@/components/messages/chat-view";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export function MessagesView() {
+export function MessagesView(): ReactElement {
   const [selectedConversationId, setSelectedConversationId] = useState<
     Id<"conversations"> | null
   >(null);
@@ -77,7 +77,7 @@ export function MessagesView() {
   );
 }
 
-function MessagesViewSkeleton() {
+function MessagesViewSkeleton(): ReactElement {
   return (
     <div className="grid grid-cols-[0.3fr_1fr] h-full overflow-hidden">
       <div className="bg-muted/50 border-r border-border p-4 space-y-4">
@@ -93,7 +93,7 @@ function MessagesViewSkeleton() {
   );
 }
 
-function EmptyChat() {
+function EmptyChat(): ReactElement {
   return (
     <div className="flex items-center justify-center h-full bg-background">
       <p className="text-muted-foreground">Select a conversation to start messaging</p>

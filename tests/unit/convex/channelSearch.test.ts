@@ -883,7 +883,8 @@ describe("channels.search query", () => {
           lastMessageAt: Date.now(),
         });
 
-        const membershipId = await ctx.db.insert("channelMembers", {
+        // Create membership (ID not needed after creation)
+        await ctx.db.insert("channelMembers", {
           channelId,
           userId,
           role: "owner",

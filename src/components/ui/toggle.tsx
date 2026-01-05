@@ -1,5 +1,6 @@
 "use client"
 
+import { type ReactElement } from "react"
 import { Toggle as TogglePrimitive } from "@base-ui/react/toggle"
 import { cva, type VariantProps } from "class-variance-authority"
 
@@ -31,7 +32,7 @@ function Toggle({
   variant = "default",
   size = "default",
   ...props
-}: TogglePrimitive.Props & VariantProps<typeof toggleVariants>) {
+}: TogglePrimitive.Props & VariantProps<typeof toggleVariants>): ReactElement {
   return (
     <TogglePrimitive
       data-slot="toggle"

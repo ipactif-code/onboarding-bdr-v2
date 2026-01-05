@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 import {
   ColumnFiltersState,
   SortingState,
@@ -31,7 +31,7 @@ interface UsersTableProps {
   currentClerkId: string;
 }
 
-export function UsersTable({ users, onDelete, currentClerkId }: UsersTableProps) {
+export function UsersTable({ users, onDelete, currentClerkId }: UsersTableProps): ReactElement {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});

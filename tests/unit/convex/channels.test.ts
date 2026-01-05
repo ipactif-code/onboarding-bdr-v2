@@ -1,5 +1,5 @@
 import { convexTest } from "convex-test";
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import * as apiModule from "../../../convex/_generated/api";
 // Type workaround: Convex's API has excessively deep type nesting.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

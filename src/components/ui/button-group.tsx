@@ -1,3 +1,4 @@
+import { type ReactElement } from "react"
 import { mergeProps } from "@base-ui/react/merge-props"
 import { useRender } from "@base-ui/react/use-render"
 import { cva, type VariantProps } from "class-variance-authority"
@@ -26,7 +27,7 @@ function ButtonGroup({
   className,
   orientation,
   ...props
-}: React.ComponentProps<"div"> & VariantProps<typeof buttonGroupVariants>) {
+}: React.ComponentProps<"div"> & VariantProps<typeof buttonGroupVariants>): ReactElement {
   return (
     <div
       role="group"
@@ -42,7 +43,7 @@ function ButtonGroupText({
   className,
   render,
   ...props
-}: useRender.ComponentProps<"div">) {
+}: useRender.ComponentProps<"div">): ReactElement {
   return useRender({
     defaultTagName: "div",
     props: mergeProps<"div">(
@@ -65,7 +66,7 @@ function ButtonGroupSeparator({
   className,
   orientation = "vertical",
   ...props
-}: React.ComponentProps<typeof Separator>) {
+}: React.ComponentProps<typeof Separator>): ReactElement {
   return (
     <Separator
       data-slot="button-group-separator"

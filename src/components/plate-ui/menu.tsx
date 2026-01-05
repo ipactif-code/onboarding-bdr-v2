@@ -314,7 +314,7 @@ export function MenuItem({
     <>
       <div className="flex w-full items-center gap-2 whitespace-nowrap">
         {icon && (
-          <span className="menu-item-icon text-subtle-foreground">{icon}</span>
+          <span className="menu-item-icon text-muted-foreground">{icon}</span>
         )}
         {baseProps.children ?? label}
       </div>

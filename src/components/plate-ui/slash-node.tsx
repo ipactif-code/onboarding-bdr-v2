@@ -382,7 +382,7 @@ export function SlashInputElement(props: PlateElementProps) {
                   >
                     {description ? (
                       <>
-                        <div className="flex size-11 items-center justify-center rounded border border-foreground/15 bg-white [&_svg]:size-5 [&_svg]:text-subtle-foreground">
+                        <div className="flex size-11 items-center justify-center rounded border border-foreground/15 bg-white dark:bg-muted [&_svg]:size-5 [&_svg]:text-foreground">
                           {icon}
                         </div>
                         <div className="ml-3 flex flex-1 flex-col truncate">
@@ -394,7 +394,7 @@ export function SlashInputElement(props: PlateElementProps) {
                       </>
                     ) : (
                       <>
-                        <div className="mr-2 text-subtle-foreground">
+                        <div className="mr-2 text-muted-foreground">
                           {icon}
                         </div>
                         {label ?? value}

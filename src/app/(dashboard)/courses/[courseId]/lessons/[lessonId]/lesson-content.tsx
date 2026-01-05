@@ -1,6 +1,10 @@
 "use client";
 
-import { ContentRenderer } from "@/components/editor/plate-editor-placeholder";
+import * as React from "react";
+import { type Value } from "platejs";
+import { Plate, usePlateEditor } from "platejs/react";
+import { EditorKit } from "@/components/editor/editor-kit";
+import { Editor, EditorContainer } from "@/components/plate-ui/editor";
 import { Card, CardContent } from "@/components/ui/card";
 import { Id } from "../../../../../../../convex/_generated/dataModel";
 import { EmbedViewer } from "@/components/lessons/embed-viewer";
@@ -45,13 +49,39 @@ interface LessonContentProps {
   courseId: string;
 }
 
-export function LessonContent({ lesson }: LessonContentProps) {
+/**
+ * Read-only Plate editor component for displaying lesson content.
+ */
+function ReadOnlyEditor({ value }: { value: unknown[] }): React.ReactElement {
+  const initialValue: Value = React.useMemo(() => {
+    if (value && Array.isArray(value) && value.length > 0) {
+      return value as Value;
+    }
+    // Default empty paragraph
+    return [{ type: "p", children: [{ text: "" }] }] as Value;
+  }, [value]);
+
+  const editor = usePlateEditor({
+    plugins: EditorKit,
+    value: initialValue,
+  });
+
+  return (
+    <Plate editor={editor} readOnly>
+      <EditorContainer>
+        <Editor readOnly />
+      </EditorContainer>
+    </Plate>
+  );
+}
+
+export function LessonContent({ lesson }: LessonContentProps): React.ReactElement {
   switch (lesson.type) {
     case "text":
       return (
         <div className="space-y-6">
           {lesson.content && lesson.content.length > 0 ? (
-            <ContentRenderer value={lesson.content} className="prose prose-neutral max-w-none" />
+            <ReadOnlyEditor value={lesson.content} />
           ) : (
             <p className="text-muted-foreground italic">
               No content available for this lesson.
@@ -75,7 +105,7 @@ export function LessonContent({ lesson }: LessonContentProps) {
             </div>
           )}
           {lesson.content && lesson.content.length > 0 && (
-            <ContentRenderer value={lesson.content} className="prose prose-neutral max-w-none" />
+            <ReadOnlyEditor value={lesson.content} />
           )}
         </div>
       );

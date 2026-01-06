@@ -21,7 +21,7 @@ import {
   RefreshCwIcon,
   Trash2,
 } from 'lucide-react';
-import { KEYS, type TElement } from 'platejs';
+import { KEYS, type TElement as _TElement } from 'platejs';
 import { type PlateEditor, useEditorRef, useHotkeys } from 'platejs/react';
 import * as React from 'react';
 
@@ -68,7 +68,7 @@ export function BlockMenu({
   Pick<MenuContentProps, 'animateZoom' | 'getAnchorRect'> & {
     id?: string;
     children?: React.ReactNode;
-  }) {
+  }): React.ReactElement {
   const editor = useEditorRef();
   const [open, setOpen] = React.useState(false);
 
@@ -114,7 +114,7 @@ export function BlockMenu({
   );
 }
 
-function BlockMenuInput({ onHide }: { onHide: () => void }) {
+function BlockMenuInput({ onHide }: { onHide: () => void }): React.ReactElement {
   const editor = useEditorRef();
   const blockSelectionTf =
     editor.getTransforms(BlockSelectionPlugin).blockSelection;
@@ -159,7 +159,7 @@ function BlockMenuInput({ onHide }: { onHide: () => void }) {
   );
 }
 
-function AIIcon(props: LucideProps) {
+function AIIcon(props: LucideProps): React.ReactElement {
   return (
     <svg
       fill="url(#myGradient)"
@@ -327,7 +327,7 @@ const mediaMenuItems = [
   },
 ];
 
-function BlockMenuItems() {
+function BlockMenuItems(): React.ReactElement {
   const [searchValue] = useComboboxValueState();
   const selectedBlocks = useBlockSelectionNodes();
   const editor = useEditorRef();
@@ -335,10 +335,12 @@ function BlockMenuItems() {
   const menuGroups = React.useMemo(() => {
     const isMedia =
       selectedBlocks.length === 1 &&
-      selectedBlocks.some((item) =>
-        [KEYS.audio, KEYS.file, KEYS.img, KEYS.mediaEmbed, KEYS.video].includes(
-          item[0].type as any
-        )
+      selectedBlocks.some(
+        (item) =>
+          [KEYS.audio, KEYS.file, KEYS.img, KEYS.mediaEmbed, KEYS.video].includes(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            item[0].type as any
+          )
       );
 
     const items = isMedia ? mediaMenuItems : orderedMenuItems;
@@ -390,7 +392,7 @@ function BlockMenuItems() {
   );
 }
 
-function ColorMenuItem() {
+function ColorMenuItem(): React.ReactElement {
   const [searchValue] = useComboboxValueState();
   const editor = useEditorRef();
 
@@ -404,7 +406,7 @@ function ColorMenuItem() {
     defaultValue: 'transparent',
   });
 
-  const handleColorChange = (group: string, value: string) => {
+  const handleColorChange = (group: string, value: string): void => {
     if (group === GROUP.COLOR) {
       editor
         .getTransforms(BlockSelectionPlugin)
@@ -462,7 +464,7 @@ function ColorMenuItem() {
   );
 }
 
-function AlignMenuItem() {
+function AlignMenuItem(): React.ReactElement {
   const [searchValue] = useComboboxValueState();
   const editor = useEditorRef();
   const value = useBlockSelectionFragmentProp({
@@ -516,16 +518,17 @@ function AlignMenuItem() {
   );
 }
 
-function TurnIntoMenuItem() {
+function TurnIntoMenuItem(): React.ReactElement {
   const editor = useEditorRef();
   const [searchValue] = useComboboxValueState();
 
   const value = useBlockSelectionFragmentProp({
     defaultValue: KEYS.p,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getProp: (node) => getBlockType(node as any),
   });
 
-  const handleTurnInto = (value: string) => {
+  const handleTurnInto = (value: string): void => {
     editor
       .getApi(BlockSelectionPlugin)
       .blockSelection.getNodes()

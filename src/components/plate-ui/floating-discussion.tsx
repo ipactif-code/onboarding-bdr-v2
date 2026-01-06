@@ -54,7 +54,7 @@ import {
 } from './block-suggestion';
 import { Comment, CommentCreateForm, formatCommentDate } from './comment';
 
-export function FloatingDiscussion() {
+export function FloatingDiscussion(): React.ReactElement | null {
   const mounted = useEditorMounted();
   const isOverlapWithEditor = usePluginOption(
     commentPlugin,
@@ -77,7 +77,7 @@ const getCommentTop = (
     relativeElement: HTMLDivElement;
     topOffset?: number;
   }
-) => {
+): number => {
   const commentLeafDomNode = editor.api.toDOMNode(node);
 
   if (!commentLeafDomNode) return 0;
@@ -95,7 +95,7 @@ const updateActiveBelow = (
   topMap: Record<string, number>,
   domMap: Record<string, HTMLDivElement | null>,
   activeId: string
-) => {
+): Record<string, number> => {
   const discussionArray = Object.entries(topMap)
     .map(([id, top]) => ({ id, top }))
     .sort((a, b) => a.top - b.top);
@@ -132,7 +132,7 @@ const updateActiveTop = (
   domMap: Record<string, HTMLDivElement | null>,
   activeId: string,
   targetTop: number
-) => {
+): Record<string, number> => {
   const discussionArray = Object.entries(topMap)
     .map(([id, top]) => ({ id, top }))
     .sort((a, b) => a.top - b.top);
@@ -187,7 +187,7 @@ const updateActiveTop = (
 const updateTopCommenting = (
   topMap: Record<string, number>,
   domMap: Record<string, HTMLDivElement | null>
-) => {
+): Record<string, number> => {
   const discussionArray = Object.entries(topMap)
     .map(([id, topDistance]) => ({ id, topDistance }))
     .sort((a, b) => a.topDistance - b.topDistance);
@@ -256,7 +256,7 @@ const updateTopCommenting = (
 const resolveOverlappingTop = (
   topMap: Record<string, number>,
   domMap: Record<string, HTMLDivElement | null>
-) => {
+): Record<string, number> => {
   const discussionArray = Object.entries(topMap)
     .map(([id, topDistance]) => ({ id, topDistance }))
     .sort((a, b) => a.topDistance - b.topDistance);
@@ -300,7 +300,7 @@ const resolveOverlappingTop = (
   return Object.fromEntries(discussionArray.map((d) => [d.id, d.topDistance]));
 };
 
-const useCommentingNode = () =>
+const useCommentingNode = (): TCommentText | undefined =>
   useEditorSelector((editor) => {
     if (!editor.selection || editor.api.isExpanded()) return;
 
@@ -310,7 +310,7 @@ const useCommentingNode = () =>
     })?.[0];
   }, []);
 
-function FloatingDiscussionContent() {
+function FloatingDiscussionContent(): React.ReactElement {
   const editorContainerRef = useEditorContainerRef();
   const editor = useEditorRef();
   const commentApi = editor.getApi(commentPlugin);
@@ -618,7 +618,7 @@ function FloatingCommentsContent({
   discussion,
   ref,
   top,
-}: React.ComponentProps<'div'> & FloatingCommentsContentProps) {
+}: React.ComponentProps<'div'> & FloatingCommentsContentProps): React.ReactElement {
   const editor = useEditorRef();
 
   const { activeId, hoverId } = usePluginOptions(
@@ -631,7 +631,7 @@ function FloatingCommentsContent({
 
   const [editingId, setEditingId] = React.useState<string | null>(null);
 
-  const setHoverId = (id: string | null) => {
+  const setHoverId = (id: string | null): void => {
     // If dropdown menu open, do not unset the active state since it will make dropdown menu open in the wrong position
     // Notion has the same issue
     if (document.activeElement?.closest('[data-radix-menu-content]')) return;
@@ -639,7 +639,7 @@ function FloatingCommentsContent({
     editor.setOption(commentPlugin, 'hoverId', id);
   };
 
-  const highlightDiscussion = (editor: PlateEditor, id: string) => {
+  const highlightDiscussion = (editor: PlateEditor, id: string): void => {
     editor.setOption(commentPlugin, 'activeId', id);
     editor.setOption(suggestionPlugin, 'activeId', null);
     const leaf = editor.api.node({
@@ -742,7 +742,7 @@ const FloatingSuggestionContent = ({
   entries,
   ref,
   top,
-}: React.ComponentProps<'div'> & FloatingSuggestionContentProps) => {
+}: React.ComponentProps<'div'> & FloatingSuggestionContentProps): React.ReactElement | null => {
   const { api, editor, setOption } = useEditorPlugin(suggestionPlugin);
   const nodeData = entries[0] ? api.suggestion.suggestionData(entries[0][0]) : null;
 
@@ -769,8 +769,8 @@ const FloatingSuggestionContent = ({
 
   let newText = '';
   let text = '';
-  let properties: any = {};
-  let newProperties: any = {};
+  let properties: Record<string, unknown> = {};
+  let newProperties: Record<string, unknown> = {};
 
   // overlapping suggestion
   entries.forEach(([node]) => {
@@ -830,19 +830,19 @@ const FloatingSuggestionContent = ({
   const createdAt = new Date(nodeData.createdAt);
   const keyId = getSuggestionKey(id);
 
-  const suggestionText2Array = (text: string) => {
+  const suggestionText2Array = (text: string): string[] => {
     if (text === BLOCK_SUGGESTION) return ['line breaks'];
 
     return text.split(BLOCK_SUGGESTION).filter(Boolean);
   };
 
-  const accept = (suggestion: ResolvedSuggestion) => {
+  const accept = (suggestion: ResolvedSuggestion): void => {
     api.suggestion.withoutSuggestions(() => {
       acceptSuggestion(editor, suggestion);
     });
   };
 
-  const reject = (suggestion: ResolvedSuggestion) => {
+  const reject = (suggestion: ResolvedSuggestion): void => {
     api.suggestion.withoutSuggestions(() => {
       rejectSuggestion(editor, suggestion);
     });
@@ -897,7 +897,7 @@ const FloatingSuggestionContent = ({
     return null;
   }
 
-  const highlightSuggestion = (editor: PlateEditor, id: string) => {
+  const highlightSuggestion = (editor: PlateEditor, id: string): void => {
     editor.setOption(suggestionPlugin, 'activeId', id);
     editor.setOption(commentPlugin, 'activeId', null);
 
@@ -905,6 +905,7 @@ const FloatingSuggestionContent = ({
       at: [],
       match: (n) =>
         n[KEYS.suggestion] &&
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         editor.getApi(suggestionPlugin).suggestion.nodeId(n as any) === id,
     });
 
@@ -971,7 +972,7 @@ const FloatingSuggestionContent = ({
               suggestionText2Array(suggestion.newText!).map((text, index) => (
                 <div className="flex items-center gap-2" key={index}>
                   <span className="text-muted-foreground text-sm">Add:</span>
-                  <span className="text-sm">"{text || 'line breaks'}"</span>
+                  <span className="text-sm">&quot;{text || 'line breaks'}&quot;</span>
                 </div>
               ))}
 
@@ -983,7 +984,7 @@ const FloatingSuggestionContent = ({
                       <div className="flex items-center text-brand/80">
                         <span className="text-sm">With:</span>
                         <span className="text-sm">
-                          "{text || 'line breaks'}"
+                          &quot;{text || 'line breaks'}&quot;
                         </span>
                       </div>
                     </React.Fragment>
@@ -996,7 +997,7 @@ const FloatingSuggestionContent = ({
                       <span className="text-muted-foreground text-sm">
                         {index === 0 ? 'Replace:' : 'Delete:'}
                       </span>
-                      <span className="text-sm">"{text || 'line breaks'}"</span>
+                      <span className="text-sm">&quot;{text || 'line breaks'}&quot;</span>
                     </div>
                   </React.Fragment>
                 ))}
@@ -1015,7 +1016,7 @@ const FloatingSuggestionContent = ({
                     </span>
                   ))}
                 </span>
-                <span className="text-sm">"{suggestion.newText}"</span>
+                <span className="text-sm">&quot;{suggestion.newText}&quot;</span>
               </div>
             )}
           </div>

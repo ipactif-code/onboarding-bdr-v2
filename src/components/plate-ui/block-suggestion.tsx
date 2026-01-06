@@ -81,18 +81,18 @@ export function BlockSuggestionCard({
   idx: number;
   isLast: boolean;
   suggestion: ResolvedSuggestion;
-}) {
+}): React.ReactElement {
   const { api, editor } = useEditorPlugin(SuggestionPlugin);
 
   const userInfo = usePluginOption(discussionPlugin, 'user', suggestion.userId);
 
-  const accept = (suggestion: ResolvedSuggestion) => {
+  const accept = (suggestion: ResolvedSuggestion): void => {
     api.suggestion.withoutSuggestions(() => {
       acceptSuggestion(editor, suggestion);
     });
   };
 
-  const reject = (suggestion: ResolvedSuggestion) => {
+  const reject = (suggestion: ResolvedSuggestion): void => {
     api.suggestion.withoutSuggestions(() => {
       rejectSuggestion(editor, suggestion);
     });
@@ -100,7 +100,7 @@ export function BlockSuggestionCard({
 
   const [hovering, setHovering] = React.useState(false);
 
-  const suggestionText2Array = (text: string) => {
+  const suggestionText2Array = (text: string): string[] => {
     if (text === BLOCK_SUGGESTION) return ['line breaks'];
 
     return text.split(BLOCK_SUGGESTION).filter(Boolean);
@@ -169,7 +169,7 @@ export function BlockSuggestionCard({
                       >
                         <span className="text-sm">With:</span>
                         <span className="text-sm">
-                          "{text || 'line breaks'}"
+                          &quot;{text || 'line breaks'}&quot;
                         </span>
                       </div>
                     </React.Fragment>
@@ -182,7 +182,7 @@ export function BlockSuggestionCard({
                       <span className="text-muted-foreground text-sm">
                         {index === 0 ? 'Replace:' : 'Delete:'}
                       </span>
-                      <span className="text-sm">"{text || 'line breaks'}"</span>
+                      <span className="text-sm">&quot;{text || 'line breaks'}&quot;</span>
                     </div>
                   </React.Fragment>
                 ))}
@@ -202,7 +202,7 @@ export function BlockSuggestionCard({
                     </span>
                   ))}
                 </span>
-                <span className="text-sm">"{suggestion.newText}"</span>
+                <span className="text-sm">&quot;{suggestion.newText}&quot;</span>
               </div>
             )}
           </div>
@@ -346,7 +346,9 @@ export const useResolveSuggestion = (
 
       let newText = '';
       let text = '';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let properties: any = {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let newProperties: any = {};
 
       // overlapping suggestion

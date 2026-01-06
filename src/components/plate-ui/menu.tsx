@@ -50,11 +50,11 @@ export function Menu({
   trigger,
   value,
   onOpenChange,
-  onRootMenuClose,
+  onRootMenuClose: _onRootMenuClose,
   onValueChange = () => {},
   onValuesChange,
   ...props
-}: MenuProps) {
+}: MenuProps): React.ReactElement {
   const isRootMenu = !Ariakit.useMenuContext();
   const [open, setOpen] = React.useState(false);
 
@@ -106,8 +106,9 @@ export function MenuTrigger({
 }: React.ComponentProps<typeof Ariakit.MenuButton> & {
   icon?: React.ReactNode;
   label?: React.ReactNode;
-}) {
+}): React.ReactElement {
   return (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     <Ariakit.MenuButton render={(children as any) ?? <MenuItem />} {...props}>
       {icon}
       {label && <span>{label}</span>}
@@ -156,7 +157,7 @@ export function MenuContent({
   variant,
   onClickOutside,
   ...props
-}: MenuContentProps) {
+}: MenuContentProps): React.ReactElement {
   const menuRef = React.useRef<HTMLDivElement | null>(null);
   const { open } = React.useContext(MenuContext);
   const side = useMenuSide();
@@ -182,7 +183,7 @@ export function MenuContent({
 
 export function MenuSeparator(
   props: React.ComponentProps<typeof Ariakit.MenuSeparator>
-) {
+): React.ReactElement {
   return <Ariakit.MenuSeparator {...props} className={cn(props.className)} />;
 }
 
@@ -191,7 +192,7 @@ export function MenuGroup({
   ...props
 }: React.ComponentProps<typeof Ariakit.MenuGroup> & {
   label?: React.ReactNode;
-}) {
+}): React.ReactElement {
   return (
     <>
       <MenuSeparator
@@ -220,7 +221,7 @@ export function MenuGroup({
   );
 }
 
-export function MenuShortcut({ ...props }: React.ComponentProps<'span'>) {
+export function MenuShortcut({ ...props }: React.ComponentProps<'span'>): React.ReactElement {
   return (
     <span
       {...props}
@@ -287,7 +288,7 @@ export function MenuItem({
   shortcut?: React.ReactNode;
   shortcutEnter?: boolean;
   value?: string;
-} & VariantProps<typeof menuItemVariants>) {
+} & VariantProps<typeof menuItemVariants>): React.ReactElement {
   const menu = Ariakit.useMenuContext();
 
   if (!menu) throw new Error('MenuItem should be used inside a Menu');
@@ -345,6 +346,7 @@ export function MenuItem({
         ...baseProps,
         hideOnClick: true,
         name,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         value: props.value as any,
       };
 
@@ -354,7 +356,7 @@ export function MenuItem({
     return <Ariakit.MenuItem {...baseProps} />;
   }
 
-  const hideOnClick = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
+  const hideOnClick = (event: React.MouseEvent<HTMLElement, MouseEvent>): boolean => {
     const expandable = event.currentTarget.hasAttribute('aria-expanded');
 
     if (expandable) return false;
@@ -384,7 +386,7 @@ export function ComboboxContent({
   className,
   variant = 'default',
   ...props
-}: React.ComponentProps<'div'> & VariantProps<typeof comboboxVariants>) {
+}: React.ComponentProps<'div'> & VariantProps<typeof comboboxVariants>): React.ReactElement {
   return (
     <div className={cn(comboboxVariants({ variant }), className)} {...props} />
   );
@@ -414,7 +416,7 @@ export function ComboboxList({
   variant = 'default',
   ...props
 }: React.ComponentProps<typeof Ariakit.ComboboxList> &
-  VariantProps<typeof comboboxListVariants>) {
+  VariantProps<typeof comboboxListVariants>): React.ReactElement {
   return (
     <Ariakit.ComboboxList
       className={cn(comboboxListVariants({ variant }), className)}
@@ -426,11 +428,12 @@ export function ComboboxList({
 export function ComboboxInput({
   children,
   ...props
-}: React.ComponentProps<typeof Ariakit.Combobox>) {
+}: React.ComponentProps<typeof Ariakit.Combobox>): React.ReactElement {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return <Ariakit.Combobox autoSelect render={children as any} {...props} />;
 }
 
-export function ComboboxEmpty() {
+export function ComboboxEmpty(): React.ReactElement {
   return (
     <div className="py-1.5 group-has-[[role=option]]/combobox-list:hidden">
       <div
@@ -490,21 +493,25 @@ export function filterMenuGroups(
   }, []);
 }
 
-export function useComboboxValueState() {
+export function useComboboxValueState(): readonly [string, (value: string) => void] {
   const store = Ariakit.useComboboxContext();
   const searchValue = store?.useState('value') ?? '';
 
   return [searchValue, store!.setValue] as const;
 }
 
-export function useMenuSide() {
+export function useMenuSide(): string | undefined {
   const store = Ariakit.useMenuStore();
   const currentPlacement = store?.useState('currentPlacement').split('-')[0];
 
   return currentPlacement;
 }
 
-export function useContextMenu(anchorRect: { x: number; y: number }) {
+export function useContextMenu(anchorRect: { x: number; y: number }): {
+  store: ReturnType<typeof Ariakit.useMenuStore>;
+  getAnchorRect: () => { x: number; y: number };
+  show: () => void;
+} {
   const menu = Ariakit.useMenuStore();
 
   useEffect(() => {
@@ -523,7 +530,10 @@ export function useContextMenu(anchorRect: { x: number; y: number }) {
   };
 }
 
-export function useMenuStore() {
+export function useMenuStore(): {
+  store: ReturnType<typeof Ariakit.useMenuStore>;
+  show: (anchorElement: HTMLElement) => void;
+} {
   const menu = Ariakit.useMenuStore();
 
   return {

@@ -39,9 +39,9 @@ import {
 import { Toolbar, ToolbarButton, toolbarButtonVariants } from './toolbar';
 
 export function MediaToolbar({
-  className,
+  className: _className,
   ...props
-}: React.ComponentProps<typeof Toolbar>) {
+}: React.ComponentProps<typeof Toolbar>): React.ReactElement {
   return (
     <Toolbar
       className={cn(
@@ -72,14 +72,14 @@ const alignItems = [
   },
 ];
 
-function MediaToolbarButtons() {
+function MediaToolbarButtons(): React.ReactElement {
   const editor = useEditorRef();
   const element = useElement<TMediaElement>();
   const state = useMediaControllerState();
   const { MediaControllerDropDownMenuProps: mediaToolbarDropDownMenuProps } =
     useMediaController(state);
 
-  const handleDownload = () => {
+  const handleDownload = (): void => {
     toast.promise(downloadFile(element.url, element.id || 'file'), {
       error: 'Download failed. Please try again.',
       loading: 'Downloading...',
@@ -154,11 +154,11 @@ function MediaToolbarButtons() {
 }
 
 function MediaAlignButton({
-  children,
+  children: _children,
   ...props
 }: {
   setAlignOpen: React.Dispatch<React.SetStateAction<boolean>>;
-} & DropdownMenuProps) {
+} & DropdownMenuProps): React.ReactElement {
   const editor = useEditorRef();
   const element = useElement<TMediaElement & TTextAlignProps>();
   const openState = useOpenState();
@@ -194,6 +194,7 @@ function MediaAlignButton({
         <DropdownMenuRadioGroup
           className="flex hover:bg-transparent"
           onValueChange={(value) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required by Plate setNodes API
             editor.tf.setNodes({ align: value as any }, { at: element });
           }}
           value={value}

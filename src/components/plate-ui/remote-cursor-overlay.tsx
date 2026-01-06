@@ -10,7 +10,7 @@ import {
 import { useEditorContainerRef, usePluginOption } from 'platejs/react';
 import * as React from 'react';
 
-export function RemoteCursorOverlay() {
+export function RemoteCursorOverlay(): React.ReactElement | null {
   const isSynced = usePluginOption(YjsPlugin, '_isSynced');
 
   if (!isSynced) {
@@ -20,7 +20,8 @@ export function RemoteCursorOverlay() {
   return <RemoteCursorOverlayContent />;
 }
 
-function RemoteCursorOverlayContent() {
+function RemoteCursorOverlayContent(): React.ReactElement {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required by slate-yjs library
   const containerRef: any = useEditorContainerRef();
   const [cursors] = useRemoteCursorOverlayPositions<CursorData>({
     containerRef,
@@ -39,7 +40,7 @@ function RemoteSelection({
   caretPosition,
   data,
   selectionRects,
-}: CursorOverlayData<CursorData>) {
+}: CursorOverlayData<CursorData>): React.ReactElement | null {
   if (!data) {
     return null;
   }
@@ -74,13 +75,13 @@ const hoverOpacity = 1;
 function Caret({
   caretPosition,
   data,
-}: Pick<CursorOverlayData<CursorData>, 'caretPosition' | 'data'>) {
+}: Pick<CursorOverlayData<CursorData>, 'caretPosition' | 'data'>): React.ReactElement {
   const [isHover, setIsHover] = React.useState(false);
 
-  const handleMouseEnter = () => {
+  const handleMouseEnter = (): void => {
     setIsHover(true);
   };
-  const handleMouseLeave = () => {
+  const handleMouseLeave = (): void => {
     setIsHover(false);
   };
   const caretStyle: React.CSSProperties = {

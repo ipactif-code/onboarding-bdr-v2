@@ -54,7 +54,7 @@ import {
 } from './menu';
 import { TextareaAutosize } from './textarea';
 
-export function AIMenu() {
+export function AIMenu(): React.ReactElement | null {
   const { api, editor } = useEditorPlugin(AIChatPlugin);
   const open = usePluginOption(AIChatPlugin, 'open');
   const mode = usePluginOption(AIChatPlugin, 'mode');
@@ -476,7 +476,7 @@ Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
       aiEditor: PlateEditor;
       editor: PlateEditor;
       input: string;
-      store: any;
+      store: unknown;
     }) => void;
   }
 >;
@@ -528,9 +528,10 @@ function AIMenuItems({
   store,
 }: {
   input: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required by menu store API
   store: any;
   setInput: (value: string) => void;
-}) {
+}): React.ReactElement {
   const editor = useEditorRef();
   const [searchValue] = useComboboxValueState();
   const { messages } = usePluginOption(AIChatPlugin, 'chat');
@@ -602,7 +603,7 @@ function TranslateMenuItems({
 }: {
   input: string;
   menuState: EditorChatState;
-}) {
+}): React.ReactElement {
   const editor = useEditorRef();
   const [searchValue] = useComboboxValueState();
 
@@ -611,7 +612,7 @@ function TranslateMenuItems({
     [searchValue]
   );
 
-  const handleTranslate = (value: string) => {
+  const handleTranslate = (value: string): void => {
     if (menuState === 'cursorCommand') {
       void editor.getApi(AIChatPlugin).aiChat.submit(input, {
         mode: 'insert',
@@ -674,7 +675,7 @@ function AIMenuCombobox({
 }: {
   input: string;
   setInput: (value: string) => void;
-}) {
+}): React.ReactElement {
   const { api } = useEditorPlugin(AIChatPlugin);
   const [, setValue] = useComboboxValueState();
 
@@ -708,7 +709,7 @@ function AIMenuCombobox({
   );
 }
 
-function StopIcon() {
+function StopIcon(): React.ReactElement {
   return (
     <svg
       height="20"
@@ -722,7 +723,7 @@ function StopIcon() {
   );
 }
 
-function SubmitIcon() {
+function SubmitIcon(): React.ReactElement {
   return (
     <div
       className={cn(
@@ -734,7 +735,7 @@ function SubmitIcon() {
   );
 }
 
-function LoadingIcon() {
+function LoadingIcon(): React.ReactElement {
   return (
     <div className="flex gap-0.5">
       {['#eab308', '#ea580c', '#6EB6F2'].map((color, index) => (

@@ -109,7 +109,10 @@ export interface AttachmentData {
 interface SendMessageOptions {
   parentId?: Id<"messages">;
   lessonId?: Id<"lessons">;
+  /** Attachment data for UploadThing URLs */
   attachments?: AttachmentData[];
+  /** Attachment IDs for files uploaded to Convex storage */
+  attachmentIds?: Id<"messageAttachments">[];
 }
 
 /**
@@ -212,6 +215,7 @@ export function useChannelMessages(
         parentId: sendOptions?.parentId,
         lessonId: sendOptions?.lessonId,
         attachments: sendOptions?.attachments,
+        attachmentIds: sendOptions?.attachmentIds,
       });
     },
     [channelId, sendMutation]

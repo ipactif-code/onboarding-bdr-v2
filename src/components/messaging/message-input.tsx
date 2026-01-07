@@ -8,10 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Id } from "../../../convex/_generated/dataModel";
 import { VoiceRecorder } from "@/components/messaging/voice-recorder";
 import { useVoiceSender } from "@/hooks/voice";
+import { useFileUpload } from "@/hooks/use-file-upload";
 import { toast } from "sonner";
 
 /**
- * Attachment data structure for file uploads.
+ * Attachment data structure for file uploads (UploadThing URLs).
  */
 export interface AttachmentData {
   url: string;
@@ -20,9 +21,19 @@ export interface AttachmentData {
   type: string;
 }
 
+/**
+ * Options for sending a message with attachments.
+ */
+export interface SendMessageOptions {
+  /** Attachment URLs from UploadThing */
+  attachments?: AttachmentData[];
+  /** Attachment IDs from Convex storage */
+  attachmentIds?: Id<"messageAttachments">[];
+}
+
 export interface MessageInputProps {
   /** Callback when message is sent - content is string (plain text for now) */
-  onSend?: (content: string, attachments?: AttachmentData[]) => Promise<void> | void;
+  onSend?: (content: string, options?: SendMessageOptions) => Promise<void> | void;
   /** Callback for legacy onSubmit API */
   onSubmit?: (content: string) => Promise<void> | void;
   /** Placeholder text */
@@ -91,13 +102,40 @@ export function MessageInput({
     },
   });
 
+  // File upload hook for attachments
+  const { upload: uploadFile, isUploading: isFileUploading } = useFileUpload({
+    onError: (error) => {
+      toast.error(error);
+    },
+  });
+
   const handleSubmit = async (): Promise<void> => {
     const trimmedValue = value.trim();
-    if (!trimmedValue || isSubmitting || disabled) return;
+    const hasContent = trimmedValue.length > 0;
+    const hasAttachments = pendingFiles.length > 0;
+
+    // Allow sending if there's text OR attachments
+    if ((!hasContent && !hasAttachments) || isSubmitting || disabled || isFileUploading) return;
 
     setIsSubmitting(true);
     try {
+      // Upload all pending files first
+      const uploadedAttachmentIds: Id<"messageAttachments">[] = [];
+      if (hasAttachments) {
+        for (const file of pendingFiles) {
+          const attachmentId = await uploadFile(file);
+          if (attachmentId) {
+            uploadedAttachmentIds.push(attachmentId);
+          } else {
+            // Upload failed - error toast already shown by useFileUpload
+            // Stop sending if any upload fails
+            return;
+          }
+        }
+      }
+
       // Convert plain text to Slate/Plate JSON format for backend compatibility
+      // Use empty paragraph if no text content (attachments-only message)
       const slateContent = JSON.stringify([
         {
           type: "p",
@@ -106,11 +144,14 @@ export function MessageInput({
       ]);
 
       if (onSend) {
-        await onSend(slateContent, []);
+        await onSend(slateContent, {
+          attachmentIds: uploadedAttachmentIds.length > 0 ? uploadedAttachmentIds : undefined,
+        });
       } else if (onSubmit) {
         await onSubmit(slateContent);
       }
       setValue("");
+      setPendingFiles([]); // Clear pending files after successful send
       onSent?.();
       textareaRef.current?.focus();
     } finally {
@@ -269,7 +310,7 @@ export function MessageInput({
         {/* Send button */}
         <Button
           onClick={handleSubmit}
-          disabled={!value.trim() || isSubmitting || disabled}
+          disabled={(!value.trim() && pendingFiles.length === 0) || isSubmitting || isFileUploading || disabled}
           size="icon"
           className="size-8 shrink-0"
           aria-label="Send message"

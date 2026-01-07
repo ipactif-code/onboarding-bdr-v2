@@ -156,6 +156,8 @@ export function MessageItem({
     { messageId: id }
   ) as ReactionGroup[] | undefined;
 
+  // Debug logging for reactions
+
   // Fetch voice message data when this is a voice message
   const voiceData = useQuery(
     api.voiceMessages.getVoiceMessage,

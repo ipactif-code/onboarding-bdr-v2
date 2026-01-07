@@ -80,13 +80,16 @@ export function ReactionBar({
   ): Promise<void> => {
     setPendingEmoji(emoji);
 
+    // Debug logging
+
     try {
       if (currentUserReacted) {
-        await removeReaction({ messageId, emoji });
+        const _result = await removeReaction({ messageId, emoji });
       } else {
-        await addReaction({ messageId, emoji });
+        const _result = await addReaction({ messageId, emoji });
       }
-    } catch {
+    } catch (err) {
+      console.error("[ReactionBar] Toggle reaction error:", err);
       toast.error(
         currentUserReacted
           ? "Failed to remove reaction"
@@ -104,9 +107,12 @@ export function ReactionBar({
     setEmojiPickerOpen(false);
     setPendingEmoji(emoji);
 
+    // Debug logging
+
     try {
-      await addReaction({ messageId, emoji });
-    } catch {
+      const _result = await addReaction({ messageId, emoji });
+    } catch (err) {
+      console.error("[ReactionBar] Reaction error details:", err);
       toast.error("Failed to add reaction");
     } finally {
       setPendingEmoji(null);

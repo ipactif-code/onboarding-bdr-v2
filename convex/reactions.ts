@@ -92,10 +92,14 @@ export const addReaction = mutation({
   },
   returns: v.id("reactions"),
   handler: async (ctx, args) => {
+
     const user = await requireAuth(ctx);
 
     // Validate emoji is a valid Unicode emoji
-    if (!isValidEmoji(args.emoji)) {
+    const isValid = isValidEmoji(args.emoji);
+
+    if (!isValid) {
+      console.error("[addReaction] Invalid emoji rejected:", args.emoji, "codePoints:", [...args.emoji].map(c => c.codePointAt(0)?.toString(16)));
       throw new Error("Invalid emoji: Must be a valid Unicode emoji character");
     }
 

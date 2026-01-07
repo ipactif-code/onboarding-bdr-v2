@@ -482,12 +482,14 @@ function MentionHoverCardContent(props: { element: MyMentionElement }): React.Re
       </div>
       <div className="absolute top-5 left-4 text-[30px]">{element.icon}</div>
       <h1 className="mt-5 px-4 font-bold text-lg">{element.value}</h1>
-      <EditorStatic
-        className="px-4 text-xs"
-        editor={previewEditor}
-        // components={basicComponents}
-        variant="mention"
-      />
+      {previewEditor && (
+        <EditorStatic
+          className="px-4 text-xs"
+          editor={previewEditor}
+          // components={basicComponents}
+          variant="mention"
+        />
+      )}
     </div>
   );
 }

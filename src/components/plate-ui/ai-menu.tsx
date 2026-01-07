@@ -476,7 +476,7 @@ Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
       aiEditor: PlateEditor;
       editor: PlateEditor;
       input: string;
-      store: unknown;
+      store: ReturnType<typeof import('./menu').useMenuStore>['store'];
     }) => void;
   }
 >;
@@ -562,7 +562,7 @@ function AIMenuItems({
               label?: string;
               value?: string;
               component?: React.ComponentType<{ menuState: EditorChatState }>;
-              onSelect?: (args: { aiEditor: PlateEditor; editor: PlateEditor; input: string; store: unknown }) => void;
+              onSelect?: (args: { aiEditor: PlateEditor; editor: PlateEditor; input: string; store: ReturnType<typeof useMenuStore>['store'] }) => void;
             }>)[item.value!];
 
             if (!menuItem) return null;

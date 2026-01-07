@@ -147,13 +147,14 @@ export function Comment(props: {
 
   const onCancel = (): void => {
     setEditingId(null);
-    commentEditor.tf.replaceNodes(initialValue, {
+    commentEditor?.tf.replaceNodes(initialValue, {
       at: [],
       children: true,
     });
   };
 
   const onSave = (): void => {
+    if (!commentEditor) return;
     void updateComment({
       id: comment.id,
       contentRich: commentEditor.children,
@@ -217,7 +218,7 @@ export function Comment(props: {
               dropdownOpen={dropdownOpen}
               onCloseAutoFocus={() => {
                 setTimeout(() => {
-                  commentEditor.tf.focus({ edge: 'endEditor' });
+                  commentEditor?.tf.focus({ edge: 'endEditor' });
                 }, 0);
               }}
               onRemoveComment={() => {
@@ -448,7 +449,7 @@ export function CommentCreateForm({
   }, [commentEditor, focusOnMount]);
 
   const onAddComment = React.useCallback((): void => {
-    if (!commentValue) return;
+    if (!commentValue || !commentEditor) return;
 
     commentEditor.tf.reset();
 
@@ -557,7 +558,7 @@ export function CommentCreateForm({
       );
       editor.tf.unsetNodes([getDraftCommentKey()], { at: path });
     });
-  }, [commentValue, commentEditor.tf, discussionId, editor, discussions]);
+  }, [commentValue, commentEditor, discussionId, editor, discussions]);
 
   return (
     <div className={cn('flex w-full', className)}>

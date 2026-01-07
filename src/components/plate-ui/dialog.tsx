@@ -133,13 +133,15 @@ function DialogModalContent({
   let variant = useDialogValue('variant') as 'drawer' | 'full' | 'modal' | undefined;
   variant = variant === 'modal' ? variantProp! : variant;
   const fixed = useDialogContentValue('fixed');
+  // dialogContentVariants only supports 'modal' | 'full', not 'drawer'
+  const contentVariant = variant === 'drawer' ? undefined : variant;
 
   return (
     <DialogPortal>
       <DialogOverlay className={cn('md:py-10')}>
         <Component
           className={cn(
-            dialogContentVariants({ minHeight, size, variant }),
+            dialogContentVariants({ minHeight, size, variant: contentVariant }),
             fixed ? 'gap-0 p-0 sm:max-h-[min(640px,80vh)]' : 'gap-4 p-6',
             className
           )}

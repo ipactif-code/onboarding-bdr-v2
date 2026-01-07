@@ -2,10 +2,13 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { AlertTriangle, Send, Paperclip } from "lucide-react";
+import { AlertTriangle, Send, Paperclip, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Id } from "../../../convex/_generated/dataModel";
+import { VoiceRecorder } from "@/components/messaging/voice-recorder";
+import { useVoiceSender } from "@/hooks/voice";
+import { toast } from "sonner";
 
 /**
  * Attachment data structure for file uploads.
@@ -59,12 +62,34 @@ export function MessageInput({
   className,
   disabled = false,
   autoFocus = false,
+  channelId,
+  conversationId,
+  lessonId,
+  parentId,
   onSent,
   onTyping,
 }: MessageInputProps): React.ReactElement {
   const [value, setValue] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isVoiceMode, setIsVoiceMode] = React.useState(false);
+  const [pendingFiles, setPendingFiles] = React.useState<File[]>([]);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Voice message sender hook
+  const { sendVoice, isUploading: isVoiceUploading } = useVoiceSender({
+    channelId,
+    conversationId,
+    lessonId,
+    parentId,
+    onSuccess: () => {
+      setIsVoiceMode(false);
+      onSent?.();
+    },
+    onError: () => {
+      // Error toast is already shown by useVoiceSender
+    },
+  });
 
   const handleSubmit = async (): Promise<void> => {
     const trimmedValue = value.trim();
@@ -106,22 +131,113 @@ export function MessageInput({
     onTyping?.();
   };
 
+  // Handle file selection from input
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const selectedFiles = Array.from(files);
+    // For now, just show a toast - full implementation needs upload integration
+    toast.info(`Selected ${selectedFiles.length} file(s): ${selectedFiles.map(f => f.name).join(", ")}`);
+    setPendingFiles((prev) => [...prev, ...selectedFiles]);
+
+    // Reset the input so the same file can be selected again
+    e.target.value = "";
+  };
+
+  // Handle attachment button click
+  const handleAttachmentClick = (): void => {
+    fileInputRef.current?.click();
+  };
+
+  // Handle voice recording send
+  const handleVoiceSend = async (
+    blob: Blob,
+    mimeType: string,
+    duration: number,
+    waveformData: number[]
+  ): Promise<void> => {
+    await sendVoice(blob, mimeType, duration, waveformData);
+  };
+
+  // Handle voice recording cancel
+  const handleVoiceCancel = (): void => {
+    setIsVoiceMode(false);
+  };
+
+  // Toggle voice recording mode
+  const handleVoiceToggle = (): void => {
+    setIsVoiceMode((prev) => !prev);
+  };
+
+  // Show voice recorder when in voice mode
+  if (isVoiceMode) {
+    return (
+      <div className={cn("flex flex-col gap-2", className)}>
+        <VoiceRecorder
+          onSend={handleVoiceSend}
+          onCancel={handleVoiceCancel}
+          disabled={disabled || isVoiceUploading}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={cn("flex flex-col gap-2", className)}>
       <div className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-3 py-1.5 rounded-md">
         <AlertTriangle className="size-3" />
         <span>Rich text editor upgrading - plain text only</span>
       </div>
+
+      {/* Pending files indicator */}
+      {pendingFiles.length > 0 && (
+        <div className="flex flex-wrap gap-1 px-2">
+          {pendingFiles.map((file, index) => (
+            <span
+              key={`${file.name}-${index}`}
+              className="inline-flex items-center gap-1 rounded bg-muted px-2 py-1 text-xs"
+            >
+              <Paperclip className="size-3" />
+              {file.name}
+              <button
+                type="button"
+                onClick={() => setPendingFiles((prev) => prev.filter((_, i) => i !== index))}
+                className="ml-1 text-muted-foreground hover:text-foreground"
+                aria-label={`Remove ${file.name}`}
+              >
+                &times;
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
       <div className="flex items-end gap-2 rounded-lg border bg-background p-2">
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          onChange={handleFileSelect}
+          className="hidden"
+          aria-hidden="true"
+        />
+
+        {/* Attachment button */}
         <Button
+          type="button"
           variant="ghost"
           size="icon"
-          className="size-8 shrink-0 text-muted-foreground"
-          disabled
-          title="Attachments coming soon"
+          className="size-8 shrink-0 text-muted-foreground hover:text-foreground"
+          onClick={handleAttachmentClick}
+          disabled={disabled || isSubmitting}
+          title="Add attachment"
+          aria-label="Add attachment"
         >
           <Paperclip className="size-4" />
         </Button>
+
         <Textarea
           ref={textareaRef}
           value={value}
@@ -133,11 +249,30 @@ export function MessageInput({
           className="min-h-[40px] max-h-[200px] resize-none border-0 bg-transparent p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
           rows={1}
         />
+
+        {/* Voice recording button - only show when channelId or conversationId is available */}
+        {(channelId || conversationId) && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-8 shrink-0 text-muted-foreground hover:text-foreground"
+            onClick={handleVoiceToggle}
+            disabled={disabled || isSubmitting}
+            title="Record voice message"
+            aria-label="Record voice message"
+          >
+            <Mic className="size-4" />
+          </Button>
+        )}
+
+        {/* Send button */}
         <Button
           onClick={handleSubmit}
           disabled={!value.trim() || isSubmitting || disabled}
           size="icon"
           className="size-8 shrink-0"
+          aria-label="Send message"
         >
           <Send className="size-4" />
         </Button>

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { parseContent } from "@/components/messaging/rich-text-renderer-utils";
 
 export interface RichTextRendererProps {
   content: unknown;
@@ -24,10 +25,22 @@ export function RichTextRenderer({
 }: RichTextRendererProps): React.ReactElement {
   const textContent = React.useMemo(() => {
     if (!content) return "";
-    if (typeof content === "string") return content;
+
+    // If content is a string, try to parse it as Plate.js JSON first
+    if (typeof content === "string") {
+      const parsed = parseContent(content);
+      if (parsed) {
+        return extractTextFromSlateContent(parsed);
+      }
+      // Not valid JSON, return as plain text
+      return content;
+    }
+
+    // Already an array (parsed Plate.js content)
     if (Array.isArray(content)) {
       return extractTextFromSlateContent(content);
     }
+
     return "";
   }, [content]);
 

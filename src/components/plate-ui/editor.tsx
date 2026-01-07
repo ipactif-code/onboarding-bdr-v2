@@ -42,7 +42,7 @@ export function EditorContainer({
   variant,
   ...props
 }: React.HTMLAttributes<HTMLDivElement> &
-  VariantProps<typeof editorContainerVariants>) {
+  VariantProps<typeof editorContainerVariants>): React.ReactElement {
   const editor = useEditorRef();
 
   return (
@@ -116,7 +116,7 @@ export function Editor({
   onClick,
   onMouseDown,
   ...props
-}: PlateContentProps & VariantProps<typeof editorVariants>) {
+}: PlateContentProps & VariantProps<typeof editorVariants>): React.ReactElement {
   return (
     <PlateContent
       className={cn(

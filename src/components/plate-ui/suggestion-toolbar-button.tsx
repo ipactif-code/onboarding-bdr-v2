@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 
 import { ToolbarButton } from './toolbar';
 
-export function SuggestionToolbarButton() {
+export function SuggestionToolbarButton(): React.ReactElement {
   const { setOption } = useEditorPlugin(SuggestionPlugin);
   const isSuggesting = usePluginOption(SuggestionPlugin, 'isSuggesting');
 

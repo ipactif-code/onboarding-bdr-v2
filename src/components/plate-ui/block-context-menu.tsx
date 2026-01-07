@@ -21,7 +21,7 @@ import { BlockMenu } from './block-menu';
 import { Button, type ButtonProps } from './button';
 import { useContextMenu } from './menu';
 
-export function BlockContextMenu({ children }: { children: React.ReactNode }) {
+export function BlockContextMenu({ children }: { children: React.ReactNode }): React.ReactElement | React.ReactNode {
   const { api, editor } = useEditorPlugin(BlockMenuPlugin);
   const anchorRect = usePluginOption(BlockMenuPlugin, 'position');
   const openId = usePluginOption(BlockMenuPlugin, 'openId');
@@ -71,7 +71,7 @@ export function BlockActionButton({
   className,
   defaultStyles = true,
   ...props
-}: Partial<ButtonProps> & { defaultStyles?: boolean }) {
+}: Partial<ButtonProps> & { defaultStyles?: boolean }): React.ReactElement {
   const editor = useEditorRef();
   const element = useElement();
 

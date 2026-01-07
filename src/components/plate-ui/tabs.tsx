@@ -16,7 +16,7 @@ export function TabsList({
   className,
   ...props
 }: React.ComponentProps<typeof TabsPrimitive.List> &
-  VariantProps<typeof tabsListVariants>) {
+  VariantProps<typeof tabsListVariants>): React.ReactElement {
   return (
     <TabsPrimitive.List
       className={cn(tabsListVariants(), className)}
@@ -37,7 +37,7 @@ export function TabsTrigger({
   className,
   ...props
 }: React.ComponentProps<typeof TabsPrimitive.Trigger> &
-  VariantProps<typeof tabsTriggerVariants>) {
+  VariantProps<typeof tabsTriggerVariants>): React.ReactElement {
   return (
     <TabsPrimitive.Trigger
       className={cn(tabsTriggerVariants(), className)}
@@ -49,7 +49,7 @@ export function TabsTrigger({
 export function TabsContent({
   className,
   ...props
-}: React.ComponentProps<typeof TabsPrimitive.Content>) {
+}: React.ComponentProps<typeof TabsPrimitive.Content>): React.ReactElement {
   return (
     <TabsPrimitive.Content
       className={cn(

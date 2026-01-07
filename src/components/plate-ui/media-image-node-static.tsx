@@ -5,7 +5,7 @@ import * as React from 'react';
 
 export function ImageElementStatic(
   props: SlateElementProps<TImageElement & TCaptionElement & TResizableProps>
-) {
+): React.ReactElement {
   const { align = 'center', caption, url, width } = props.element;
 
   return (
@@ -17,6 +17,7 @@ export function ImageElementStatic(
         >
           <div className="inline-block" style={{ width }}>
             <img
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               alt={(props.attributes as any).alt}
               className="w-full max-w-full cursor-default rounded-sm object-cover px-0"
               src={url}

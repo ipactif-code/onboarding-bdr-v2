@@ -19,7 +19,7 @@ import { ToolbarButton } from './toolbar';
 
 export function FontColorToolbarButton(
   props: React.ComponentProps<typeof DropdownMenu>
-) {
+): React.ReactElement {
   const editor = useEditorRef();
 
   const color = useSelectionFragmentProp({
@@ -185,7 +185,7 @@ export function FontColorToolbarButton(
   );
 }
 
-export function ColorIcon({ group, value }: { group: string; value: string }) {
+export function ColorIcon({ group, value }: { group: string; value: string }): React.ReactElement {
   return (
     <div
       className="flex size-5 items-center justify-center rounded-sm border text-sm"

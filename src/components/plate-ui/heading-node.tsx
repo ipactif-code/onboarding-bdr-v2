@@ -27,7 +27,7 @@ export function HeadingElement({
   attributes,
   variant = 'h1',
   ...props
-}: PlateElementProps & VariantProps<typeof headingVariants>) {
+}: PlateElementProps & VariantProps<typeof headingVariants>): React.ReactElement {
   const isFirstBlock = PathApi.equals(props.path, [0]);
 
   return (
@@ -45,14 +45,14 @@ export function HeadingElement({
   );
 }
 
-export function H1Element(props: PlateElementProps) {
+export function H1Element(props: PlateElementProps): React.ReactElement {
   return <HeadingElement variant="h1" {...props} />;
 }
 
-export function H2Element(props: PlateElementProps) {
+export function H2Element(props: PlateElementProps): React.ReactElement {
   return <HeadingElement variant="h2" {...props} />;
 }
 
-export function H3Element(props: PlateElementProps) {
+export function H3Element(props: PlateElementProps): React.ReactElement {
   return <HeadingElement variant="h3" {...props} />;
 }

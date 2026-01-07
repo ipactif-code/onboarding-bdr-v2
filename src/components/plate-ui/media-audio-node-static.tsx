@@ -4,7 +4,7 @@ import * as React from 'react';
 
 export function MediaAudioElementStatic(
   props: SlateElementProps<TAudioElement>
-) {
+): React.ReactElement {
   const { url } = props.element;
 
   return (

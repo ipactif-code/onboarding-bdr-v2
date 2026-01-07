@@ -48,7 +48,7 @@ import { linkPlugin } from '@/components/editor/plugins/link-kit';
 import { Button } from './button';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from './hover-card';
 
-export function LinkElement(props: PlateElementProps) {
+export function LinkElement(props: PlateElementProps): React.ReactElement {
   const element = useElement<MyLinkElement>();
   const { props: linkProps } = useLink({ element });
   const { api, setOption } = useEditorPlugin(linkPlugin);
@@ -59,7 +59,7 @@ export function LinkElement(props: PlateElementProps) {
 
   const isInternal = element.url.startsWith('/');
 
-  const onCopy = () => {
+  const onCopy = (): void => {
     const urlToCopy = isInternal
       ? `${window.location.origin}${element.url}`
       : element.url;
@@ -90,6 +90,7 @@ export function LinkElement(props: PlateElementProps) {
             {...props}
             attributes={{
               ...props.attributes,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               ...(linkProps as any),
               onClick: () => {
                 window.open(element.url, isInternal ? '_self' : '_blank');
@@ -134,7 +135,7 @@ export function LinkElement(props: PlateElementProps) {
   );
 }
 
-const LinkPreview = ({ element }: { element: MyLinkElement }) => {
+const LinkPreview = ({ element }: { element: MyLinkElement }): React.ReactElement => {
   const { editor } = useEditorPlugin(linkPlugin);
 
   const isInternal = element.url.startsWith('/');

@@ -111,12 +111,13 @@ export const turnIntoItems = [
   },
 ];
 
-export function TurnIntoToolbarButton(props: DropdownMenuProps) {
+export function TurnIntoToolbarButton(props: DropdownMenuProps): React.ReactElement {
   const editor = useEditorRef();
   const openState = useOpenState();
 
   const value = useSelectionFragmentProp({
     defaultValue: KEYS.p,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getProp: (node) => getBlockType(node as any),
   });
   const selectedItem = React.useMemo(

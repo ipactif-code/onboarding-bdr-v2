@@ -19,7 +19,7 @@ import {
 
 const EMOJI_REGEX = /:$/;
 
-export function EmojiInputElement(props: PlateElementProps) {
+export function EmojiInputElement(props: PlateElementProps): React.ReactElement {
   const data = usePluginOption(EmojiPlugin, 'data')!;
   const { children, editor, element } = props;
   const [value, setValue] = React.useState('');

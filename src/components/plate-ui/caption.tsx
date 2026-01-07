@@ -23,7 +23,7 @@ const captionVariants = cva('max-w-full', {
 type CaptionProps = React.ComponentPropsWithoutRef<typeof CaptionPrimitive> &
   VariantProps<typeof captionVariants>;
 
-export function Caption({ align, className, ...props }: CaptionProps) {
+export function Caption({ align, className, ...props }: CaptionProps): React.ReactElement {
   return (
     <CaptionPrimitive
       {...props}
@@ -34,7 +34,7 @@ export function Caption({ align, className, ...props }: CaptionProps) {
 
 export function CaptionTextarea(
   props: React.ComponentPropsWithoutRef<typeof CaptionTextareaPrimitive>
-) {
+): React.ReactElement {
   return (
     <CaptionTextareaPrimitive
       {...props}

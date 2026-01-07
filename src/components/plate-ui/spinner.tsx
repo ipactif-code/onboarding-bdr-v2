@@ -22,7 +22,7 @@ export function Spinner({
   className,
   size,
   ...props
-}: Partial<LucideProps & VariantProps<typeof spinnerVariants>>) {
+}: Partial<LucideProps & VariantProps<typeof spinnerVariants>>): React.ReactElement {
   return (
     <Loader2Icon
       className={cn(spinnerVariants({ size }), className)}

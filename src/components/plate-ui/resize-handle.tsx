@@ -45,7 +45,7 @@ export function ResizeHandle({
   className,
   options,
   ...props
-}: ResizeHandleProps) {
+}: ResizeHandleProps): React.ReactElement | null {
   const state = useResizeHandleState(options ?? {});
   const resizeHandle = useResizeHandle(state);
 
@@ -77,7 +77,7 @@ const resizableVariants = cva('', {
 type ResizableProps = React.ComponentProps<typeof ResizablePrimitive> &
   VariantProps<typeof resizableVariants>;
 
-export function Resizable({ align, className, ...props }: ResizableProps) {
+export function Resizable({ align, className, ...props }: ResizableProps): React.ReactElement {
   return (
     <ResizablePrimitive
       {...props}

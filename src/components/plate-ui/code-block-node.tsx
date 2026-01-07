@@ -30,7 +30,7 @@ import {
 import { Input } from './input';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 
-export function CodeBlockElement(props: PlateElementProps) {
+export function CodeBlockElement(props: PlateElementProps): React.ReactElement {
   const { element } = props;
   const { copyToClipboard } = useCopyToClipboard();
 
@@ -95,7 +95,7 @@ export function CodeBlockElement(props: PlateElementProps) {
   );
 }
 
-function CodeBlockCombobox({ className }: { className?: string }) {
+function CodeBlockCombobox({ className }: { className?: string }): React.ReactElement | null {
   const [open, setOpen] = React.useState(false);
   const readOnly = useReadOnly();
   const editor = useEditorRef();
@@ -180,11 +180,11 @@ function CodeBlockCombobox({ className }: { className?: string }) {
   );
 }
 
-export function CodeLineElement(props: PlateElementProps) {
+export function CodeLineElement(props: PlateElementProps): React.ReactElement {
   return <PlateElement {...props} />;
 }
 
-export function CodeSyntaxLeaf(props: PlateLeafProps) {
+export function CodeSyntaxLeaf(props: PlateLeafProps): React.ReactElement {
   const tokenClassName = props.leaf.className as string;
 
   return <PlateLeaf {...props} className={tokenClassName} />;

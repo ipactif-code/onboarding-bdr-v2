@@ -8,7 +8,7 @@ import * as React from 'react';
 import { useOpenState } from './dropdown-menu';
 import { ToolbarButton } from './toolbar';
 
-export function MoreToolbarButton() {
+export function MoreToolbarButton(): React.ReactElement {
   const editor = useEditorRef();
   const openState = useOpenState();
 

@@ -20,7 +20,7 @@ export const MediaFileElement = withHOC(
     const readOnly = useReadOnly();
     const { name, unsafeUrl } = useMediaState();
 
-    const onDownload = () => {
+    const onDownload = (): void => {
       window.open(unsafeUrl);
     };
 

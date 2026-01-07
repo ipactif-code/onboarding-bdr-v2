@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 
 export function MediaVideoElementStatic(
   props: SlateElementProps<TVideoElement & TCaptionElement & TResizableProps>
-) {
+): React.ReactElement {
   const { align = 'center', caption, url, width } = props.element;
 
   return (

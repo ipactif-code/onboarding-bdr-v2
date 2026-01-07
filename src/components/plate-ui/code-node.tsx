@@ -3,7 +3,7 @@
 import { PlateLeaf, type PlateLeafProps } from 'platejs/react';
 import * as React from 'react';
 
-export function CodeLeaf(props: PlateLeafProps) {
+export function CodeLeaf(props: PlateLeafProps): React.ReactElement {
   return (
     <PlateLeaf
       {...props}

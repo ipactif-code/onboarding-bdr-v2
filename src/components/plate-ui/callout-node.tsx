@@ -8,7 +8,7 @@ import * as React from 'react';
 import { Button } from './button';
 import { EmojiPicker, EmojiPopover } from './emoji-toolbar-button';
 
-export function CalloutElement(props: PlateElementProps) {
+export function CalloutElement(props: PlateElementProps): React.ReactElement {
   const { emojiPickerState, isOpen, setIsOpen } = useEmojiDropdownMenuState({
     closeOnSelect: true,
   });
@@ -23,6 +23,7 @@ export function CalloutElement(props: PlateElementProps) {
     <PlateElement
       className="my-1 flex rounded-sm bg-muted p-4 pl-3"
       style={{
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         backgroundColor: props.element.backgroundColor as any,
       }}
       {...props}
@@ -44,7 +45,8 @@ export function CalloutElement(props: PlateElementProps) {
               }}
               variant="ghost"
             >
-              {(props.element.icon as any) || '💡'}
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            {(props.element.icon as any) || '💡'}
             </Button>
           }
         >

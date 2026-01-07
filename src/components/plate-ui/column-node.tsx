@@ -30,7 +30,7 @@ export const ColumnElement = withHOC(
   }
 );
 
-export function ColumnGroupElement(props: PlateElementProps) {
+export function ColumnGroupElement(props: PlateElementProps): React.ReactElement {
   return (
     <PlateElement className="mb-1" {...props}>
       <div className="flex size-full gap-4 rounded">{props.children}</div>

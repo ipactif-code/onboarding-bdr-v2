@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
-export function HrElementStatic(props: SlateElementProps) {
+export function HrElementStatic(props: SlateElementProps): React.ReactElement {
   return (
     <SlateElement className="mb-1 py-2" {...props}>
       <div contentEditable={false}>

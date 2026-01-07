@@ -16,7 +16,7 @@ export function Label({
   ...props
 }: React.ComponentProps<typeof LabelPrimitive.Root> & {
   disabled?: boolean;
-} & VariantProps<typeof labelVariants>) {
+} & VariantProps<typeof labelVariants>): React.ReactElement {
   return (
     <LabelPrimitive.Root
       className={cn(

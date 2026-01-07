@@ -40,7 +40,7 @@ export function Toggle({
   variant,
   ...props
 }: React.ComponentProps<typeof TogglePrimitive.Root> &
-  VariantProps<typeof toggleVariants>) {
+  VariantProps<typeof toggleVariants>): React.ReactElement {
   return (
     <TogglePrimitive.Root
       className={cn(toggleVariants({ size, variant }), className)}

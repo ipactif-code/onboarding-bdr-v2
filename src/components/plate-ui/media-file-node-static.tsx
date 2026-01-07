@@ -4,7 +4,7 @@ import type { TFileElement } from 'platejs';
 import { SlateElement, type SlateElementProps } from 'platejs/static';
 import * as React from 'react';
 
-export function MediaFileElementStatic(props: SlateElementProps<TFileElement>) {
+export function MediaFileElementStatic(props: SlateElementProps<TFileElement>): React.ReactElement {
   const { name, url } = props.element;
 
   return (

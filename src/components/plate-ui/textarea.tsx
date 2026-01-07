@@ -30,7 +30,7 @@ export type TextareaAutosizeProps = React.ComponentProps<
 > &
   VariantProps<typeof textareaVariants>;
 
-export function Textarea({ className, variant, ...props }: TextareaProps) {
+export function Textarea({ className, variant, ...props }: TextareaProps): React.ReactElement {
   return (
     <textarea
       className={cn(textareaVariants({ variant }), className)}
@@ -43,11 +43,11 @@ export type TextareaProps = React.ComponentProps<'textarea'> &
   VariantProps<typeof textareaVariants>;
 
 export function TextareaAutosize({
-  children,
+  children: _children,
   className,
   variant,
   ...props
-}: TextareaAutosizeProps) {
+}: TextareaAutosizeProps): React.ReactElement {
   return (
     <ReactTextareaAutosize
       autoComplete="off"

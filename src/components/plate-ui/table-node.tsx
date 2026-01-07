@@ -30,7 +30,7 @@ import { Button } from './button';
 
 export const TableElement = withHOC(
   TableProvider,
-  function TableElement(props: PlateElementProps) {
+  function TableElement(props: PlateElementProps): React.ReactElement {
     const { editor, element } = props;
     const { tf } = useEditorPlugin(TablePlugin);
     const readOnly = useReadOnly();
@@ -142,7 +142,7 @@ export const TableElement = withHOC(
   }
 );
 
-export function TableRowElement(props: PlateElementProps) {
+export function TableRowElement(props: PlateElementProps): React.ReactElement {
   const selected = useSelected();
 
   return (
@@ -160,7 +160,7 @@ export function TableCellElement({
   ...props
 }: PlateElementProps<TTableCellElement> & {
   isHeader?: boolean;
-}) {
+}): React.ReactElement {
   const { api } = useEditorPlugin(TablePlugin);
   const readOnly = useReadOnly();
   const element = props.element;
@@ -250,6 +250,7 @@ export function TableCellElement({
                 className={cn(
                   'absolute top-0 z-30 hidden h-full w-1 bg-ring',
                   'right-[-1.5px]',
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   columnResizeVariants({ colIndex: colIndex as any })
                 )}
               />
@@ -276,7 +277,7 @@ export function TableCellElement({
 
 export function TableCellHeaderElement(
   props: React.ComponentProps<typeof TableCellElement>
-) {
+): React.ReactElement {
   return <TableCellElement {...props} isHeader />;
 }
 

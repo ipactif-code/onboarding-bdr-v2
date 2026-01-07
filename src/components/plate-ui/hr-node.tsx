@@ -10,7 +10,7 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
-export function HrElement(props: PlateElementProps) {
+export function HrElement(props: PlateElementProps): React.ReactElement {
   const selected = useSelected();
   const focused = useFocused();
 

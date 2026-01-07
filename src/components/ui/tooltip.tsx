@@ -1,6 +1,6 @@
 "use client"
 
-import { type ReactElement } from "react"
+import React, { type ReactElement } from "react"
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip"
 
 import { cn } from "@/lib/utils"
@@ -28,16 +28,31 @@ function Tooltip({ ...props }: TooltipPrimitive.Root.Props): ReactElement {
 
 interface TooltipTriggerProps extends TooltipPrimitive.Trigger.Props {
   /**
-   * @deprecated Use render prop instead. Kept for backwards compatibility.
-   * In Base UI, the Trigger already renders children directly.
+   * When true, the trigger will render the child element directly using Base UI's
+   * render prop, preventing nested button elements in the DOM.
    */
   asChild?: boolean
 }
 
-function TooltipTrigger({ asChild: _asChild, ...props }: TooltipTriggerProps): ReactElement {
-  // Base UI's Trigger already renders children directly, so asChild is not needed
-  // We accept it for backwards compatibility but ignore it
-  return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />
+function TooltipTrigger({
+  asChild,
+  children,
+  ...props
+}: TooltipTriggerProps): ReactElement {
+  if (asChild && React.isValidElement(children)) {
+    return (
+      <TooltipPrimitive.Trigger
+        data-slot="tooltip-trigger"
+        render={children}
+        {...props}
+      />
+    )
+  }
+  return (
+    <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props}>
+      {children}
+    </TooltipPrimitive.Trigger>
+  )
 }
 
 function TooltipContent({

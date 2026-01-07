@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 
 export function CodeBlockElementStatic(
   props: SlateElementProps<TCodeBlockElement>
-) {
+): React.ReactElement {
   return (
     <SlateElement
       className={cn(
@@ -39,11 +39,11 @@ export function CodeBlockElementStatic(
   );
 }
 
-export function CodeLineElementStatic(props: SlateElementProps) {
+export function CodeLineElementStatic(props: SlateElementProps): React.ReactElement {
   return <SlateElement {...props} />;
 }
 
-export function CodeSyntaxLeafStatic(props: SlateLeafProps) {
+export function CodeSyntaxLeafStatic(props: SlateLeafProps): React.ReactElement {
   const tokenClassName = props.leaf.className as string;
 
   return <SlateLeaf {...props} className={tokenClassName} />;

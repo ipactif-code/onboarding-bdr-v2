@@ -11,7 +11,7 @@ export function TooltipProvider({
   disableHoverableContent = true,
   skipDelayDuration = 0,
   ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
+}: React.ComponentProps<typeof TooltipPrimitive.Provider>): React.ReactElement {
   return (
     <TooltipPrimitive.Provider
       delayDuration={delayDuration}
@@ -32,7 +32,7 @@ export function TooltipContent({
   className,
   sideOffset = 4,
   ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Content>) {
+}: React.ComponentProps<typeof TooltipPrimitive.Content>): React.ReactElement {
   return (
     <TooltipPrimitive.Content
       className={cn(
@@ -58,7 +58,7 @@ export function TooltipTC({
 }: {
   content: React.ReactNode;
 } & React.ComponentProps<typeof TooltipPrimitive.Content> &
-  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Root>) {
+  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Root>): React.ReactNode {
   const mounted = useMounted();
 
   if (!mounted) {
@@ -102,15 +102,15 @@ type TooltipProps<T extends React.ElementType> = {
   >;
 } & React.ComponentProps<T>;
 
-export function withTooltip<T extends React.ElementType>(Component: T) {
-  return function ExtendComponent({
+export function withTooltip<T extends React.ElementType>(Component: T): (props: TooltipProps<T>) => React.ReactElement {
+  function ExtendComponent({
     shortcut,
     tooltip,
     tooltipContentProps,
     tooltipProps,
     tooltipTriggerProps,
     ...props
-  }: TooltipProps<T>) {
+  }: TooltipProps<T>): React.ReactElement {
     const isMounted = useMounted();
 
     const component = <Component {...(props as React.ComponentProps<T>)} />;
@@ -137,5 +137,7 @@ export function withTooltip<T extends React.ElementType>(Component: T) {
     }
 
     return component;
-  };
+  }
+  ExtendComponent.displayName = 'ExtendComponent';
+  return ExtendComponent;
 }

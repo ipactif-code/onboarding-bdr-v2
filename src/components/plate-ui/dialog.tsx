@@ -16,7 +16,7 @@ import { useMediaQuery } from '@/hooks/use-media-query';
 import { useMounted } from '@/hooks/use-mounted';
 import { buttonVariants } from '@/components/plate-ui/button';
 
-const useIsDesktop = () => {
+const useIsDesktop = (): boolean => {
   const mounted = useMounted();
 
   return useMediaQuery('(min-width: 768px)') || !mounted;
@@ -35,7 +35,7 @@ export const DialogPortal = DialogPrimitive.Portal;
 export function DialogOverlay({
   className,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
+}: React.ComponentProps<typeof DialogPrimitive.Overlay>): React.ReactElement {
   return (
     <DialogPrimitive.Overlay
       className={cn(
@@ -50,10 +50,9 @@ export function DialogOverlay({
 export const DialogClosePrimitive = DialogPrimitive.Close;
 
 export function DialogClose({
-  children,
   className,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Close>) {
+}: React.ComponentProps<typeof DialogPrimitive.Close>): React.ReactElement {
   return (
     <DialogPrimitive.Close
       aria-label="Close"
@@ -130,17 +129,19 @@ function DialogModalContent({
   fixed?: boolean;
   hideClose?: boolean;
 } & VariantProps<typeof dialogContentVariants> &
-  React.ComponentProps<typeof DialogPrimitive.Content>) {
-  let variant = useDialogValue('variant') as any;
+  React.ComponentProps<typeof DialogPrimitive.Content>): React.ReactElement {
+  let variant = useDialogValue('variant') as 'drawer' | 'full' | 'modal' | undefined;
   variant = variant === 'modal' ? variantProp! : variant;
   const fixed = useDialogContentValue('fixed');
+  // dialogContentVariants only supports 'modal' | 'full', not 'drawer'
+  const contentVariant = variant === 'drawer' ? undefined : variant;
 
   return (
     <DialogPortal>
       <DialogOverlay className={cn('md:py-10')}>
         <Component
           className={cn(
-            dialogContentVariants({ minHeight, size, variant }),
+            dialogContentVariants({ minHeight, size, variant: contentVariant }),
             fixed ? 'gap-0 p-0 sm:max-h-[min(640px,80vh)]' : 'gap-4 p-6',
             className
           )}
@@ -170,7 +171,7 @@ function DialogModalContent({
 export function DialogHeader({
   className,
   ...props
-}: React.ComponentProps<'div'>) {
+}: React.ComponentProps<'div'>): React.ReactElement {
   const variant = useDialogValue('variant');
   const fixed = useDialogContentValue('fixed');
 
@@ -190,7 +191,7 @@ export function DialogHeader({
 export function DialogFooter({
   className,
   ...props
-}: React.ComponentProps<'div'>) {
+}: React.ComponentProps<'div'>): React.ReactElement {
   const variant = useDialogValue('variant');
   const fixed = useDialogContentValue('fixed');
 
@@ -211,7 +212,7 @@ export function DialogFooter({
 export function DialogModalTitle({
   className,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Title>) {
+}: React.ComponentProps<typeof DialogPrimitive.Title>): React.ReactElement {
   return (
     <DialogPrimitive.Title
       className={cn(
@@ -226,7 +227,7 @@ export function DialogModalTitle({
 export function DialogDescription({
   className,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Description>) {
+}: React.ComponentProps<typeof DialogPrimitive.Description>): React.ReactElement {
   return (
     <DialogPrimitive.Description
       className={cn('text-sm text-subtle-foreground', className)}
@@ -255,7 +256,7 @@ export function Dialog({
   desktopVariant = 'modal',
   mobileVariant = 'drawer',
   ...props
-}: ComponentProps<typeof DialogProvider> & DialogProps) {
+}: ComponentProps<typeof DialogProvider> & DialogProps): React.ReactElement {
   const isDesktop = useIsDesktop();
 
   const variant = isDesktop ? desktopVariant : mobileVariant;
@@ -271,7 +272,7 @@ export function Dialog({
 
 export function DialogTrigger(
   props: React.ComponentProps<typeof DialogModalTrigger>
-) {
+): React.ReactElement {
   const variant = useDialogValue('variant');
   const ResponsiveTrigger =
     variant === 'drawer' ? DrawerTrigger : DialogModalTrigger;
@@ -286,13 +287,14 @@ export function DialogContent({
   hideClose,
   size,
   ...props
-}: React.ComponentProps<typeof DialogModalContent> & { fixed?: boolean }) {
+}: React.ComponentProps<typeof DialogModalContent> & { fixed?: boolean }): React.ReactElement {
   const variant = useDialogValue('variant');
   const dismissible = useDialogValue('dismissible');
 
   return (
     <DialogContentProvider fixed={fixed}>
       {variant === 'drawer' ? (
+        /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
         <DrawerContent dismissible={dismissible} {...(props as any)} />
       ) : (
         <DialogModalContent
@@ -312,7 +314,7 @@ export function DialogBody({
   children,
   className,
   ...props
-}: React.ComponentProps<'div'>) {
+}: React.ComponentProps<'div'>): React.ReactElement {
   const fixed = useDialogContentValue('fixed');
   const variant = useDialogValue('variant');
 
@@ -333,7 +335,7 @@ export function DialogBody({
 
 export function DialogTitle(
   props: React.ComponentProps<typeof DialogModalTitle>
-) {
+): React.ReactElement {
   const variant = useDialogValue('variant');
 
   return variant === 'drawer' ? (
@@ -347,7 +349,7 @@ export function DialogTitle(
 
 export function Drawer(
   props: React.ComponentProps<typeof DrawerPrimitive.Root>
-) {
+): React.ReactElement {
   return <DrawerPrimitive.Root shouldScaleBackground={false} {...props} />;
 }
 
@@ -360,7 +362,7 @@ export const DrawerClose = DrawerPrimitive.Close;
 export function DrawerOverlay({
   className,
   ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Overlay>) {
+}: React.ComponentProps<typeof DrawerPrimitive.Overlay>): React.ReactElement {
   return (
     <DrawerPrimitive.Overlay
       className={cn('fixed inset-0 z-50 bg-black/40', className)}
@@ -377,7 +379,7 @@ export function DrawerContent({
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Content> & {
   dismissible?: boolean;
-}) {
+}): React.ReactElement {
   return (
     <DrawerPortal>
       <DrawerOverlay />
@@ -409,7 +411,7 @@ export const DrawerHeader = DialogHeader;
 export function DrawerTitle({
   className,
   ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Title>) {
+}: React.ComponentProps<typeof DrawerPrimitive.Title>): React.ReactElement {
   return (
     <DrawerPrimitive.Title
       className={cn(
@@ -424,7 +426,7 @@ export function DrawerTitle({
 export function DrawerDescription({
   className,
   ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Description>) {
+}: React.ComponentProps<typeof DrawerPrimitive.Description>): React.ReactElement {
   return (
     <DrawerPrimitive.Description
       className={cn('text-sm text-subtle-foreground', className)}

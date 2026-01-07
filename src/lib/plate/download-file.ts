@@ -1,4 +1,4 @@
-export const downloadFile = async (url: string, filename: string) => {
+export const downloadFile = async (url: string, filename: string): Promise<void> => {
   const response = await fetch(url);
 
   const blob = await response.blob();

@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 const OVERLAY_ID = '__plate_cursor_overlay__';
 
 // TODO:Move to core
-export const getCursorOverlayElement = () =>
+export const getCursorOverlayElement = (): Element | null =>
   document.querySelector(`#${OVERLAY_ID}`);
 
 export function Cursor({
@@ -24,7 +24,7 @@ export function Cursor({
   data,
   selection,
   selectionRects,
-}: CursorOverlayState<CursorData>) {
+}: CursorOverlayState<CursorData>): React.ReactElement | null {
   const streaming = usePluginOption(AIChatPlugin, 'streaming');
 
   if (streaming) return null;
@@ -63,7 +63,7 @@ export function Cursor({
   );
 }
 
-export function CursorOverlay() {
+export function CursorOverlay(): React.ReactElement {
   const { cursors } = useCursorOverlay();
 
   return (

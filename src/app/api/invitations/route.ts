@@ -17,7 +17,7 @@ async function queryUserByClerkId(
   } | null>;
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<Response> {
   try {
     // 1. Verify authentication
     const { userId } = await auth();

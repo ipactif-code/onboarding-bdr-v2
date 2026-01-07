@@ -39,7 +39,7 @@ const MarkdownComponents: Components = {
   text: ({ children }) => <span>{children}</span>,
 };
 
-export function GhostText() {
+export function GhostText(): React.ReactElement | null {
   const element = useElement();
 
   const isSuggested = usePluginOption(
@@ -53,7 +53,7 @@ export function GhostText() {
   return <GhostTextContent />;
 }
 
-function GhostTextContent() {
+function GhostTextContent(): React.ReactElement {
   const suggestionText = usePluginOption(CopilotPlugin, 'suggestionText');
   const hasLeadingSpace = suggestionText?.startsWith(' ');
 

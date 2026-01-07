@@ -46,37 +46,37 @@ const dropdownMenuLabelVariants = cva(
 
 export type DropdownMenuProps = DropdownMenuPrimitive.DropdownMenuProps;
 
-export function DropdownMenu(props: DropdownMenuProps) {
+export function DropdownMenu(props: DropdownMenuProps): React.ReactElement {
   return <DropdownMenuPrimitive.Root {...props} />;
 }
 
 export function DropdownMenuTrigger(
   props: DropdownMenuPrimitive.DropdownMenuTriggerProps
-) {
+): React.ReactElement {
   return <DropdownMenuPrimitive.Trigger {...props} />;
 }
 
 export function DropdownMenuGroup(
   props: DropdownMenuPrimitive.DropdownMenuGroupProps
-) {
+): React.ReactElement {
   return <DropdownMenuPrimitive.Group className="py-1.5" {...props} />;
 }
 
 export function DropdownMenuPortal(
   props: DropdownMenuPrimitive.DropdownMenuPortalProps
-) {
+): React.ReactElement {
   return <DropdownMenuPrimitive.Portal {...props} />;
 }
 
 export function DropdownMenuSub(
   props: DropdownMenuPrimitive.DropdownMenuSubProps
-) {
+): React.ReactElement {
   return <DropdownMenuPrimitive.Sub {...props} />;
 }
 
 export function DropdownMenuRadioGroup(
   props: DropdownMenuPrimitive.DropdownMenuRadioGroupProps
-) {
+): React.ReactElement {
   return <DropdownMenuPrimitive.RadioGroup {...props} />;
 }
 
@@ -87,7 +87,7 @@ export function DropdownMenuSubTrigger({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.SubTrigger> & {
   inset?: boolean;
-}) {
+}): React.ReactElement {
   return (
     <DropdownMenuPrimitive.SubTrigger
       className={cn(
@@ -108,7 +108,7 @@ export function DropdownMenuSubTrigger({
 export function DropdownMenuSubContent({
   className,
   ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.SubContent>) {
+}: React.ComponentProps<typeof DropdownMenuPrimitive.SubContent>): React.ReactElement {
   return (
     <DropdownMenuPrimitive.SubContent
       className={cn(
@@ -126,7 +126,7 @@ export function DropdownMenuContent({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Content> & {
   portal?: boolean;
-}) {
+}): React.ReactElement {
   const content = (
     <DropdownMenuPrimitive.Content
       className={cn(
@@ -152,7 +152,7 @@ export function DropdownMenuItem({
   className,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Item> &
-  VariantProps<typeof dropdownMenuItemVariants>) {
+  VariantProps<typeof dropdownMenuItemVariants>): React.ReactElement {
   return (
     <DropdownMenuPrimitive.Item
       className={cn(dropdownMenuItemVariants(), className)}
@@ -165,7 +165,7 @@ export function DropdownMenuCheckboxItem({
   children,
   className,
   ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.CheckboxItem>) {
+}: React.ComponentProps<typeof DropdownMenuPrimitive.CheckboxItem>): React.ReactElement {
   return (
     <DropdownMenuPrimitive.CheckboxItem
       className={cn(
@@ -192,7 +192,7 @@ export function DropdownMenuRadioItem({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.RadioItem> & {
   hideIcon?: boolean;
-}) {
+}): React.ReactElement {
   return (
     <DropdownMenuPrimitive.RadioItem
       className={cn(
@@ -220,7 +220,7 @@ export function DropdownMenuLabel({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Label> & {
   inset?: boolean;
-}) {
+}): React.ReactElement {
   return (
     <DropdownMenuPrimitive.Label
       className={cn(dropdownMenuLabelVariants({ inset }), className)}
@@ -232,7 +232,7 @@ export function DropdownMenuLabel({
 export function DropdownMenuSeparator({
   className,
   ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.Separator>) {
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Separator>): React.ReactElement {
   return (
     <DropdownMenuPrimitive.Separator
       className={cn('-mx-1 my-1 h-px bg-muted', className)}
@@ -244,7 +244,7 @@ export function DropdownMenuSeparator({
 export function DropdownMenuShortcut({
   className,
   ...props
-}: React.ComponentProps<'span'>) {
+}: React.ComponentProps<'span'>): React.ReactElement {
   return (
     <span
       className={cn('ml-auto text-xs tracking-widest opacity-60', className)}
@@ -253,11 +253,14 @@ export function DropdownMenuShortcut({
   );
 }
 
-export function useOpenState() {
+export function useOpenState(): {
+  open: boolean;
+  onOpenChange: (_value?: boolean) => void;
+} {
   const [open, setOpen] = React.useState(false);
 
   const onOpenChange = React.useCallback(
-    (_value = !open) => {
+    (_value = !open): void => {
       setOpen(_value);
     },
     [open]

@@ -12,7 +12,7 @@ import {
 import { cn } from '@/lib/utils';
 import { commentPlugin } from '@/components/editor/plugins/comment-kit';
 
-export function CommentLeaf(props: PlateLeafProps<TCommentText>) {
+export function CommentLeaf(props: PlateLeafProps<TCommentText>): React.ReactElement {
   const { api, setOption } = useEditorPlugin(commentPlugin);
   const hoverId = usePluginOption(commentPlugin, 'hoverId');
   const activeId = usePluginOption(commentPlugin, 'activeId');

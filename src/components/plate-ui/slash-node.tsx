@@ -66,7 +66,7 @@ type Group = {
   }[];
 };
 
-function AIIcon(props: LucideProps) {
+function AIIcon(props: LucideProps): React.ReactElement {
   return (
     <svg
       fill="url(#myGradient)"
@@ -347,7 +347,7 @@ const groups: Group[] = [
   },
 ];
 
-export function SlashInputElement(props: PlateElementProps) {
+export function SlashInputElement(props: PlateElementProps): React.ReactElement {
   const { children, editor, element } = props;
 
   return (

@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactElement } from "react";
 import { useRouter } from "next/navigation";
 import { Play, CheckCircle2, Circle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,7 @@ interface CourseSidebarProps {
   selectedLessonId?: string | null;
 }
 
-export function CourseSidebar({ course, selectedLessonId }: CourseSidebarProps) {
+export function CourseSidebar({ course, selectedLessonId }: CourseSidebarProps): ReactElement {
   const router = useRouter();
   const progress = course.userProgress.percentage;
 
@@ -38,11 +39,11 @@ export function CourseSidebar({ course, selectedLessonId }: CourseSidebarProps) 
   );
 
   // Check if section is completed
-  const isSectionCompleted = (sectionLessons: typeof allLessons) =>
+  const isSectionCompleted = (sectionLessons: typeof allLessons): boolean =>
     sectionLessons.every((l) => lessonStatusMap.get(l._id) === "completed");
 
   // Navigate to lesson using query params (SPA-style)
-  const navigateToLesson = (lessonId: Id<"lessons">) => {
+  const navigateToLesson = (lessonId: Id<"lessons">): void => {
     router.push(`/courses/${course._id}?lesson=${lessonId}`, { scroll: false });
   };
 

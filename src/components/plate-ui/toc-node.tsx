@@ -19,7 +19,7 @@ const headingItemVariants = cva(
   }
 );
 
-export function TocElement(props: PlateElementProps) {
+export function TocElement(props: PlateElementProps): React.ReactElement {
   const { editor, element } = props;
   const state = useTocElementState();
   const { props: btnProps } = useTocElement(state);
@@ -32,6 +32,7 @@ export function TocElement(props: PlateElementProps) {
           headingList.map((item) => (
             <Button
               aria-current
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               className={headingItemVariants({ depth: item.depth as any })}
               key={item.id}
               onClick={(e) => btnProps.onClick(e, item, 'smooth')}

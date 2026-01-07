@@ -75,7 +75,7 @@ export const BlockDiscussion: RenderNodeWrapper<AnyPluginConfig> = (props) => {
     return;
   }
 
-  return (props) => (
+  const BlockCommentsWrapper = (props: PlateElementProps): React.ReactElement => (
     <BlockCommentsContent
       blockPath={blockPath}
       commentNodes={commentNodes}
@@ -84,6 +84,8 @@ export const BlockDiscussion: RenderNodeWrapper<AnyPluginConfig> = (props) => {
       {...props}
     />
   );
+  BlockCommentsWrapper.displayName = 'BlockCommentsWrapper';
+  return BlockCommentsWrapper;
 };
 
 const BlockCommentsContent = ({
@@ -97,7 +99,7 @@ const BlockCommentsContent = ({
   commentNodes: NodeEntry<TCommentText>[];
   draftCommentNode: NodeEntry<TCommentText> | undefined;
   suggestionNodes: NodeEntry<TElement | TSuggestionText>[];
-}) => {
+}): React.ReactElement => {
   const editor = useEditorRef();
 
   const resolvedSuggestion = useResolveSuggestion(suggestionNodes, blockPath);
@@ -286,7 +288,7 @@ function BlockComment({
 }: {
   discussion: TDiscussion;
   isLast: boolean;
-}) {
+}): React.ReactElement {
   const [editingId, setEditingId] = React.useState<string | null>(null);
 
   return (

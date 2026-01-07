@@ -30,7 +30,7 @@ export function FloatingToolbar({
   ...props
 }: React.ComponentProps<typeof Toolbar> & {
   state?: FloatingToolbarState;
-}) {
+}): React.ReactElement | null {
   const editor = useEditorRef();
   const focusedEditorId = useEventEditorValue('focus');
   const isFloatingLinkOpen = !!usePluginOption(linkPlugin, 'mode');

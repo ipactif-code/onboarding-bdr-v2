@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 
 export function EquationElementStatic(
   props: SlateElementProps<TEquationElement>
-) {
+): React.ReactElement {
   const element = props.element;
 
   const html = getEquationHtml({
@@ -47,7 +47,7 @@ export function EquationElementStatic(
 
 export function InlineEquationElementStatic(
   props: SlateElementProps<TEquationElement>
-) {
+): React.ReactElement {
   const element = props.element;
 
   const html = getEquationHtml({

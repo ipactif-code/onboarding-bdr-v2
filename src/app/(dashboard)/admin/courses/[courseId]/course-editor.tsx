@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactElement } from "react";
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { Id } from "../../../../../../convex/_generated/dataModel";
@@ -11,7 +12,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
-  Save,
   Globe,
   GlobeLock,
   Trash2,
@@ -148,7 +148,7 @@ const lessonTypeLabels = {
   files: "Files",
 };
 
-export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
+export function CourseEditor({ course: initialCourse }: CourseEditorProps): ReactElement {
   const router = useRouter();
 
   // Modal states
@@ -189,37 +189,37 @@ export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
   );
 
   // Publish/Unpublish
-  const handlePublish = async () => {
+  const handlePublish = async (): Promise<void> => {
     try {
       await publishCourse({ courseId: course._id });
       toast.success("Course published");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to publish course");
+    } catch (_error) {
+      toast.error(_error instanceof Error ? _error.message : "Failed to publish course");
     }
   };
 
-  const handleUnpublish = async () => {
+  const handleUnpublish = async (): Promise<void> => {
     try {
       await unpublishCourse({ courseId: course._id });
       toast.success("Course unpublished");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to unpublish course");
+    } catch (_error) {
+      toast.error(_error instanceof Error ? _error.message : "Failed to unpublish course");
     }
   };
 
   // Delete course
-  const handleDelete = async () => {
+  const handleDelete = async (): Promise<void> => {
     try {
       await removeCourse({ courseId: course._id });
       toast.success("Course deleted");
       router.push("/admin/courses");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to delete course");
+    } catch (_error) {
+      toast.error(_error instanceof Error ? _error.message : "Failed to delete course");
     }
   };
 
   // Create section
-  const handleCreateSection = async () => {
+  const handleCreateSection = async (): Promise<void> => {
     if (!newSectionTitle.trim()) return;
     try {
       await createSection({
@@ -229,13 +229,13 @@ export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
       setNewSectionTitle("");
       setNewSectionOpen(false);
       toast.success("Section created");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to create section");
+    } catch (_error) {
+      toast.error(_error instanceof Error ? _error.message : "Failed to create section");
     }
   };
 
   // Create lesson
-  const handleCreateLesson = async () => {
+  const handleCreateLesson = async (): Promise<void> => {
     if (!newLessonSectionId || !newLessonTitle.trim()) return;
     try {
       const lessonId = await createLesson({
@@ -247,24 +247,24 @@ export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
       setNewLessonSectionId(null);
       toast.success("Lesson created");
       router.push(`/admin/courses/${course._id}/lessons/${lessonId}`);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to create lesson");
+    } catch (_error) {
+      toast.error(_error instanceof Error ? _error.message : "Failed to create lesson");
     }
   };
 
   // Remove tag handler
-  const handleRemoveTag = async (tagId: Id<"tags">) => {
+  const handleRemoveTag = async (tagId: Id<"tags">): Promise<void> => {
     try {
       await removeTagMutation({ courseId: course._id, tagId });
       toast.success("Tag removed");
-    } catch (error) {
-      console.error("Error removing tag:", error);
+    } catch (_error) {
+      console.error("Error removing tag:", _error);
       toast.error("Failed to remove tag");
     }
   };
 
   // Section reorder
-  const handleSectionDragEnd = (event: DragEndEvent) => {
+  const handleSectionDragEnd = (event: DragEndEvent): void => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
@@ -282,7 +282,7 @@ export function CourseEditor({ course: initialCourse }: CourseEditorProps) {
   };
 
   // Lesson reorder within section
-  const handleLessonDragEnd = (sectionId: Id<"sections">, event: DragEndEvent) => {
+  const handleLessonDragEnd = (sectionId: Id<"sections">, event: DragEndEvent): void => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
@@ -724,7 +724,7 @@ function SortableSection({
   onUpdateSection,
   onDeleteSection,
   onDeleteLesson,
-}: SortableSectionProps) {
+}: SortableSectionProps): ReactElement {
   const [isOpen, setIsOpen] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(section.title);
@@ -739,7 +739,7 @@ function SortableSection({
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const handleSaveTitle = () => {
+  const handleSaveTitle = (): void => {
     if (editTitle.trim() && editTitle !== section.title) {
       onUpdateSection({ sectionId: section._id, title: editTitle.trim() });
     }
@@ -883,7 +883,7 @@ interface SortableLessonProps {
   onDelete: () => void;
 }
 
-function SortableLesson({ lesson, courseId, onDelete }: SortableLessonProps) {
+function SortableLesson({ lesson, courseId, onDelete }: SortableLessonProps): ReactElement {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: lesson._id });
 

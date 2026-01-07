@@ -27,13 +27,13 @@ import { Input, inputVariants } from './input';
 import { mockRecentDocuments } from './link-node';
 import { Popover, PopoverAnchor, PopoverContent } from './popover';
 
-const onUpsertLink = (editor: PlateEditor, url: string) => {
+const onUpsertLink = (editor: PlateEditor, url: string): void => {
   upsertLink(editor, { skipValidation: true, url });
   editor.setOption(linkPlugin, 'mode', null);
   editor.tf.focus();
 };
 
-export function LinkFloatingToolbar() {
+export function LinkFloatingToolbar(): React.ReactElement | null {
   const mode = usePluginOption(linkPlugin, 'mode');
 
   const anchorElement = usePluginOption(linkPlugin, 'anchorElement');
@@ -113,7 +113,7 @@ export function LinkFloatingToolbar() {
   );
 }
 
-const InsertLinkCommand = ({ initialUrl }: { initialUrl: string }) => {
+const InsertLinkCommand = ({ initialUrl }: { initialUrl: string }): React.ReactElement => {
   const [query, setQuery] = React.useState(initialUrl);
 
   const { editor } = useEditorPlugin(linkPlugin);
@@ -176,7 +176,7 @@ const EditLinkCommand = ({
   initialUrl: string;
   setInitialUrl: (url: string) => void;
   autoFocus?: boolean;
-}) => {
+}): React.ReactElement => {
   const [searching, setSearching] = React.useState(false);
   const [query, setQuery] = React.useState<string>('');
   const [text, setText] = React.useState<string>('');
@@ -191,7 +191,6 @@ const EditLinkCommand = ({
   // Sync text from editor node - valid Effect (external editor state that user can then modify)
   useEffect(() => {
     if (editingLinkEntry) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- valid: syncing from external editor state
       setText(NodeApi.string(editingLinkEntry[0]));
     }
   }, [editingLinkEntry]);
@@ -208,7 +207,7 @@ const EditLinkCommand = ({
     [query]
   );
 
-  const onEditLink = (url: string) => {
+  const onEditLink = (url: string): void => {
     upsertLink(editor, {
       skipValidation: true,
       url,
@@ -222,7 +221,7 @@ const EditLinkCommand = ({
     editor.tf.focus();
   };
 
-  const updateLinkSelection = () => {
+  const updateLinkSelection = (): void => {
     editor.tf.select(
       editor.api.node({
         at: [],
@@ -236,11 +235,12 @@ const EditLinkCommand = ({
         selection: editor.selection,
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setOption('anchorElement', getCursorOverlayElement() as any);
     }, 0);
   };
 
-  const onTitleChange = (newTitle: string) => {
+  const onTitleChange = (newTitle: string): void => {
     setText(newTitle);
 
     if (newTitle.length === 0) return;
@@ -377,7 +377,7 @@ const EditLinkCommand = ({
   );
 };
 
-const OutsideLinkCommandItem = ({ query }: { query: string }) => {
+const OutsideLinkCommandItem = ({ query }: { query: string }): React.ReactElement => {
   const editor = useEditorRef();
 
   return (
@@ -402,9 +402,10 @@ const InternalLinkCommandItem = ({
   document,
   onSelect,
 }: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   document: any;
   onSelect?: () => void;
-}) => {
+}): React.ReactElement => {
   const editor = useEditorRef();
 
   return (

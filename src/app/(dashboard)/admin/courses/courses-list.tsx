@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactElement } from "react";
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { Id } from "../../../../../convex/_generated/dataModel";
@@ -18,7 +19,7 @@ import { toast } from "sonner";
 
 type CourseStatus = "published" | "draft";
 
-export function CoursesList() {
+export function CoursesList(): ReactElement {
   const [status, setStatus] = useState<CourseStatus | undefined>(undefined);
   const [search, setSearch] = useState("");
 
@@ -34,35 +35,35 @@ export function CoursesList() {
   const removeCourse = useMutation(api.courses.remove);
 
   // Handlers
-  const handlePublish = async (courseId: Id<"courses">) => {
+  const handlePublish = async (courseId: Id<"courses">): Promise<void> => {
     try {
       await publishCourse({ courseId });
       toast.success("Course published");
-    } catch (error) {
+    } catch (_error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to publish course"
+        _error instanceof Error ? _error.message : "Failed to publish course"
       );
     }
   };
 
-  const handleUnpublish = async (courseId: Id<"courses">) => {
+  const handleUnpublish = async (courseId: Id<"courses">): Promise<void> => {
     try {
       await unpublishCourse({ courseId });
       toast.success("Course unpublished");
-    } catch (error) {
+    } catch (_error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to unpublish course"
+        _error instanceof Error ? _error.message : "Failed to unpublish course"
       );
     }
   };
 
-  const handleDelete = async (courseId: Id<"courses">) => {
+  const handleDelete = async (courseId: Id<"courses">): Promise<void> => {
     try {
       await removeCourse({ courseId });
       toast.success("Course deleted");
-    } catch (error) {
+    } catch (_error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to delete course"
+        _error instanceof Error ? _error.message : "Failed to delete course"
       );
     }
   };
@@ -121,7 +122,7 @@ export function CoursesList() {
   );
 }
 
-function TableSkeleton() {
+function TableSkeleton(): ReactElement {
   return (
     <div className="space-y-4">
       <Skeleton className="h-10 w-full" />

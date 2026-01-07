@@ -19,6 +19,7 @@ import { MessageActionButtons } from "@/components/messaging/message-action-butt
 import { FileAttachment } from "@/components/messaging/file-attachment";
 import { ImageAttachment } from "@/components/messaging/image-attachment";
 import { VoicePlayer, VoicePlayerSkeleton } from "@/components/messaging/voice-player";
+import { ReactionBar, ReactionBarSkeleton, type ReactionGroup } from "@/components/messaging/reaction-bar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { isImage } from "@/lib/file-type-utils";
 import {
@@ -183,6 +184,12 @@ function DMMessageItem({
     api.attachments.getMessageAttachments,
     message.hasAttachments ? { messageId: message._id } : "skip"
   );
+
+  // Fetch reactions for this message (real-time subscription)
+  const reactions = useQuery(
+    api.reactions.getMessageReactions,
+    { messageId: message._id }
+  ) as ReactionGroup[] | undefined;
 
   // Mutations for transcription
   // - editTranscription and retryTranscription: only available for own messages
@@ -404,6 +411,17 @@ function DMMessageItem({
               {threadReplyCount} {threadReplyCount === 1 ? "reply" : "replies"}
             </span>
           </button>
+        )}
+
+        {/* Message reactions */}
+        {reactions === undefined ? (
+          <ReactionBarSkeleton />
+        ) : (
+          <ReactionBar
+            messageId={message._id}
+            reactions={reactions}
+            className="mt-2"
+          />
         )}
       </div>
 

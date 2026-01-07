@@ -5,13 +5,13 @@ import { usePluginOption } from 'platejs/react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 
-export function MediaUploadToast() {
+export function MediaUploadToast(): null {
   useUploadErrorToast();
 
   return null;
 }
 
-const useUploadErrorToast = () => {
+const useUploadErrorToast = (): void => {
   const uploadError = usePluginOption(PlaceholderPlugin, 'error');
 
   useEffect(() => {

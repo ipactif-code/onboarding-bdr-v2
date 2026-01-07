@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { ThreadView } from "@/components/messaging/thread-view";
-import { MessageInput, type AttachmentData } from "@/components/messaging/message-input";
+import { MessageInput, type SendMessageOptions } from "@/components/messaging/message-input";
 import type { Id } from "../../../convex/_generated/dataModel";
 
 // ============================================================================
@@ -35,8 +35,8 @@ interface ThreadPanelProps {
   isChannelAdmin?: boolean;
   /** Callback to close the panel. */
   onClose: () => void;
-  /** Callback when user sends a reply (receives serialized content and optional attachments). */
-  onSendReply: (content: string, attachments?: AttachmentData[]) => void;
+  /** Callback when user sends a reply (receives serialized content and optional attachment options). */
+  onSendReply: (content: string, options?: SendMessageOptions) => void;
   /** Optional callback after reply is sent successfully. */
   onReplySent?: () => void;
   /** Callback when user wants to edit a message. */
@@ -182,4 +182,4 @@ export function ThreadPanel({
   );
 }
 
-export type { ThreadPanelProps, AttachmentData };
+export type { ThreadPanelProps, SendMessageOptions };

@@ -1,11 +1,12 @@
 import { SlateElement, type SlateElementProps } from 'platejs/static';
 import * as React from 'react';
 
-export function CalloutElementStatic(props: SlateElementProps) {
+export function CalloutElementStatic(props: SlateElementProps): React.ReactElement {
   return (
     <SlateElement
       className="my-1 flex rounded-sm bg-muted p-4 pl-3"
       style={{
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         backgroundColor: props.element.backgroundColor as any,
       }}
       {...props}
@@ -19,6 +20,7 @@ export function CalloutElementStatic(props: SlateElementProps) {
           }}
         >
           <span data-plate-prevent-deserialization>
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {(props.element.icon as any) || '💡'}
           </span>
         </div>

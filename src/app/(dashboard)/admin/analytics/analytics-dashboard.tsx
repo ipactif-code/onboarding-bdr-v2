@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactElement } from "react";
 import { useMemo } from "react";
 import { useQuery } from "convex/react";
 
@@ -59,7 +60,7 @@ interface KPICardProps {
   };
 }
 
-function KPICard({ title, value, description, icon, trend }: KPICardProps) {
+function KPICard({ title, value, description, icon, trend }: KPICardProps): ReactElement {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -90,7 +91,7 @@ function KPICard({ title, value, description, icon, trend }: KPICardProps) {
   );
 }
 
-function KPICardSkeleton() {
+function KPICardSkeleton(): ReactElement {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -160,7 +161,7 @@ function formatDate(dateStr: string): string {
 // Main Page Component
 // ============================================
 
-export function AnalyticsDashboard() {
+export function AnalyticsDashboard(): ReactElement {
   // Fetch all analytics data
   const overview = useQuery(api.analytics.getOverview, {});
   const sessionStats = useQuery(api.analytics.getSessionStats, {});
@@ -215,7 +216,7 @@ export function AnalyticsDashboard() {
       <div>
         <h1 className="text-2xl font-bold">Analytics</h1>
         <p className="text-muted-foreground">
-          Monitor your team's training progress and performance
+          Monitor your team&apos;s training progress and performance
         </p>
       </div>
 

@@ -1,5 +1,4 @@
 'use client';
-/* eslint-disable react-hooks/refs */
 
 import {
   type Emoji,
@@ -43,7 +42,7 @@ export function EmojiPopover({
   control: ReactNode;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-}) {
+}): React.ReactElement {
   return (
     <Popover.Root onOpenChange={setIsOpen} open={isOpen}>
       <Popover.Trigger asChild>{control}</Popover.Trigger>
@@ -78,7 +77,7 @@ export function EmojiPicker({
   onSelectEmoji,
 }: Omit<UseEmojiPickerType, 'icons'> & {
   icons?: EmojiIconList<React.ReactElement>;
-}) {
+}): React.ReactElement {
   return (
     <div
       className={cn(
@@ -164,6 +163,7 @@ const EmojiButton = memo(
     </button>
   )
 );
+EmojiButton.displayName = 'EmojiButton';
 
 const RowOfButtons = memo(
   ({
@@ -190,6 +190,7 @@ const RowOfButtons = memo(
     </div>
   )
 );
+RowOfButtons.displayName = 'RowOfButtons';
 
 function EmojiPickerContent({
   emojiLibrary,
@@ -212,11 +213,12 @@ function EmojiPickerContent({
   | 'searchResult'
   | 'settings'
   | 'visibleCategories'
->) {
+>): React.ReactElement {
   const getRowWidth = settings.perLine.value * settings.buttonSize.value;
 
   const isCategoryVisible = useCallback(
-    (categoryId: any) =>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (categoryId: any): boolean | undefined =>
       visibleCategories.has(categoryId)
         ? visibleCategories.get(categoryId)
         : false,
@@ -224,7 +226,7 @@ function EmojiPickerContent({
   );
 
   const EmojiList = useCallback(
-    () =>
+    (): React.ReactElement[] =>
       emojiLibrary
         .getGrid()
         .sections()
@@ -274,7 +276,7 @@ function EmojiPickerContent({
   );
 
   const SearchList = useCallback(
-    () => (
+    (): React.ReactElement => (
       <div data-id="search" style={{ width: getRowWidth }}>
         <div className="-top-px sticky z-1 bg-popover/90 p-1 py-2 font-semibold text-card-foreground text-sm backdrop-blur-xs">
           {i18n.searchResult}
@@ -329,7 +331,7 @@ function EmojiPickerSearchBar({
   setSearch,
 }: {
   children: ReactNode;
-} & Pick<UseEmojiPickerType, 'i18n' | 'searchValue' | 'setSearch'>) {
+} & Pick<UseEmojiPickerType, 'i18n' | 'searchValue' | 'setSearch'>): React.ReactElement {
   return (
     <div className="flex items-center px-2">
       <div className="relative flex grow items-center">
@@ -352,7 +354,7 @@ function EmojiPickerSearchAndClear({
   clearSearch,
   i18n,
   searchValue,
-}: Pick<UseEmojiPickerType, 'clearSearch' | 'i18n' | 'searchValue'>) {
+}: Pick<UseEmojiPickerType, 'clearSearch' | 'i18n' | 'searchValue'>): React.ReactElement {
   return (
     <div className="flex items-center">
       <div
@@ -381,7 +383,7 @@ function EmojiPickerSearchAndClear({
   );
 }
 
-function EmojiPreview({ emoji }: Pick<UseEmojiPickerType, 'emoji'>) {
+function EmojiPreview({ emoji }: Pick<UseEmojiPickerType, 'emoji'>): React.ReactElement {
   return (
     <div className="flex h-20 items-center border-muted border-t p-2">
       <div
@@ -401,7 +403,7 @@ function EmojiPreview({ emoji }: Pick<UseEmojiPickerType, 'emoji'>) {
   );
 }
 
-function NoEmoji({ i18n }: Pick<UseEmojiPickerType, 'i18n'>) {
+function NoEmoji({ i18n }: Pick<UseEmojiPickerType, 'i18n'>): React.ReactElement {
   return (
     <div className="flex h-20 items-center border-muted border-t p-2">
       <div className="flex items-center justify-center text-2xl">😢</div>
@@ -415,7 +417,7 @@ function NoEmoji({ i18n }: Pick<UseEmojiPickerType, 'i18n'>) {
   );
 }
 
-function PickAnEmoji({ i18n }: Pick<UseEmojiPickerType, 'i18n'>) {
+function PickAnEmoji({ i18n }: Pick<UseEmojiPickerType, 'i18n'>): React.ReactElement {
   return (
     <div className="flex h-20 items-center border-muted border-t p-2">
       <div className="flex items-center justify-center text-2xl">☝️</div>
@@ -432,7 +434,7 @@ function EmojiPickerPreview({
   i18n,
   isSearching = false,
   ...props
-}: Pick<UseEmojiPickerType, 'emoji' | 'hasFound' | 'i18n' | 'isSearching'>) {
+}: Pick<UseEmojiPickerType, 'emoji' | 'hasFound' | 'i18n' | 'isSearching'>): React.ReactElement {
   const showPickEmoji = !emoji && !(isSearching && !hasFound);
   const showNoEmoji = isSearching && !hasFound;
   const showPreview = emoji;
@@ -449,7 +451,7 @@ function EmojiPickerPreview({
 const getBarProperty = (
   emojiLibrary: IEmojiFloatingLibrary,
   focusedCategory?: EmojiCategoryList
-) => {
+): { position: number; width: number } => {
   let width = 0;
   let position = 0;
 
@@ -474,7 +476,7 @@ function EmojiPickerNavigation({
 } & Pick<
   UseEmojiPickerType,
   'emojiLibrary' | 'focusedCategory' | 'i18n' | 'icons'
->) {
+>): React.ReactElement {
   const { position, width } = getBarProperty(emojiLibrary, focusedCategory);
 
   return (

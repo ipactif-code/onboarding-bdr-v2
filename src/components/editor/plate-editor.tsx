@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactElement } from 'react';
 import { Plate, usePlateEditor } from 'platejs/react';
 
 import { EditorKit } from '@/components/editor/editor-kit';
@@ -7,7 +8,7 @@ import { playgroundValue } from '@/lib/plate/playground-value';
 import { Editor, EditorContainer } from '@/components/plate-ui/editor';
 import { TocSidebar } from '@/components/plate-ui/toc-sidebar';
 
-export function PlateEditor() {
+export function PlateEditor(): ReactElement {
   const editor = usePlateEditor({
     plugins: EditorKit,
     value: playgroundValue,

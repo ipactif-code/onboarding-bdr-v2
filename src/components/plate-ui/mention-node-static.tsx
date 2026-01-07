@@ -10,7 +10,7 @@ export function MentionElementStatic({
   ...props
 }: SlateElementProps<TMentionElement> & {
   prefix?: string;
-}) {
+}): React.ReactElement {
   const element = props.element;
 
   return (

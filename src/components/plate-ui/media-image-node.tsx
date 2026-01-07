@@ -132,6 +132,7 @@ export const ImageElement = withHOC(
                       {
                         className: cn('block h-full', loading && 'absolute'),
                         ref: handleRef,
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       } as any
                     }
                     {...imageProps}
@@ -162,7 +163,7 @@ export const ImageElement = withHOC(
   }
 );
 
-const ImagePlaceholder = ({ file }: { file?: File }) => {
+const ImagePlaceholder = ({ file }: { file?: File }): React.ReactElement => {
   const objectUrl = useMemo(
     () => (file ? URL.createObjectURL(file) : null),
     [file]

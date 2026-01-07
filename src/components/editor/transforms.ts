@@ -22,7 +22,7 @@ import type { PlateEditor } from 'platejs/react';
 
 const ACTION_THREE_COLUMNS = 'action_three_columns';
 
-const insertList = (editor: PlateEditor, type: string) => {
+const insertList = (editor: PlateEditor, type: string): void => {
   editor.tf.insertNodes(
     editor.api.create.block({
       indent: 1,
@@ -61,7 +61,7 @@ const insertInlineMap: Record<
     insertInlineEquation(editor, '', { select: true }),
 };
 
-export const insertBlock = (editor: PlateEditor, type: string) => {
+export const insertBlock = (editor: PlateEditor, type: string): void => {
   editor.tf.withoutNormalizing(() => {
     const block = editor.api.block();
 
@@ -80,7 +80,7 @@ export const insertBlock = (editor: PlateEditor, type: string) => {
   });
 };
 
-export const insertInlineElement = (editor: PlateEditor, type: string) => {
+export const insertInlineElement = (editor: PlateEditor, type: string): void => {
   if (insertInlineMap[type]) {
     insertInlineMap[type](editor, type);
   }
@@ -90,7 +90,7 @@ const setList = (
   editor: PlateEditor,
   type: string,
   entry: NodeEntry<TElement>
-) => {
+): void => {
   editor.tf.setNodes(
     editor.api.create.block({
       indent: 1,
@@ -116,9 +116,9 @@ export const setBlockType = (
   editor: PlateEditor,
   type: string,
   { at }: { at?: Path } = {}
-) => {
+): void => {
   editor.tf.withoutNormalizing(() => {
-    const setEntry = (entry: NodeEntry<TElement>) => {
+    const setEntry = (entry: NodeEntry<TElement>): void => {
       const [node, path] = entry;
 
       if (node[KEYS.listType]) {
@@ -150,7 +150,7 @@ export const setBlockType = (
   });
 };
 
-export const getBlockType = (block: TElement) => {
+export const getBlockType = (block: TElement): string => {
   if (block[KEYS.listType]) {
     if (block[KEYS.listType] === KEYS.ol) {
       return KEYS.ol;

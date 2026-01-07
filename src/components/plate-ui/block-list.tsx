@@ -33,10 +33,12 @@ const config: Record<
 export const BlockList: RenderNodeWrapper = (props) => {
   if (!props.element.listStyleType) return;
 
-  return (props) => <List {...props} />;
+  const ListWrapper = (props: PlateElementProps): React.ReactElement => <List {...props} />;
+  ListWrapper.displayName = 'ListWrapper';
+  return ListWrapper;
 };
 
-function List(props: PlateElementProps) {
+function List(props: PlateElementProps): React.ReactElement {
   const { listStart, listStyleType } = props.element as TListElement;
   const { Li, Marker } = config[listStyleType] ?? {};
   const List = isOrderedList(props.element) ? 'ol' : 'ul';
@@ -53,7 +55,7 @@ function List(props: PlateElementProps) {
   );
 }
 
-function TodoMarker(props: PlateElementProps) {
+function TodoMarker(props: PlateElementProps): React.ReactElement {
   const state = useTodoListElementState({ element: props.element });
   const { checkboxProps } = useTodoListElement(state);
   const readOnly = useReadOnly();
@@ -71,7 +73,7 @@ function TodoMarker(props: PlateElementProps) {
   );
 }
 
-function TodoLi(props: PlateElementProps) {
+function TodoLi(props: PlateElementProps): React.ReactElement {
   return (
     <li
       className={cn(

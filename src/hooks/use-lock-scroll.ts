@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 export const useLockScroll = (
   lock: boolean,
   scrollContainerSelector: string
-) => {
+): void => {
   useEffect(() => {
     const scrollContainer = document.querySelector(
       scrollContainerSelector

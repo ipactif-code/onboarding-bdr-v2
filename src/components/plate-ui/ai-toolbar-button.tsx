@@ -8,7 +8,7 @@ import { ToolbarButton } from './toolbar';
 
 export function AIToolbarButton(
   props: React.ComponentProps<typeof ToolbarButton>
-) {
+): React.ReactElement {
   const { api } = useEditorPlugin(AIChatPlugin);
 
   return (

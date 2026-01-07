@@ -34,7 +34,7 @@ export function TocSidebar({
   className,
   maxShowCount = 20,
   ...props
-}: TocSideBarProps & { className?: string; maxShowCount?: number }) {
+}: TocSideBarProps & { className?: string; maxShowCount?: number }): React.ReactElement {
   const state = useTocSideBarState({
     ...props,
   });
@@ -92,7 +92,8 @@ export function TocSidebar({
                       className={cn(
                         tocSidebarButtonVariants({
                           active: isActive,
-                          depth: item.depth as any,
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        depth: item.depth as any,
                         })
                       )}
                       id={isActive ? 'toc_item_active' : 'toc_item'}

@@ -63,7 +63,7 @@ export function Comment(props: {
   documentContent?: string;
   showDocumentContent?: boolean;
   onEditorClick?: () => void;
-}) {
+}): React.ReactElement {
   const {
     comment,
     discussionLength,
@@ -81,7 +81,7 @@ export function Comment(props: {
   const userInfo = usePluginOption(discussionPlugin, 'user', comment.userId);
   const currentUserId = usePluginOption(discussionPlugin, 'currentUserId');
 
-  const resolveDiscussion = (id: string) => {
+  const resolveDiscussion = (id: string): void => {
     const updatedDiscussions = discussions.map((discussion) => {
       if (discussion.id === id) {
         return { ...discussion, isResolved: true };
@@ -92,8 +92,9 @@ export function Comment(props: {
     editor.setOption(discussionPlugin, 'discussions', updatedDiscussions);
   };
 
-  const removeDiscussion = (id: string) => {
+  const removeDiscussion = (id: string): void => {
     const updatedDiscussions = discussions.filter(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (discussion: any) => discussion.id !== id
     );
     editor.setOption(discussionPlugin, 'discussions', updatedDiscussions);
@@ -101,10 +102,11 @@ export function Comment(props: {
 
   const updateComment = (input: {
     id: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     contentRich: any;
     discussionId: string;
     isEdited: boolean;
-  }) => {
+  }): void => {
     const updatedDiscussions = discussions.map((discussion) => {
       if (discussion.id === input.discussionId) {
         const updatedComments = discussion.comments.map((comment) => {
@@ -143,15 +145,16 @@ export function Comment(props: {
     [initialValue]
   );
 
-  const onCancel = () => {
+  const onCancel = (): void => {
     setEditingId(null);
-    commentEditor.tf.replaceNodes(initialValue, {
+    commentEditor?.tf.replaceNodes(initialValue, {
       at: [],
       children: true,
     });
   };
 
-  const onSave = () => {
+  const onSave = (): void => {
+    if (!commentEditor) return;
     void updateComment({
       id: comment.id,
       contentRich: commentEditor.children,
@@ -161,7 +164,7 @@ export function Comment(props: {
     setEditingId(null);
   };
 
-  const onResolveComment = () => {
+  const onResolveComment = (): void => {
     void resolveDiscussion(comment.discussionId);
     tf.comment.unsetMark({ id: comment.discussionId });
   };
@@ -215,7 +218,7 @@ export function Comment(props: {
               dropdownOpen={dropdownOpen}
               onCloseAutoFocus={() => {
                 setTimeout(() => {
-                  commentEditor.tf.focus({ edge: 'endEditor' });
+                  commentEditor?.tf.focus({ edge: 'endEditor' });
                 }, 0);
               }}
               onRemoveComment={() => {
@@ -297,7 +300,7 @@ function CommentMoreDropdown(props: {
   setEditingId: React.Dispatch<React.SetStateAction<string | null>>;
   onCloseAutoFocus?: () => void;
   onRemoveComment?: () => void;
-}) {
+}): React.ReactElement {
   const {
     comment,
     dropdownOpen,
@@ -312,17 +315,19 @@ function CommentMoreDropdown(props: {
 
   const selectedEditCommentRef = React.useRef<boolean>(false);
 
-  const onDeleteComment = React.useCallback(() => {
+  const onDeleteComment = React.useCallback((): void => {
     if (!comment.id)
       return alert('You are operating too quickly, please try again later.');
 
     // Find and update the discussion
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updatedDiscussions = discussions.map((discussion: any) => {
       if (discussion.id !== comment.discussionId) {
         return discussion;
       }
 
       const commentIndex = discussion.comments.findIndex(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (c: any) => c.id === comment.id
       );
 
@@ -344,7 +349,7 @@ function CommentMoreDropdown(props: {
     onRemoveComment?.();
   }, [comment.discussionId, comment.id, discussions, editor, onRemoveComment]);
 
-  const onEditComment = React.useCallback(() => {
+  const onEditComment = React.useCallback((): void => {
     selectedEditCommentRef.current = true;
 
     if (!comment.id)
@@ -392,8 +397,9 @@ function CommentMoreDropdown(props: {
 
 export const useCommentEditor = (
   options: Omit<CreatePlateEditorOptions, 'plugins'> = {},
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   deps: any[] = []
-) => {
+): ReturnType<typeof usePlateEditor> => {
   const commentEditor = usePlateEditor(
     {
       id: 'comment',
@@ -417,7 +423,7 @@ export function CommentCreateForm({
   className?: string;
   discussionId?: string;
   focusOnMount?: boolean;
-}) {
+}): React.ReactElement {
   const discussions = usePluginOption(discussionPlugin, 'discussions');
 
   const editor = useEditorRef();
@@ -429,6 +435,7 @@ export function CommentCreateForm({
   const commentContent = useMemo(
     () =>
       commentValue
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ? NodeApi.string({ children: commentValue as any, type: 'p' })
         : '',
     [commentValue]
@@ -441,13 +448,14 @@ export function CommentCreateForm({
     }
   }, [commentEditor, focusOnMount]);
 
-  const onAddComment = React.useCallback(() => {
-    if (!commentValue) return;
+  const onAddComment = React.useCallback((): void => {
+    if (!commentValue || !commentEditor) return;
 
     commentEditor.tf.reset();
 
     if (discussionId) {
       // Get existing discussion
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const discussion = discussions.find((d: any) => d.id === discussionId);
 
       if (!discussion) {
@@ -495,6 +503,7 @@ export function CommentCreateForm({
 
       // Filter out old discussion and add updated one
       const updatedDiscussions = discussions
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .filter((d: any) => d.id !== discussionId)
         .concat(updatedDiscussion);
 
@@ -549,7 +558,7 @@ export function CommentCreateForm({
       );
       editor.tf.unsetNodes([getDraftCommentKey()], { at: path });
     });
-  }, [commentValue, commentEditor.tf, discussionId, editor, discussions]);
+  }, [commentValue, commentEditor, discussionId, editor, discussions]);
 
   return (
     <div className={cn('flex w-full', className)}>
@@ -604,7 +613,7 @@ export function CommentCreateForm({
   );
 }
 
-export const formatCommentDate = (date: Date) => {
+export const formatCommentDate = (date: Date): string => {
   const now = new Date();
   const diffMinutes = differenceInMinutes(now, date);
   const diffHours = differenceInHours(now, date);

@@ -154,7 +154,7 @@ const MEDIA_CONFIG: Record<
   },
 };
 
-function MediaPlaceholderPopover({ children }: { children: React.ReactNode }) {
+function MediaPlaceholderPopover({ children }: { children: React.ReactNode }): React.ReactElement {
   const { api, editor, getOption, tf } = useEditorPlugin(PlaceholderPlugin);
 
   const {
@@ -350,13 +350,12 @@ function ImageProgress({
   className?: string;
   imageRef?: React.RefObject<HTMLImageElement | null>;
   progress?: number;
-}) {
+}): React.ReactElement | null {
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
 
   // Create and manage Object URL lifecycle - valid Effect (external resource with cleanup)
   useEffect(() => {
     const url = URL.createObjectURL(file);
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- valid: syncing external resource (Object URL)
     setObjectUrl(url);
 
     return () => {
@@ -394,7 +393,7 @@ function formatBytes(
     decimals?: number;
     sizeType?: 'accurate' | 'normal';
   } = {}
-) {
+): string {
   const { decimals = 0, sizeType = 'normal' } = opts;
 
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];

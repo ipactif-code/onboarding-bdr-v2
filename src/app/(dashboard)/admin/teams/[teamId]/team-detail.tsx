@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactElement } from "react";
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { Id } from "../../../../../../convex/_generated/dataModel";
@@ -23,7 +24,7 @@ interface TeamDetailProps {
   teamId: Id<"teams">;
 }
 
-export function TeamDetail({ teamId }: TeamDetailProps) {
+export function TeamDetail({ teamId }: TeamDetailProps): ReactElement {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
@@ -39,7 +40,7 @@ export function TeamDetail({ teamId }: TeamDetailProps) {
   const setLead = useMutation(api.teams.setLead);
 
   // Start editing
-  const handleStartEdit = () => {
+  const handleStartEdit = (): void => {
     if (team) {
       setEditName(team.name);
       setEditDescription(team.description || "");
@@ -48,14 +49,14 @@ export function TeamDetail({ teamId }: TeamDetailProps) {
   };
 
   // Cancel editing
-  const handleCancelEdit = () => {
+  const handleCancelEdit = (): void => {
     setIsEditing(false);
     setEditName("");
     setEditDescription("");
   };
 
   // Save changes
-  const handleSave = async () => {
+  const handleSave = async (): Promise<void> => {
     if (!editName.trim()) return;
 
     setIsSaving(true);
@@ -67,30 +68,30 @@ export function TeamDetail({ teamId }: TeamDetailProps) {
       });
       setIsEditing(false);
       toast.success("Team updated");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to update team");
+    } catch (_error) {
+      toast.error(_error instanceof Error ? _error.message : "Failed to update team");
     } finally {
       setIsSaving(false);
     }
   };
 
   // Remove member
-  const handleRemoveMember = async (userId: Id<"users">) => {
+  const handleRemoveMember = async (userId: Id<"users">): Promise<void> => {
     try {
       await removeMember({ teamId, userId });
       toast.success("Member removed");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to remove member");
+    } catch (_error) {
+      toast.error(_error instanceof Error ? _error.message : "Failed to remove member");
     }
   };
 
   // Set lead
-  const handleSetLead = async (userId: Id<"users">) => {
+  const handleSetLead = async (userId: Id<"users">): Promise<void> => {
     try {
       await setLead({ teamId, userId });
       toast.success("Team lead updated");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to update team lead");
+    } catch (_error) {
+      toast.error(_error instanceof Error ? _error.message : "Failed to update team lead");
     }
   };
 
@@ -234,7 +235,7 @@ export function TeamDetail({ teamId }: TeamDetailProps) {
   );
 }
 
-function TeamDetailSkeleton() {
+function TeamDetailSkeleton(): ReactElement {
   return (
     <div className="space-y-6">
       <Skeleton className="h-5 w-32" />

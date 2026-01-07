@@ -23,7 +23,7 @@ import { Button } from './button';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 import { TextareaAutosize, type TextareaAutosizeProps } from './textarea';
 
-export function EquationElement(props: PlateElementProps) {
+export function EquationElement(props: PlateElementProps): React.ReactElement {
   const element = useElement<TEquationElement>();
   const selected = useSelected();
   const [open, setOpen] = React.useState(selected);
@@ -91,7 +91,7 @@ export function EquationElement(props: PlateElementProps) {
 
 export function InlineEquationElement(
   props: PlateElementProps<TEquationElement>
-) {
+): React.ReactElement {
   const element = props.element;
   const katexRef = React.useRef<HTMLDivElement | null>(null);
   const selected = useSelected();
@@ -104,7 +104,6 @@ export function InlineEquationElement(
   // Sync popover open state from editor selection - valid Effect (external editor state)
   useEffect(() => {
     if (selected && isCollapsed) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- valid: syncing from external editor selection state
       setOpen(true);
     }
   }, [selected, isCollapsed]);
@@ -188,7 +187,7 @@ function EquationPopoverContent({
   isInline: boolean;
   open: boolean;
   setOpen: (open: boolean) => void;
-} & TextareaAutosizeProps) {
+} & TextareaAutosizeProps): React.ReactElement | null {
   const editor = useEditorRef();
   const readOnly = useReadOnly();
   const element = useElement<TEquationElement>();
@@ -201,7 +200,7 @@ function EquationPopoverContent({
 
   if (readOnly) return null;
 
-  const onClose = () => {
+  const onClose = (): void => {
     setOpen(false);
 
     if (isInline) {

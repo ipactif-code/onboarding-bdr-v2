@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactElement } from "react";
 import { useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "convex/react";
@@ -16,7 +17,7 @@ interface CoursePageContentProps {
   courseId: string;
 }
 
-export function CoursePageContent({ courseId }: CoursePageContentProps) {
+export function CoursePageContent({ courseId }: CoursePageContentProps): ReactElement {
   const router = useRouter();
   const searchParams = useSearchParams();
   const lessonIdParam = searchParams.get("lesson");

@@ -69,10 +69,12 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
 
   if (!enabled) return;
 
-  return (props) => <Draggable {...props} />;
+  return function DraggableWrapper(props: PlateElementProps): React.ReactElement {
+    return <Draggable {...props} />;
+  };
 };
 
-function Draggable(props: PlateElementProps) {
+function Draggable(props: PlateElementProps): React.ReactElement {
   const { children, editor, element, path } = props;
   const blockSelectionApi = editor.getApi(BlockSelectionPlugin).blockSelection;
 
@@ -95,7 +97,7 @@ function Draggable(props: PlateElementProps) {
 
   const [previewTop, setPreviewTop] = React.useState(0);
 
-  const resetPreview = () => {
+  const resetPreview = (): void => {
     if (previewRef.current) {
       previewRef.current.replaceChildren();
       previewRef.current?.classList.add('hidden');
@@ -216,7 +218,7 @@ function Gutter({
   children,
   className,
   ...props
-}: React.ComponentProps<'div'>) {
+}: React.ComponentProps<'div'>): React.ReactElement {
   const editor = useEditorRef();
   const element = useElement();
   const isSelectionAreaVisible = usePluginOption(
@@ -373,7 +375,7 @@ const DropLine = React.memo(function DropLine({
   );
 });
 
-const DraggableInsertHandle = () => {
+const DraggableInsertHandle = (): React.ReactElement => {
   const editor = useEditorRef();
   const element = useElement();
 
@@ -414,7 +416,7 @@ const triggerComboboxNextBlock = (
   triggerText: string,
   at?: Path,
   insertAbove = false
-) => {
+): void => {
   let _at: Path | undefined;
 
   if (at) {
@@ -440,7 +442,7 @@ const createDragPreviewElements = (
    * Remove data attributes from the element to avoid recognized as slate
    * elements incorrectly.
    */
-  const removeDataAttributes = (element: HTMLElement) => {
+  const removeDataAttributes = (element: HTMLElement): void => {
     Array.from(element.attributes).forEach((attr) => {
       if (
         attr.name.startsWith('data-slate') ||
@@ -455,7 +457,7 @@ const createDragPreviewElements = (
     });
   };
 
-  const resolveElement = (node: TElement, index: number) => {
+  const resolveElement = (node: TElement, index: number): void => {
     const domNode = editor.api.toDOMNode(node)!;
     const newDomNode = domNode.cloneNode(true) as HTMLElement;
 
@@ -463,7 +465,7 @@ const createDragPreviewElements = (
     const applyScrollCompensation = (
       original: Element,
       cloned: HTMLElement
-    ) => {
+    ): void => {
       const scrollLeft = original.scrollLeft;
 
       if (scrollLeft > 0) {

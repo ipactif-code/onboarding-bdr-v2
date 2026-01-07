@@ -6,7 +6,7 @@ import * as React from 'react';
 import { Calendar } from './calendar';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 
-export function DateElement(props: PlateElementProps) {
+export function DateElement(props: PlateElementProps): React.ReactElement {
   const { editor, element } = props;
 
   return (

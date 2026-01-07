@@ -9,7 +9,7 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
-export function ToggleElement(props: PlateElementProps) {
+export function ToggleElement(props: PlateElementProps): React.ReactElement {
   const element = useElement();
   const state = useToggleButtonState(element.id as string);
   const { buttonProps, open } = useToggleButton(state);

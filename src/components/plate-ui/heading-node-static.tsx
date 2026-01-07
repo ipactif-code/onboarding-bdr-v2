@@ -26,7 +26,7 @@ export function HeadingElementStatic({
   ...props
 }: SlateElementProps & {
   variant?: 'h1' | 'h2' | 'h3';
-}) {
+}): React.ReactElement {
   const isFirstBlock = PathApi.equals(props.api.findPath(props.element)!, [0]);
 
   return (
@@ -40,14 +40,14 @@ export function HeadingElementStatic({
   );
 }
 
-export function H1ElementStatic(props: SlateElementProps) {
+export function H1ElementStatic(props: SlateElementProps): React.ReactElement {
   return <HeadingElementStatic variant="h1" {...props} />;
 }
 
-export function H2ElementStatic(props: SlateElementProps) {
+export function H2ElementStatic(props: SlateElementProps): React.ReactElement {
   return <HeadingElementStatic variant="h2" {...props} />;
 }
 
-export function H3ElementStatic(props: SlateElementProps) {
+export function H3ElementStatic(props: SlateElementProps): React.ReactElement {
   return <HeadingElementStatic variant="h3" {...props} />;
 }

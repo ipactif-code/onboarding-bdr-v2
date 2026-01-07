@@ -22,10 +22,12 @@ const config: Record<
 export const BlockListStatic: RenderStaticNodeWrapper = (props) => {
   if (!props.element.listStyleType) return;
 
-  return (props) => <List {...props} />;
+  const ListWrapper = (props: SlateRenderElementProps): React.ReactElement => <List {...props} />;
+  ListWrapper.displayName = 'ListWrapper';
+  return ListWrapper;
 };
 
-function List(props: SlateRenderElementProps) {
+function List(props: SlateRenderElementProps): React.ReactElement {
   const { listStart, listStyleType } = props.element as TListElement;
   const { Li, Marker } = config[listStyleType] ?? {};
   const List = isOrderedList(props.element) ? 'ol' : 'ul';
@@ -42,7 +44,7 @@ function List(props: SlateRenderElementProps) {
   );
 }
 
-function TodoMarkerStatic(props: SlateRenderElementProps) {
+function TodoMarkerStatic(props: SlateRenderElementProps): React.ReactElement {
   const checked = props.element.checked as boolean;
 
   return (
@@ -63,7 +65,7 @@ function TodoMarkerStatic(props: SlateRenderElementProps) {
   );
 }
 
-function TodoLiStatic(props: SlateRenderElementProps) {
+function TodoLiStatic(props: SlateRenderElementProps): React.ReactElement {
   return (
     <li
       className={cn(

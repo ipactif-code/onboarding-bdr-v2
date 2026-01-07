@@ -107,16 +107,16 @@ export const Button = withTooltip(function Button({
   icon,
   iconPlacement = 'left',
   isMenu,
-  isPending,
+  isPending: _isPending,
   label,
   loading,
   loadingClassName,
   size,
   truncate,
   variant,
-  onToggleClick,
+  onToggleClick: _onToggleClick,
   ...props
-}: ButtonExtendedProps & React.ComponentProps<'button'>) {
+}: ButtonExtendedProps & React.ComponentProps<'button'>): React.ReactElement {
   const Comp = asChild ? SlotRoot : 'button';
 
   return (

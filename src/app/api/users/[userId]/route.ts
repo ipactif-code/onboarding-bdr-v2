@@ -10,8 +10,8 @@ const apiRef: any = require("../../../../../convex/_generated/api").api;
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ userId: string }> }
-) {
+  { params: _params }: { params: Promise<{ userId: string }> }
+): Promise<Response> {
   try {
     // 1. Verify authentication
     const { userId: currentClerkId } = await auth();

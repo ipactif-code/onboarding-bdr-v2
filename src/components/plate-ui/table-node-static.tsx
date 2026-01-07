@@ -6,7 +6,7 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
-export function TableElementStatic(props: SlateElementProps<TTableElement>) {
+export function TableElementStatic(props: SlateElementProps<TTableElement>): React.ReactElement {
   const { disableMarginLeft } = props.editor.getOptions(BaseTablePlugin);
   const marginLeft = disableMarginLeft ? 0 : props.element.marginLeft;
 
@@ -25,7 +25,7 @@ export function TableElementStatic(props: SlateElementProps<TTableElement>) {
   );
 }
 
-export function TableRowElementStatic(props: SlateElementProps) {
+export function TableRowElementStatic(props: SlateElementProps): React.ReactElement {
   return <SlateElement {...props} as="tr" className="h-full" />;
 }
 
@@ -34,7 +34,7 @@ export function TableCellElementStatic({
   ...props
 }: SlateElementProps<TTableCellElement> & {
   isHeader?: boolean;
-}) {
+}): React.ReactElement {
   const { editor, element } = props;
   const { api } = editor.getPlugin(BaseTablePlugin);
 
@@ -80,6 +80,6 @@ export function TableCellElementStatic({
   );
 }
 
-export function TableCellHeaderElementStatic(props: SlateElementProps) {
+export function TableCellHeaderElementStatic(props: SlateElementProps): React.ReactElement {
   return <TableCellElementStatic {...props} isHeader />;
 }

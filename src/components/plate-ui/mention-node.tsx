@@ -164,7 +164,7 @@ const mockUsers = [
   },
 ];
 
-export function MentionInputElement(props: PlateElementProps) {
+export function MentionInputElement(props: PlateElementProps): React.ReactElement {
   const [placeholder, setPlaceholder] = useState(
     'Mention a person,page,or date...'
   );
@@ -260,7 +260,7 @@ function PeopleComboboxGroup({
   search: searchRaw,
   onUserHover,
   onUserSelect,
-}: PeopleComboboxGroupProps) {
+}: PeopleComboboxGroupProps): React.ReactElement | null {
   const search = useDebounce(searchRaw, 100);
 
   const allUsers = useMemo(
@@ -307,7 +307,7 @@ function DocumentComboboxGroup({
   search: searchRaw,
   onDocumentHover,
   onDocumentSelect,
-}: DocumentComboboxGroupProps) {
+}: DocumentComboboxGroupProps): React.ReactElement | null {
   const search = useDebounce(searchRaw, 500);
 
   const allDocuments = useMemo(
@@ -344,7 +344,7 @@ function DocumentComboboxGroup({
   );
 }
 
-const openDocument = (id: string) => {
+const openDocument = (id: string): void => {
   const host = window.location.host;
   const baseUrl =
     // TODO: Remove this for demo only
@@ -359,7 +359,7 @@ function DocumentMentionElement(
   props: PlateElementProps<MyMentionElement> & {
     prefix?: string;
   }
-) {
+): React.ReactElement {
   const { children } = props;
   const element = props.element;
   const selected = useSelected();
@@ -427,7 +427,7 @@ function DocumentMentionElement(
   );
 }
 
-function MentionHoverCardContent(props: { element: MyMentionElement }) {
+function MentionHoverCardContent(props: { element: MyMentionElement }): React.ReactElement {
   const editor = useEditorRef();
   const { element } = props;
 
@@ -482,12 +482,14 @@ function MentionHoverCardContent(props: { element: MyMentionElement }) {
       </div>
       <div className="absolute top-5 left-4 text-[30px]">{element.icon}</div>
       <h1 className="mt-5 px-4 font-bold text-lg">{element.value}</h1>
-      <EditorStatic
-        className="px-4 text-xs"
-        editor={previewEditor}
-        // components={basicComponents}
-        variant="mention"
-      />
+      {previewEditor && (
+        <EditorStatic
+          className="px-4 text-xs"
+          editor={previewEditor}
+          // components={basicComponents}
+          variant="mention"
+        />
+      )}
     </div>
   );
 }
@@ -496,7 +498,7 @@ function UserMentionElement(
   props: PlateElementProps<MyMentionElement> & {
     prefix?: string;
   }
-) {
+): React.ReactElement {
   const { children } = props;
   const element = props.element;
   const readOnly = useReadOnly();
@@ -514,8 +516,11 @@ function UserMentionElement(
       className={cn(
         'inline-block cursor-pointer align-baseline font-medium text-primary/65',
         !readOnly && 'cursor-pointer',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (element.children[0] as any).bold === true && 'font-bold',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (element.children[0] as any).italic === true && 'italic',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (element.children[0] as any).underline === true && 'underline'
       )}
     >
@@ -543,7 +548,7 @@ export function MentionElement(
   props: PlateElementProps<MyMentionElement> & {
     prefix?: string;
   }
-) {
+): React.ReactElement {
   const element = props.element;
   const isDocument = element.key?.startsWith('/');
 
@@ -554,7 +559,7 @@ export function MentionElement(
   );
 }
 
-const useEditorPreview = (value: Value) => {
+const useEditorPreview = (value: Value): ReturnType<typeof usePlateEditor> => {
   const editorStatic = usePlateEditor(
     {
       plugins: BaseEditorKit,

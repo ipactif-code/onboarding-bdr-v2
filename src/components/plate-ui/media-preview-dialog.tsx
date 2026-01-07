@@ -15,6 +15,7 @@ import {
   Plus,
 } from 'lucide-react';
 import { useEditorRef } from 'platejs/react';
+import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 import { downloadFile } from '@/lib/plate/download-file';
@@ -23,7 +24,7 @@ import { Button } from './button';
 
 const SCROLL_SPEED = 4;
 
-export function ImagePreview() {
+export function ImagePreview(): React.ReactElement {
   const editor = useEditorRef();
   const isOpen = useImagePreviewValue('isOpen', editor.id);
   const scale = useImagePreviewValue('scale');
@@ -123,7 +124,7 @@ export function ImagePreview() {
   );
 }
 
-function ScaleInput(props: React.ComponentProps<'input'>) {
+function ScaleInput(props: React.ComponentProps<'input'>): React.ReactElement {
   const { props: scaleInputProps, ref } = useScaleInput();
 
   return <input {...scaleInputProps} {...props} ref={ref} />;

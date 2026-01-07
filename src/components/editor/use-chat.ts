@@ -15,6 +15,7 @@ import { discussionPlugin } from './plugins/discussion-kit';
 
 export type Chat = UseChatHelpers<ChatMessage>;
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- UIMessage generic requires empty object for no custom data
 export type ChatMessage = UIMessage<{}, MessageDataPart>;
 
 export type MessageDataPart = {
@@ -33,13 +34,13 @@ export type TComment = {
 
 export type ToolName = 'comment' | 'edit' | 'generate';
 
-export const useChat = () => {
+export const useChat = (): Chat & { _abortFakeStream: () => void } => {
   const editor = useEditorRef();
   // const options = usePluginOption(aiChatPlugin, 'chatOptions');
 
   // remove when you implement the route /api/ai/command
   const abortControllerRef = React.useRef<AbortController | null>(null);
-  const _abortFakeStream = () => {
+  const _abortFakeStream = (): void => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
@@ -60,7 +61,7 @@ export const useChat = () => {
           try {
             const content = JSON.parse(init?.body as string)
               .messages.at(-1)
-              .parts.find((p: any) => p.type === 'text')?.text;
+              .parts.find((p: { type: string; text?: string }) => p.type === 'text')?.text;
 
             if (content.includes('Generate a markdown sample')) {
               sample = 'markdown';
@@ -166,6 +167,7 @@ export const useChat = () => {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- AIChatPlugin expects internal chat type
     editor.setOption(AIChatPlugin, 'chat', chat as any);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chat.status, chat.messages, chat.error]);
@@ -184,7 +186,7 @@ const fakeStreamText = ({
   chunkCount?: number;
   sample?: 'comment' | 'markdown' | 'mdx' | null;
   signal?: AbortSignal;
-}) => {
+}): ReadableStream<Uint8Array> => {
   const encoder = new TextEncoder();
 
   return new ReadableStream({
@@ -226,7 +228,7 @@ const fakeStreamText = ({
         return;
       }
 
-      const abortHandler = () => {
+      const abortHandler = (): void => {
         controller.error(new Error('Stream aborted'));
       };
 
@@ -1436,7 +1438,7 @@ const mdxChunks = [
   ],
 ];
 
-const createCommentChunks = (editor: PlateEditor) => {
+const createCommentChunks = (editor: PlateEditor): { delay: number; texts: string }[][] => {
   const selectedBlocksApi = editor.getApi(BlockSelectionPlugin).blockSelection;
 
   const selectedBlocks = selectedBlocksApi

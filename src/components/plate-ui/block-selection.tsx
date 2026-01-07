@@ -27,7 +27,7 @@ export const blockSelectionVariants = cva(
   }
 );
 
-export function BlockSelection(props: PlateElementProps) {
+export function BlockSelection(props: PlateElementProps): React.ReactElement | null {
   const isBlockSelected = useBlockSelected();
   const isDragging = usePluginOption(DndPlugin, 'isDragging');
 

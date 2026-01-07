@@ -143,7 +143,7 @@ export const AIKit = [
   aiChatPlugin,
 ];
 
-const insertAIAnchorElement = (editor: PlateEditor) => {
+const insertAIAnchorElement = (editor: PlateEditor): void => {
   const blockNodes = editor
     .getApi(BlockSelectionPlugin)
     .blockSelection.getNodes({ selectionFallback: true, sort: true });

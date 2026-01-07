@@ -27,7 +27,7 @@ import { SuggestionToolbarButton } from './suggestion-toolbar-button';
 import { ToolbarGroup } from './toolbar';
 import { TurnIntoToolbarButton } from './turn-into-toolbar-button';
 
-export function FloatingToolbarButtons() {
+export function FloatingToolbarButtons(): React.ReactElement {
   const editor = useEditorRef();
   const readOnly = useEditorReadOnly();
 
@@ -118,7 +118,7 @@ export function FloatingToolbarButtons() {
   );
 }
 
-function AIIcon(props: LucideProps) {
+function AIIcon(props: LucideProps): React.ReactElement {
   return (
     <svg
       fill="url(#myGradient)"

@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { MessageCircle } from "lucide-react";
 
 import { Id } from "../../../../../../convex/_generated/dataModel";
-import type { AttachmentData } from "@/hooks/use-messages";
+import type { SendMessageOptions } from "@/components/messaging/message-input";
 
 // Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
 // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
@@ -137,12 +137,13 @@ export function DMView({ conversationId }: DMViewProps): React.ReactElement {
   }, []);
 
   const handleSendMessage = useCallback(
-    async (content: string, attachments?: AttachmentData[]) => {
+    async (content: string, options?: SendMessageOptions) => {
       try {
         await sendMessageMutation({
           conversationId: parsedConversationId,
           content,
-          attachments,
+          attachments: options?.attachments,
+          attachmentIds: options?.attachmentIds,
         });
         clearTyping();
       } catch (error) {
@@ -196,14 +197,15 @@ export function DMView({ conversationId }: DMViewProps): React.ReactElement {
   }, []);
 
   const handleSendThreadReply = useCallback(
-    async (content: string, attachments?: AttachmentData[]) => {
+    async (content: string, options?: SendMessageOptions) => {
       if (!openThreadId) return;
       try {
         await sendMessageMutation({
           conversationId: parsedConversationId,
           content,
           parentId: openThreadId,
-          attachments,
+          attachments: options?.attachments,
+          attachmentIds: options?.attachmentIds,
         });
       } catch (error) {
         const message =

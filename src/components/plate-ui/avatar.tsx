@@ -29,7 +29,7 @@ const avatarVariants = cva('relative flex shrink-0 overflow-hidden', {
 type AvatarProps = React.ComponentProps<typeof AvatarPrimitive.Root> &
   VariantProps<typeof avatarVariants>;
 
-function Avatar({ className, size, variant, ...props }: AvatarProps) {
+function Avatar({ className, size, variant, ...props }: AvatarProps): React.ReactElement {
   return (
     <AvatarPrimitive.Root
       className={cn(avatarVariants({ size, variant }), className)}
@@ -44,7 +44,7 @@ function AvatarImage({
   onLoadingStatusChange,
   ...props
 }: React.ComponentProps<typeof AvatarPrimitive.Image> &
-  Pick<AvatarPrimitive.AvatarImageProps, 'onLoadingStatusChange'>) {
+  Pick<AvatarPrimitive.AvatarImageProps, 'onLoadingStatusChange'>): React.ReactElement {
   return (
     <AvatarPrimitive.Image
       asChild
@@ -52,12 +52,14 @@ function AvatarImage({
       onLoadingStatusChange={onLoadingStatusChange}
       src={props.src}
     >
+{/* eslint-disable-next-line @next/next/no-img-element -- Required by Radix asChild pattern */}
       <img
         className={cn(
           'aspect-square size-full select-none object-cover',
           className
         )}
         fill="true"
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for image prop spreading
         {...(props as any)}
         alt=""
       />
@@ -84,7 +86,7 @@ type AvatarFallbackProps = React.ComponentProps<
 > &
   VariantProps<typeof avatarFallbackVariants>;
 
-function AvatarFallback({ className, variant, ...props }: AvatarFallbackProps) {
+function AvatarFallback({ className, variant, ...props }: AvatarFallbackProps): React.ReactElement {
   return (
     <AvatarPrimitive.Fallback
       className={cn(avatarFallbackVariants({ variant }), className)}

@@ -1,3 +1,4 @@
+import type { ReactElement } from "react";
 import { auth } from "@clerk/nextjs/server";
 import { redirect, notFound } from "next/navigation";
 import { ConvexHttpClient } from "convex/browser";
@@ -14,7 +15,7 @@ interface LessonEditorPageProps {
   params: Promise<{ courseId: string; lessonId: string }>;
 }
 
-export default async function LessonEditorPage({ params }: LessonEditorPageProps) {
+export default async function LessonEditorPage({ params }: LessonEditorPageProps): Promise<ReactElement> {
   const { courseId, lessonId } = await params;
   const { userId, getToken } = await auth();
 

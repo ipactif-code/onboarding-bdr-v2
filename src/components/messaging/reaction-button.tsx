@@ -14,7 +14,11 @@
 import { useQuery } from "convex/react";
 
 import type { Id } from "../../../convex/_generated/dataModel";
-import { api } from "../../../convex/_generated/api";
+
+// Type workaround: Convex's API has excessively deep type nesting (TS2589).
+// Using require instead of import to avoid type instantiation depth errors.
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const api: any = require("../../../convex/_generated/api").api;
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -90,10 +94,11 @@ export function ReactionButton({
   onToggle,
 }: ReactionButtonProps): React.ReactElement {
   // Fetch user names for tooltip - only fetch when there are userIds
-  const userNames = useQuery(
-    api.reactions.getReactionUserNames,
-    userIds.length > 0 ? { userIds } : "skip"
-  ) as { userId: Id<"users">; name: string }[] | undefined;
+  // Extract query args to separate variable to help TypeScript inference
+  const queryArgs = userIds.length > 0 ? { userIds } : "skip";
+  const userNames = useQuery(api.reactions.getReactionUserNames, queryArgs) as
+    | { userId: Id<"users">; name: string }[]
+    | undefined;
 
   // Build tooltip text showing user names
   const tooltipText = buildTooltipText(userNames, userIds.length);

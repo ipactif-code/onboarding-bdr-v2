@@ -10,7 +10,7 @@ import { ToolbarButton } from './toolbar';
 
 export function LinkToolbarButton(
   props: React.ComponentProps<typeof ToolbarButton>
-) {
+): React.ReactElement {
   const { api } = useEditorPlugin(linkPlugin);
 
   return (

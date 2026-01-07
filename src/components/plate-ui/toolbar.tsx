@@ -28,7 +28,7 @@ export function Toolbar({
   variant,
   ...props
 }: React.ComponentProps<typeof ToolbarPrimitive.Root> &
-  VariantProps<typeof toolbarVariants>) {
+  VariantProps<typeof toolbarVariants>): React.ReactElement {
   return (
     <ToolbarPrimitive.Root
       className={cn(toolbarVariants({ variant }), className)}
@@ -40,7 +40,7 @@ export function Toolbar({
 export function ToolbarToggleGroup({
   className,
   ...props
-}: React.ComponentProps<typeof ToolbarPrimitive.ToolbarToggleGroup>) {
+}: React.ComponentProps<typeof ToolbarPrimitive.ToolbarToggleGroup>): React.ReactElement {
   return (
     <ToolbarPrimitive.ToolbarToggleGroup
       className={cn('flex items-center', className)}
@@ -52,7 +52,7 @@ export function ToolbarToggleGroup({
 export function ToolbarLink({
   className,
   ...props
-}: React.ComponentProps<typeof ToolbarPrimitive.Link>) {
+}: React.ComponentProps<typeof ToolbarPrimitive.Link>): React.ReactElement {
   return (
     <ToolbarPrimitive.Link
       className={cn('font-medium underline underline-offset-4', className)}
@@ -64,7 +64,7 @@ export function ToolbarLink({
 export function ToolbarSeparator({
   className,
   ...props
-}: React.ComponentProps<typeof ToolbarPrimitive.Separator>) {
+}: React.ComponentProps<typeof ToolbarPrimitive.Separator>): React.ReactElement {
   return (
     <ToolbarPrimitive.Separator
       className={cn('mx-2 my-1 w-px shrink-0 bg-border', className)}
@@ -165,7 +165,7 @@ export function ToolbarToggleItem({
   variant,
   ...props
 }: React.ComponentProps<typeof ToolbarPrimitive.ToggleItem> &
-  VariantProps<typeof toolbarButtonVariants>) {
+  VariantProps<typeof toolbarButtonVariants>): React.ReactElement {
   return (
     <ToolbarPrimitive.ToggleItem
       className={cn(toolbarButtonVariants({ size, variant }), className)}
@@ -177,7 +177,7 @@ export function ToolbarToggleItem({
 export function ToolbarGroup({
   children,
   className,
-}: React.ComponentProps<'div'>) {
+}: React.ComponentProps<'div'>): React.ReactElement | null {
   const childArr = React.Children.map(children, (c) => c);
 
   if (!childArr || childArr.length === 0) return null;

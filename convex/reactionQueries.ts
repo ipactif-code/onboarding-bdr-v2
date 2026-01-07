@@ -35,6 +35,7 @@ export const getMessageReactions = query({
   },
   returns: v.array(groupedReactionValidator),
   handler: async (ctx, args) => {
+
     // Get current user (optional - reactions are viewable to anyone who can see the message)
     const currentUser = await getCurrentUser(ctx);
 

@@ -29,19 +29,19 @@ const popoverVariants = cva(
 
 function Popover({
   ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Root>) {
+}: React.ComponentProps<typeof PopoverPrimitive.Root>): React.ReactElement {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />;
 }
 
 function PopoverTrigger({
   ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Trigger>) {
+}: React.ComponentProps<typeof PopoverPrimitive.Trigger>): React.ReactElement {
   return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
 }
 
 function PopoverAnchor({
   ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Anchor>) {
+}: React.ComponentProps<typeof PopoverPrimitive.Anchor>): React.ReactElement {
   return <PopoverPrimitive.Anchor data-slot="popover-anchor" {...props} />;
 }
 
@@ -52,7 +52,7 @@ function PopoverContent({
   variant,
   ...props
 }: React.ComponentProps<typeof PopoverPrimitive.Content> &
-  VariantProps<typeof popoverVariants>) {
+  VariantProps<typeof popoverVariants>): React.ReactElement {
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Content

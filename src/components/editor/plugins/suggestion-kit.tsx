@@ -38,7 +38,7 @@ export const suggestionPlugin = toTPlatePlugin<SuggestionConfig>(
 
         const isBlockLeaf = leaf.dataset.blockSuggestion === 'true';
 
-        const unsetActiveSuggestion = () => {
+        const unsetActiveSuggestion = (): void => {
           setOption('activeId', null);
           isSet = true;
         };

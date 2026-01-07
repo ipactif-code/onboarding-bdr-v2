@@ -19,7 +19,7 @@ const headingItemVariants = cva(
   }
 );
 
-export function TocElementStatic(props: SlateElementProps) {
+export function TocElementStatic(props: SlateElementProps): React.ReactElement {
   const { editor } = props;
   const headingList = getHeadingList(editor);
 
@@ -29,6 +29,7 @@ export function TocElementStatic(props: SlateElementProps) {
         {headingList.length > 0 ? (
           headingList.map((item) => (
             <Button
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               className={headingItemVariants({ depth: item.depth as any })}
               key={item.title}
               variant="ghost"
@@ -56,7 +57,7 @@ const headingLevels = {
   [KEYS.h6]: 6,
 };
 
-const getHeadingList = (editor?: SlateEditor) => {
+const getHeadingList = (editor?: SlateEditor): Heading[] => {
   if (!editor) return [];
 
   const options = editor.getOptions(BaseTocPlugin);

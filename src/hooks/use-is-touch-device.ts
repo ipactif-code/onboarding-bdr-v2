@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react';
 
-export function useIsTouchDevice() {
+export function useIsTouchDevice(): boolean {
   const [isTouchDevice, setIsTouchDevice] = useState(false);
 
   useEffect(() => {
-    function onResize() {
+    function onResize(): void {
       setIsTouchDevice(
         'ontouchstart' in window ||
           navigator.maxTouchPoints > 0 ||

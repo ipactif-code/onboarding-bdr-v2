@@ -2,7 +2,7 @@ import type { TColumnElement } from 'platejs';
 import { SlateElement, type SlateElementProps } from 'platejs/static';
 import * as React from 'react';
 
-export function ColumnElementStatic(props: SlateElementProps<TColumnElement>) {
+export function ColumnElementStatic(props: SlateElementProps<TColumnElement>): React.ReactElement {
   const { width } = props.element;
 
   return (
@@ -14,7 +14,7 @@ export function ColumnElementStatic(props: SlateElementProps<TColumnElement>) {
   );
 }
 
-export function ColumnGroupElementStatic(props: SlateElementProps) {
+export function ColumnGroupElementStatic(props: SlateElementProps): React.ReactElement {
   return (
     <SlateElement className="my-2" {...props}>
       <div className="flex size-full gap-4 rounded">{props.children}</div>

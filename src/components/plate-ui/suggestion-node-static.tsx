@@ -6,7 +6,7 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
-export function SuggestionLeafStatic(props: SlateLeafProps<TSuggestionText>) {
+export function SuggestionLeafStatic(props: SlateLeafProps<TSuggestionText>): React.ReactElement {
   const { editor, leaf } = props;
 
   const dataList = editor

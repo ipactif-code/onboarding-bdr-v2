@@ -24,7 +24,7 @@ export function Separator({
   orientation = 'horizontal',
   ...props
 }: React.ComponentProps<typeof SeparatorPrimitive.Root> &
-  VariantProps<typeof separatorVariants>) {
+  VariantProps<typeof separatorVariants>): React.ReactElement {
   return (
     <SeparatorPrimitive.Root
       className={cn(

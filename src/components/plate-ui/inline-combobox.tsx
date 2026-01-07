@@ -30,6 +30,7 @@ type InlineComboboxContextValue = {
 };
 
 const InlineComboboxContext = React.createContext<InlineComboboxContextValue>(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Context default value pattern
   null as any
 );
 
@@ -66,7 +67,7 @@ function InlineCombobox({
   showTrigger = true,
   trigger,
   value: valueProp,
-}: InlineComboboxProps) {
+}: InlineComboboxProps): React.ReactElement {
   const editor = useEditorRef();
   const inputRef = React.useRef<HTMLInputElement>(null);
   const cursorState = useHTMLInputCursorState(inputRef);
@@ -77,6 +78,7 @@ function InlineCombobox({
 
   // Check if current user is the creator of this element (for Yjs collaboration)
   const isCreator = React.useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Yjs extends element with userId
     const elementUserId = (element as any).userId;
     const currentUserId = editor.meta.userId;
 
@@ -193,7 +195,7 @@ function InlineComboboxInput({
   className,
   ref: refProp,
   ...props
-}: React.ComponentProps<'input'>) {
+}: React.ComponentProps<'input'>): React.ReactElement {
   const {
     inputProps,
     inputRef: contextRef,
@@ -271,7 +273,7 @@ function InlineComboboxContent({
   variant,
   ...props
 }: React.ComponentProps<typeof Ariakit.ComboboxPopover> &
-  VariantProps<typeof comboboxVariants>) {
+  VariantProps<typeof comboboxVariants>): React.ReactElement {
   return (
     <Ariakit.Portal>
       <Ariakit.ComboboxPopover
@@ -298,7 +300,7 @@ function InlineComboboxItem({
   keywords?: string[];
   label?: string;
 } & Ariakit.ComboboxItemProps &
-  Required<Pick<Ariakit.ComboboxItemProps, 'value'>>) {
+  Required<Pick<Ariakit.ComboboxItemProps, 'value'>>): React.ReactElement | null {
   const { value } = props;
 
   const { filter, removeInput } = React.useContext(InlineComboboxContext);
@@ -330,7 +332,7 @@ function InlineComboboxItem({
 function InlineComboboxEmpty({
   children,
   className,
-}: HTMLAttributes<HTMLDivElement>) {
+}: HTMLAttributes<HTMLDivElement>): React.ReactElement | null {
   const { setHasEmpty } = React.useContext(InlineComboboxContext);
   const store = Ariakit.useComboboxContext()!;
   const items = store.useState('items');
@@ -361,7 +363,7 @@ function InlineComboboxEmpty({
 function InlineComboboxGroup({
   className,
   ...props
-}: React.ComponentProps<typeof Ariakit.ComboboxGroup>) {
+}: React.ComponentProps<typeof Ariakit.ComboboxGroup>): React.ReactElement {
   return (
     <Ariakit.ComboboxGroup
       className={cn(
@@ -376,7 +378,7 @@ function InlineComboboxGroup({
 function InlineComboboxGroupLabel({
   className,
   ...props
-}: React.ComponentProps<typeof Ariakit.ComboboxGroupLabel>) {
+}: React.ComponentProps<typeof Ariakit.ComboboxGroupLabel>): React.ReactElement {
   return (
     <Ariakit.ComboboxGroupLabel
       className={cn(

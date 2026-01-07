@@ -29,7 +29,7 @@ export const inputVariants = cva(
 export type InputProps = React.ComponentProps<'input'> &
   VariantProps<typeof inputVariants>;
 
-export function Input({ className, variant, ...props }: InputProps) {
+export function Input({ className, variant, ...props }: InputProps): React.ReactElement {
   return (
     <input className={cn(inputVariants({ variant }), className)} {...props} />
   );

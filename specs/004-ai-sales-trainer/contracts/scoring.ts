@@ -6,7 +6,7 @@
  */
 
 import { v } from "convex/values";
-import type { Id } from "../../../convex/_generated/dataModel";
+import type { Id as _Id } from "../../../convex/_generated/dataModel";
 
 // =============================================================================
 // TYPES

@@ -29,7 +29,7 @@ function Command({
   variant,
   ...props
 }: React.ComponentProps<typeof CommandPrimitive> &
-  VariantProps<typeof commandVariants>) {
+  VariantProps<typeof commandVariants>): React.ReactElement {
   return (
     <CommandPrimitive
       className={cn(commandVariants({ variant }), className)}
@@ -43,7 +43,7 @@ function CommandDialog({
   children,
   className,
   ...props
-}: DialogProps & { className?: string }) {
+}: DialogProps & { className?: string }): React.ReactElement {
   return (
     <Dialog {...props}>
       <DialogContent
@@ -74,7 +74,7 @@ function CommandInput({
 }: React.ComponentProps<typeof CommandPrimitive.Input> &
   VariantProps<typeof inputVariants> & {
     wrapClassName?: string;
-  }) {
+  }): React.ReactElement {
   return (
     <div
       className={cn('mt-2 flex w-full items-center px-3 py-1.5', wrapClassName)}
@@ -93,7 +93,7 @@ function CommandInput({
 function CommandList({
   className,
   ...props
-}: React.ComponentProps<typeof CommandPrimitive.List>) {
+}: React.ComponentProps<typeof CommandPrimitive.List>): React.ReactElement {
   return (
     <CommandPrimitive.List
       className={cn(
@@ -109,7 +109,7 @@ function CommandList({
 function CommandEmpty({
   className,
   ...props
-}: React.ComponentProps<typeof CommandPrimitive.Empty>) {
+}: React.ComponentProps<typeof CommandPrimitive.Empty>): React.ReactElement {
   return (
     <CommandPrimitive.Empty
       className={cn('py-6 text-center text-sm', className)}
@@ -122,7 +122,7 @@ function CommandEmpty({
 function CommandGroup({
   className,
   ...props
-}: React.ComponentProps<typeof CommandPrimitive.Group>) {
+}: React.ComponentProps<typeof CommandPrimitive.Group>): React.ReactElement {
   return (
     <CommandPrimitive.Group
       className={cn(
@@ -138,7 +138,7 @@ function CommandGroup({
 function CommandSeparator({
   className,
   ...props
-}: React.ComponentProps<typeof CommandPrimitive.Separator>) {
+}: React.ComponentProps<typeof CommandPrimitive.Separator>): React.ReactElement {
   return (
     <CommandPrimitive.Separator
       className={cn('-mx-1 h-px bg-border', className)}
@@ -171,7 +171,7 @@ function CommandItem({
   variant,
   ...props
 }: React.ComponentProps<typeof CommandPrimitive.Item> &
-  VariantProps<typeof commandItemVariants>) {
+  VariantProps<typeof commandItemVariants>): React.ReactElement {
   return (
     <CommandPrimitive.Item
       className={cn(commandItemVariants({ variant }), className)}
@@ -184,7 +184,7 @@ function CommandItem({
 function CommandShortcut({
   className,
   ...props
-}: React.ComponentProps<'span'>) {
+}: React.ComponentProps<'span'>): React.ReactElement {
   return (
     <span
       className={cn(

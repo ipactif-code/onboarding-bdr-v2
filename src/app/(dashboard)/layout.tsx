@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactElement } from "react";
 import { usePathname } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/layout/app-header";
@@ -11,7 +12,7 @@ import { PresenceProvider } from "@/components/presence";
 import { useConvexAuth } from "@/components/providers/convex-provider";
 import { cn } from "@/lib/utils";
 
-function AuthReadyGuard({ children }: { children: React.ReactNode }) {
+function AuthReadyGuard({ children }: { children: React.ReactNode }): ReactElement {
   const { isAuthReady } = useConvexAuth();
 
   if (!isAuthReady) {
@@ -57,7 +58,7 @@ export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
-}) {
+}): ReactElement {
   const pathname = usePathname();
 
   // Hide header on messages page (full-height chat interface)

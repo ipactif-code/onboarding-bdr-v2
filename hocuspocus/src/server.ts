@@ -56,6 +56,7 @@ const SHUTDOWN_TIMEOUT_MS = 5000;
 const PORT = parseInt(process.env.PORT ?? "1234", 10);
 const CLERK_SECRET_KEY = process.env.CLERK_SECRET_KEY;
 const NODE_ENV = process.env.NODE_ENV ?? "development";
+const SQLITE_PATH = process.env.SQLITE_PATH ?? "documents.sqlite";
 
 /**
  * Validated user context returned from authentication.
@@ -97,6 +98,8 @@ log("INFO", "CONFIG", "Configuration validated", {
   port: PORT,
   environment: NODE_ENV,
   clerkKeyPrefix: CLERK_SECRET_KEY.substring(0, 10) + "...",
+  sqlitePath: SQLITE_PATH,
+  sqlitePathSource: process.env.SQLITE_PATH ? "environment" : "default",
 });
 
 // =============================================================================
@@ -126,7 +129,7 @@ const server = Server.configure({
   extensions: [
     // SQLite persistence - stores documents for durability across restarts
     new SQLite({
-      database: "./data/documents.sqlite",
+      database: SQLITE_PATH,
     }),
 
     // Rate limiting - prevents connection abuse

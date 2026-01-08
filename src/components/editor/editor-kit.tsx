@@ -13,7 +13,8 @@ import { CalloutKit } from './plugins/callout-kit';
 import { CodeBlockKit } from './plugins/code-block-kit';
 import { ColumnKit } from './plugins/column-kit';
 import { CommentKit } from './plugins/comment-kit';
-import { CopilotKit } from './plugins/copilot-kit';
+// AI Copilot disabled until /api/ai/copilot route is implemented
+// import { CopilotKit } from './plugins/copilot-kit';
 import { CursorOverlayKit } from './plugins/cursor-overlay-kit';
 import { DateKit } from './plugins/date-kit';
 import { DiscussionKit } from './plugins/discussion-kit';
@@ -36,7 +37,9 @@ import { TocKit } from './plugins/toc-kit';
 import { ToggleKit } from './plugins/toggle-kit';
 
 export const EditorKit = [
-  ...CopilotKit,
+  // AI Copilot disabled until /api/ai/copilot route is implemented
+  // TODO: Re-enable when AI backend is ready
+  // ...CopilotKit,
   ...AIKit,
   ...BlockMenuKit,
 

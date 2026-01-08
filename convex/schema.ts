@@ -1112,4 +1112,61 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_user_document", ["userId", "documentId"])
     .index("by_user_time", ["userId", "accessedAt"]),
+
+  // ============================================================================
+  // KNOWLEDGE BASE REAL-TIME COLLABORATION TABLES
+  // ============================================================================
+
+  /**
+   * Knowledge Base Document Collaborators - Real-time presence tracking.
+   * Tracks active editors on a document with their cursor positions and selections.
+   * Used for live collaboration features (showing who's editing, cursor positions).
+   */
+  kbDocumentCollaborators: defineTable({
+    // Reference
+    documentId: v.id("kbDocuments"),
+    userId: v.id("users"),
+
+    // Cursor appearance
+    cursorColor: v.string(), // Hex color for cursor (e.g., "#FF5733")
+
+    // Cursor position (Slate Point structure)
+    cursorPosition: v.optional(v.any()), // Slate Point { path: number[], offset: number }
+
+    // Selection range (Slate Range structure)
+    selectionRange: v.optional(v.any()), // Slate Range { anchor: Point, focus: Point }
+
+    // Typing indicator
+    isTyping: v.boolean(),
+
+    // Activity tracking (milliseconds)
+    lastActiveAt: v.number(),
+  })
+    .index("by_document", ["documentId"])
+    .index("by_document_active", ["documentId", "lastActiveAt"])
+    .index("by_user", ["userId"])
+    .index("by_document_user", ["documentId", "userId"]),
+
+  /**
+   * Knowledge Base Collaboration Sessions - Session tracking for analytics.
+   * Records collaboration sessions for usage analytics, connection limits,
+   * and auditing who has worked on documents.
+   */
+  kbCollaborationSessions: defineTable({
+    // Reference
+    documentId: v.id("kbDocuments"),
+    userId: v.id("users"),
+
+    // Connection tracking
+    connectionId: v.string(), // Hocuspocus/Y.js connection ID
+
+    // Session timing (milliseconds)
+    joinedAt: v.number(),
+    leftAt: v.optional(v.number()), // null = active session
+    duration: v.optional(v.number()), // Calculated on leave (milliseconds)
+  })
+    .index("by_document", ["documentId"])
+    .index("by_user", ["userId"])
+    .index("by_document_active", ["documentId", "leftAt"]) // null leftAt = active
+    .index("by_connection", ["connectionId"]),
 });

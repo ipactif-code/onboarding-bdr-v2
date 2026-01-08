@@ -67,3 +67,6 @@ Thumbs.db
 
 # Potion template source (reference only - DO NOT COMMIT)
 /potion-source/
+
+# Hocuspocus compiled output
+hocuspocus/dist/

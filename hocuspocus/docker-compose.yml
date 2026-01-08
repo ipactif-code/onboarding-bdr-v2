@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  hocuspocus:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${HOCUSPOCUS_PORT:-1234}:1234"      # WebSocket port
+      - "${HOCUSPOCUS_HEALTH_PORT:-1235}:1235"  # Health check port
+    environment:
+      - NODE_ENV=production
+      - PORT=1234
+      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:1235/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

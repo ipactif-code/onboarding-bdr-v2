@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  hocuspocus:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "${HOCUSPOCUS_PORT:-1234}:1234"      # WebSocket port
+      - "${HOCUSPOCUS_HEALTH_PORT:-1235}:1235"  # Health check port
+    environment:
+      - NODE_ENV=development
+      - PORT=1234
+      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
+    volumes:
+      - ./src:/app/src:ro
+    restart: unless-stopped

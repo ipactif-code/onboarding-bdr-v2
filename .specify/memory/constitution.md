@@ -402,3 +402,69 @@ If Claude makes a mistake:
 ---
 
 **Version**: 1.0.0 | **Ratified**: 2026-01-03 | **Last Amended**: 2026-01-03
+
+---
+
+## Article XIV: AI & External Services (AI Sales Trainer)
+
+### AI/LLM Cost Control (MANDATORY)
+- **Budget Constraint**: 150€/month operational maximum
+- **Per-session target**: <$1.00 total (all AI services combined)
+- **Model Selection**:
+  | Task Type | Model | Rationale |
+  |-----------|-------|-----------|
+  | Real-time conversation | Claude 3.5 Haiku | Fast, cost-effective |
+  | Scoring, analysis, coach | Claude 3.5 Sonnet | Quality for complex tasks |
+  | Embeddings | text-embedding-3-small | Best cost/quality ratio |
+- **Rate Limiting**: All AI operations must have per-user rate limits
+- **Budget Alerts**: Hard stop at 95% of monthly budget
+
+### AI Output Validation (MANDATORY)
+- NEVER trust LLM output blindly
+- Validate JSON structure before use
+- Check for prompt injection patterns
+- Sanitize before storing or displaying
+- Temperature 0.1 for scoring (consistency), 0.3-0.5 for conversation
+
+### External API Actions
+- All external API calls MUST use Convex `action` (not `mutation`)
+- API keys in Convex environment variables only
+- Implement retry with exponential backoff
+- Log all API errors with context
+
+### EU Data Sovereignty (MANDATORY)
+- All data processing in EU regions
+- Convex: EU region
+- Deepgram: EU endpoint (`api-eu.deepgram.com`)
+- LiveKit: EU Frankfurt
+- GDPR compliance: consent, retention policies, right to erasure
+
+### Real-Time Voice Pipeline
+- **Latency Target**: <800ms P50, <950ms P95 (end-to-end)
+- **Streaming**: All components must support streaming (not request-response)
+- **Graceful Degradation**: Audio continues if avatar fails
+
+### DiliTrust Sales Methodology
+- **RACC Framework** is the ONLY objection handling method:
+  - **R**eframe: Validate with empathy
+  - **A**ddress: Value-based response with data
+  - **C**onfirm: Verify resolution
+  - **C**lose: Propose next step
+- **SPIN Selling** + **MEDDIC** are the qualification frameworks
+- All personas and objections must reflect real DiliTrust context
+
+### Multilingual Requirements
+- **5 Languages**: French (fr), English (en), Italian (it), German (de), Spanish (es)
+- Every user-facing feature must support all 5 languages from day 1
+- Cultural adaptations required (FR vouvoiement, DE formality)
+- No hardcoded strings - all text externalized
+
+### Voice Technology Stack
+| Service | Purpose | Region |
+|---------|---------|--------|
+| LiveKit Cloud | WebRTC infrastructure | EU Frankfurt |
+| Deepgram Nova-2 | Speech-to-Text | EU endpoint |
+| Cartesia | Text-to-Speech | - |
+| Simli | Avatar lip-sync | Verify EU |
+| D-ID | Avatar fallback | Verify EU |
+

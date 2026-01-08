@@ -1009,9 +1009,10 @@ Add this to code review checklist:
 ```
 
 ## Recent Changes
-- 004-ai-sales-trainer: Added TypeScript 5.x (strict mode) for frontend/Convex, Python 3.11+ for LiveKit agen + Next.js 15, React 19, Convex, Clerk, LiveKit SDK, Deepgram, Anthropic Claude, Cartesia, Simli
-- 001-ai-sales-trainer: Added [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
+- 009-scoring-evaluation: Added TypeScript 5.x (strict mode) + Next.js 15, React 19, Convex (EU region), Claude Sonnet API (via Anthropic SDK)
+- 008-praiz-pipeline: Added TypeScript 5.x (strict mode) + Next.js 15, React 19, Convex, Claude Sonnet API, Praiz API
+- 007-realtime-coaching: Added TypeScript 5.x (strict mode) + Next.js 15, React 19, Convex, Web Audio API, Framer Motion
 
 ## Active Technologies
-- TypeScript 5.x (strict mode) for frontend/Convex, Python 3.11+ for LiveKit agen + Next.js 15, React 19, Convex, Clerk, LiveKit SDK, Deepgram, Anthropic Claude, Cartesia, Simli (004-ai-sales-trainer)
-- Convex (real-time database), Convex `_storage` for audio recordings (004-ai-sales-trainer)
+- TypeScript 5.x (strict mode) + Next.js 15, React 19, Convex (EU region), Claude Sonnet API (via Anthropic SDK) (009-scoring-evaluation)
+- Convex tables (sessionScores, scoringJobs, certificationRecords) (009-scoring-evaluation)

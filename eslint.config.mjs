@@ -19,6 +19,7 @@ const eslintConfig = [
       "build/**",
       "coverage/**",
       "convex/_generated/**",
+      "hocuspocus/dist/**",
       "next-env.d.ts",
     ],
   },

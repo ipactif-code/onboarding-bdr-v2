@@ -94,9 +94,9 @@ const editorVariants = cva(
           'max-h-[min(70vh,320px)] max-w-[700px] overflow-y-auto px-3 py-2 text-base md:text-sm',
         comment: cn('rounded-none border-none bg-transparent text-sm'),
         default:
-          'min-h-full px-[100px] pb-72 text-base sm:px-[max(100px,calc(50%-350px))]',
+          'h-full min-h-[300px] px-[100px] pb-72 text-base sm:px-[max(100px,calc(50%-350px))]',
         demo: 'h-full px-[100px] pt-4 pb-72 text-base sm:px-[max(100px,calc(50%-350px))]',
-        fullWidth: 'min-h-full px-[100px] pb-72 text-base',
+        fullWidth: 'h-full min-h-[300px] px-[100px] pb-72 text-base',
         select: 'px-3 py-2 text-base data-readonly:w-fit',
         update: 'px-0 text-sm',
         versionHistory: 'px-0 pb-[30vh] text-base',

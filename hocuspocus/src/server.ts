@@ -19,6 +19,8 @@ import { SQLite } from "@hocuspocus/extension-sqlite";
 import { Throttle } from "@hocuspocus/extension-throttle";
 import { verifyToken } from "@clerk/backend";
 import { createServer } from "http";
+import { mkdirSync } from "fs";
+import { dirname } from "path";
 import "dotenv/config";
 
 // =============================================================================
@@ -57,6 +59,13 @@ const PORT = parseInt(process.env.PORT ?? "1234", 10);
 const CLERK_SECRET_KEY = process.env.CLERK_SECRET_KEY;
 const NODE_ENV = process.env.NODE_ENV ?? "development";
 const SQLITE_PATH = process.env.SQLITE_PATH ?? "documents.sqlite";
+
+// Ensure SQLite directory exists before server initialization
+const sqliteDir = dirname(SQLITE_PATH);
+if (sqliteDir && sqliteDir !== ".") {
+  mkdirSync(sqliteDir, { recursive: true });
+  console.log(`[${new Date().toISOString()}] [INFO] [CONFIG] Ensured SQLite directory exists: ${sqliteDir}`);
+}
 
 /**
  * Validated user context returned from authentication.

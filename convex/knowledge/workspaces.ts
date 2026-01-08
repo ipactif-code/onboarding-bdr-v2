@@ -2,6 +2,8 @@ import { v, ConvexError } from "convex/values";
 import { query, mutation } from "../_generated/server";
 import { Doc, Id } from "../_generated/dataModel";
 import { requireKBAuth, checkPermission, getEffectivePermission } from "../lib/kbAuth";
+import { batchGetWorkspacePermissions } from "./permissionHelpers";
+import { checkRateLimit } from "../lib/rateLimit";
 
 // ============================================================================
 // VALIDATORS
@@ -49,6 +51,8 @@ const workspaceMetadataValidator = v.object({
  * Returns workspaces the user owns OR has explicit permission to access.
  * Excludes archived workspaces by default.
  *
+ * OPTIMIZED: Uses batch permission checking to avoid N+1 queries.
+ *
  * @param includeArchived - Whether to include archived workspaces (default: false)
  * @returns Array of workspace metadata with user's effective permission
  */
@@ -82,15 +86,21 @@ export const list = query({
         .map((p) => p.workspaceId as Id<"kbWorkspaces">)
     );
 
-    // Fetch permitted workspaces not already owned
+    // Fetch permitted workspaces not already owned - batch fetch
     const ownedIds = new Set(ownedWorkspaces.map((w) => w._id));
-    const permittedWorkspaces: Doc<"kbWorkspaces">[] = [];
+    const workspaceIdsToFetch = Array.from(permittedWorkspaceIds).filter(
+      (id) => !ownedIds.has(id)
+    );
 
-    for (const workspaceId of Array.from(permittedWorkspaceIds)) {
-      if (!ownedIds.has(workspaceId)) {
-        const workspace = await ctx.db.get(workspaceId);
-        if (workspace && !workspace.isArchived) {
-          permittedWorkspaces.push(workspace as Doc<"kbWorkspaces">);
+    // Batch fetch permitted workspaces in one go
+    const permittedWorkspaces: Doc<"kbWorkspaces">[] = [];
+    if (workspaceIdsToFetch.length > 0) {
+      const fetchedWorkspaces = await Promise.all(
+        workspaceIdsToFetch.map((id) => ctx.db.get(id))
+      );
+      for (const workspace of fetchedWorkspaces) {
+        if (workspace && (includeArchived || !workspace.isArchived)) {
+          permittedWorkspaces.push(workspace);
         }
       }
     }
@@ -101,15 +111,18 @@ export const list = query({
       ? allWorkspaces
       : allWorkspaces.filter((w) => !w.isArchived);
 
+    // Batch get permissions for all workspaces at once
+    const workspaceIds = filteredWorkspaces.map((w) => w._id);
+    const permissionsMap = await batchGetWorkspacePermissions(
+      ctx,
+      userId,
+      workspaceIds
+    );
+
     // Build response with effective permissions and cover image URLs
     const result = await Promise.all(
       filteredWorkspaces.map(async (workspace) => {
-        const userPermission = await getEffectivePermission(
-          ctx,
-          userId,
-          "workspace",
-          workspace._id
-        );
+        const userPermission = permissionsMap.get(workspace._id) ?? null;
 
         // Get cover image URL if exists
         let coverImageUrl: string | null = null;
@@ -268,6 +281,9 @@ export const create = mutation({
   returns: v.id("kbWorkspaces"),
   handler: async (ctx, args) => {
     const { userId } = await requireKBAuth(ctx);
+
+    // Check rate limit (10 workspace creations per hour)
+    await checkRateLimit(ctx, userId, "kb.workspace.create");
 
     // Validate name
     if (args.name.length < 3 || args.name.length > 100) {

@@ -11,6 +11,7 @@ import {
   FolderPlus,
   MoreHorizontal,
   Plus,
+  Star,
   Trash2,
 } from "lucide-react";
 
@@ -157,6 +158,72 @@ function SubFolderCard({
 }
 
 // ============================================================================
+// Document Favorite Button Component
+// ============================================================================
+
+interface DocumentFavoriteButtonProps {
+  documentId: Id<"kbDocuments">;
+}
+
+function DocumentFavoriteButton({ documentId }: DocumentFavoriteButtonProps): React.ReactElement {
+  const isFavorite = useQuery(api.knowledge.documents.isFavorite, { documentId });
+  const addFavorite = useMutation(api.knowledge.documents.addFavorite);
+  const removeFavorite = useMutation(api.knowledge.documents.removeFavorite);
+
+  const handleToggle = async (e: React.MouseEvent): Promise<void> => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    try {
+      if (isFavorite) {
+        await removeFavorite({ documentId });
+        toast.success("Removed from favorites");
+      } else {
+        await addFavorite({ documentId });
+        toast.success("Added to favorites");
+      }
+    } catch {
+      toast.error("Failed to update favorites");
+    }
+  };
+
+  // Show loading state while checking favorite status
+  if (isFavorite === undefined) {
+    return (
+      <Button
+        variant="ghost"
+        size="icon-xs"
+        className="size-6 shrink-0 opacity-0 group-hover:opacity-100"
+        disabled
+        aria-label="Loading favorite status"
+      >
+        <Star className="size-4 text-muted-foreground" />
+      </Button>
+    );
+  }
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon-xs"
+      onClick={handleToggle}
+      className={cn(
+        "size-6 shrink-0",
+        isFavorite ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+      )}
+      aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+    >
+      <Star
+        className={cn(
+          "size-4",
+          isFavorite ? "fill-yellow-500 text-yellow-500" : "text-muted-foreground"
+        )}
+      />
+    </Button>
+  );
+}
+
+// ============================================================================
 // Document Row Component
 // ============================================================================
 
@@ -205,6 +272,8 @@ function DocumentRow({
             Updated {new Date(document.updatedAt).toLocaleDateString()}
           </p>
         </div>
+        {/* Favorite toggle button */}
+        <DocumentFavoriteButton documentId={document._id} />
         {canWrite && (
           <DropdownMenu>
             <DropdownMenuTrigger

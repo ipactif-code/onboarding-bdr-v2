@@ -1,6 +1,401 @@
 import { QueryCtx, MutationCtx } from "../_generated/server";
-import { Id } from "../_generated/dataModel";
+import { Doc, Id } from "../_generated/dataModel";
 import { ResourceType, ResourceId, PermissionLevel, GranteeType } from "../lib/kbAuth";
+
+// ============================================================================
+// BATCH PERMISSION HELPERS (N+1 Query Prevention)
+// ============================================================================
+
+/**
+ * Compare two permission levels.
+ * Returns true if actual >= required.
+ */
+function hasPermissionLevel(
+  actual: PermissionLevel,
+  required: PermissionLevel
+): boolean {
+  const levels: PermissionLevel[] = ["none", "read", "write", "admin"];
+  return levels.indexOf(actual) >= levels.indexOf(required);
+}
+
+/**
+ * Get the higher of two permission levels.
+ */
+function getHigherPermission(
+  a: PermissionLevel | null,
+  b: PermissionLevel | null
+): PermissionLevel | null {
+  if (!a) return b;
+  if (!b) return a;
+  const levels: PermissionLevel[] = ["none", "read", "write", "admin"];
+  return levels.indexOf(a) >= levels.indexOf(b) ? a : b;
+}
+
+/**
+ * Batch check permissions for multiple documents.
+ * Returns a Map from document ID to effective permission level.
+ *
+ * This eliminates N+1 queries by:
+ * 1. Fetching all user-specific permissions in ONE query
+ * 2. Fetching all team-specific permissions in ONE query per team
+ * 3. Computing effective permission for each document including inheritance
+ *
+ * @param ctx - Query context
+ * @param userId - User ID to check permissions for
+ * @param documentIds - Array of document IDs to check
+ * @returns Map from document ID string to effective permission level (null if no permission)
+ *
+ * @example
+ * ```typescript
+ * const permissions = await batchCheckDocumentPermissions(ctx, userId, docIds);
+ * const accessibleDocs = docs.filter(doc =>
+ *   hasPermissionLevel(permissions.get(doc._id) ?? "none", "read")
+ * );
+ * ```
+ */
+export async function batchCheckDocumentPermissions(
+  ctx: QueryCtx,
+  userId: Id<"users">,
+  documentIds: Id<"kbDocuments">[]
+): Promise<Map<string, PermissionLevel | null>> {
+  if (documentIds.length === 0) {
+    return new Map();
+  }
+
+  const result = new Map<string, PermissionLevel | null>();
+
+  // Check if user is global admin (has admin access to everything)
+  const user = await ctx.db.get(userId);
+  if (user?.role === "admin") {
+    for (const docId of documentIds) {
+      result.set(docId, "admin");
+    }
+    return result;
+  }
+
+  // Get user's team IDs for team permission checks
+  const teamMemberships = await ctx.db
+    .query("teamMembers")
+    .withIndex("by_user", (q) => q.eq("userId", userId))
+    .collect();
+  const teamIds = teamMemberships.map((m) => m.teamId);
+
+  // Fetch all documents in one query
+  const documents = await Promise.all(
+    documentIds.map((id) => ctx.db.get(id))
+  );
+  const documentMap = new Map<string, Doc<"kbDocuments">>();
+  const folderIds = new Set<Id<"kbFolders">>();
+
+  for (const doc of documents) {
+    if (doc) {
+      documentMap.set(doc._id, doc);
+      folderIds.add(doc.folderId);
+    }
+  }
+
+  // Fetch all folders in one query
+  const folders = await Promise.all(
+    Array.from(folderIds).map((id) => ctx.db.get(id))
+  );
+  const folderMap = new Map<string, Doc<"kbFolders">>();
+  const workspaceIds = new Set<Id<"kbWorkspaces">>();
+  const parentFolderIds = new Set<Id<"kbFolders">>();
+
+  for (const folder of folders) {
+    if (folder) {
+      folderMap.set(folder._id, folder);
+      workspaceIds.add(folder.workspaceId);
+      if (folder.parentId) {
+        parentFolderIds.add(folder.parentId);
+      }
+    }
+  }
+
+  // Recursively fetch parent folders (for deep nesting)
+  let currentParentIds = parentFolderIds;
+  while (currentParentIds.size > 0) {
+    const newParentIds = new Set<Id<"kbFolders">>();
+    const parentFolders = await Promise.all(
+      Array.from(currentParentIds)
+        .filter((id) => !folderMap.has(id))
+        .map((id) => ctx.db.get(id))
+    );
+    for (const pf of parentFolders) {
+      if (pf && !folderMap.has(pf._id)) {
+        folderMap.set(pf._id, pf);
+        workspaceIds.add(pf.workspaceId);
+        if (pf.parentId && !folderMap.has(pf.parentId)) {
+          newParentIds.add(pf.parentId);
+        }
+      }
+    }
+    currentParentIds = newParentIds;
+  }
+
+  // Fetch all user permissions on documents in one query
+  const userDocumentPermissions = await ctx.db
+    .query("kbResourcePermissions")
+    .withIndex("by_resource_user", (q) =>
+      q.eq("resourceType", "document").eq("userId", userId)
+    )
+    .collect();
+
+  const userDocPermMap = new Map<string, PermissionLevel>();
+  for (const perm of userDocumentPermissions) {
+    if (perm.documentId && documentMap.has(perm.documentId)) {
+      userDocPermMap.set(perm.documentId, perm.level);
+    }
+  }
+
+  // Fetch all user permissions on folders in one query
+  const userFolderPermissions = await ctx.db
+    .query("kbResourcePermissions")
+    .withIndex("by_resource_user", (q) =>
+      q.eq("resourceType", "folder").eq("userId", userId)
+    )
+    .collect();
+
+  const userFolderPermMap = new Map<string, PermissionLevel>();
+  for (const perm of userFolderPermissions) {
+    if (perm.folderId && folderMap.has(perm.folderId)) {
+      userFolderPermMap.set(perm.folderId, perm.level);
+    }
+  }
+
+  // Fetch all user permissions on workspaces in one query
+  const userWorkspacePermissions = await ctx.db
+    .query("kbResourcePermissions")
+    .withIndex("by_resource_user", (q) =>
+      q.eq("resourceType", "workspace").eq("userId", userId)
+    )
+    .collect();
+
+  const userWorkspacePermMap = new Map<string, PermissionLevel>();
+  for (const perm of userWorkspacePermissions) {
+    if (perm.workspaceId && workspaceIds.has(perm.workspaceId)) {
+      userWorkspacePermMap.set(perm.workspaceId, perm.level);
+    }
+  }
+
+  // Fetch team permissions if user is in teams
+  const teamDocPermMap = new Map<string, PermissionLevel>();
+  const teamFolderPermMap = new Map<string, PermissionLevel>();
+  const teamWorkspacePermMap = new Map<string, PermissionLevel>();
+
+  for (const teamId of teamIds) {
+    // Document permissions
+    const teamDocPerms = await ctx.db
+      .query("kbResourcePermissions")
+      .withIndex("by_resource_team", (q) =>
+        q.eq("resourceType", "document").eq("teamId", teamId)
+      )
+      .collect();
+    for (const perm of teamDocPerms) {
+      if (perm.documentId && documentMap.has(perm.documentId)) {
+        const existing = teamDocPermMap.get(perm.documentId);
+        teamDocPermMap.set(
+          perm.documentId,
+          getHigherPermission(existing ?? null, perm.level) ?? perm.level
+        );
+      }
+    }
+
+    // Folder permissions
+    const teamFolderPerms = await ctx.db
+      .query("kbResourcePermissions")
+      .withIndex("by_resource_team", (q) =>
+        q.eq("resourceType", "folder").eq("teamId", teamId)
+      )
+      .collect();
+    for (const perm of teamFolderPerms) {
+      if (perm.folderId && folderMap.has(perm.folderId)) {
+        const existing = teamFolderPermMap.get(perm.folderId);
+        teamFolderPermMap.set(
+          perm.folderId,
+          getHigherPermission(existing ?? null, perm.level) ?? perm.level
+        );
+      }
+    }
+
+    // Workspace permissions
+    const teamWorkspacePerms = await ctx.db
+      .query("kbResourcePermissions")
+      .withIndex("by_resource_team", (q) =>
+        q.eq("resourceType", "workspace").eq("teamId", teamId)
+      )
+      .collect();
+    for (const perm of teamWorkspacePerms) {
+      if (perm.workspaceId && workspaceIds.has(perm.workspaceId)) {
+        const existing = teamWorkspacePermMap.get(perm.workspaceId);
+        teamWorkspacePermMap.set(
+          perm.workspaceId,
+          getHigherPermission(existing ?? null, perm.level) ?? perm.level
+        );
+      }
+    }
+  }
+
+  // Helper to get effective permission on a folder (including inheritance)
+  function getEffectiveFolderPermission(folderId: Id<"kbFolders">): PermissionLevel | null {
+    // Direct permission
+    const directUser = userFolderPermMap.get(folderId);
+    const directTeam = teamFolderPermMap.get(folderId);
+    const directPerm = getHigherPermission(directUser ?? null, directTeam ?? null);
+    if (directPerm) return directPerm;
+
+    // Inherited from parent folder or workspace
+    const folder = folderMap.get(folderId);
+    if (!folder) return null;
+
+    if (folder.parentId) {
+      return getEffectiveFolderPermission(folder.parentId);
+    }
+
+    // Check workspace
+    const wsUserPerm = userWorkspacePermMap.get(folder.workspaceId);
+    const wsTeamPerm = teamWorkspacePermMap.get(folder.workspaceId);
+    return getHigherPermission(wsUserPerm ?? null, wsTeamPerm ?? null);
+  }
+
+  // Compute effective permission for each document
+  for (const docId of documentIds) {
+    const doc = documentMap.get(docId);
+    if (!doc) {
+      result.set(docId, null);
+      continue;
+    }
+
+    // Direct document permission
+    const directUserPerm = userDocPermMap.get(docId);
+    const directTeamPerm = teamDocPermMap.get(docId);
+    const directPerm = getHigherPermission(directUserPerm ?? null, directTeamPerm ?? null);
+
+    if (directPerm) {
+      result.set(docId, directPerm);
+      continue;
+    }
+
+    // Inherited from folder
+    const folderPerm = getEffectiveFolderPermission(doc.folderId);
+    result.set(docId, folderPerm);
+  }
+
+  return result;
+}
+
+/**
+ * Batch check if user has at least the required permission on multiple documents.
+ * This is a convenience wrapper around batchCheckDocumentPermissions.
+ *
+ * @param ctx - Query context
+ * @param userId - User ID to check permissions for
+ * @param documentIds - Array of document IDs to check
+ * @param requiredPermission - Minimum permission level required
+ * @returns Set of document IDs where user has sufficient permission
+ */
+export async function batchFilterAccessibleDocuments(
+  ctx: QueryCtx,
+  userId: Id<"users">,
+  documentIds: Id<"kbDocuments">[],
+  requiredPermission: PermissionLevel
+): Promise<Set<string>> {
+  const permissions = await batchCheckDocumentPermissions(ctx, userId, documentIds);
+  const accessible = new Set<string>();
+
+  permissions.forEach((perm, docId) => {
+    if (perm && hasPermissionLevel(perm, requiredPermission)) {
+      accessible.add(docId);
+    }
+  });
+
+  return accessible;
+}
+
+/**
+ * Batch get effective permissions for multiple workspaces.
+ * Returns a Map from workspace ID to effective permission level.
+ *
+ * @param ctx - Query context
+ * @param userId - User ID to check permissions for
+ * @param workspaceIds - Array of workspace IDs to check
+ * @returns Map from workspace ID string to effective permission level
+ */
+export async function batchGetWorkspacePermissions(
+  ctx: QueryCtx,
+  userId: Id<"users">,
+  workspaceIds: Id<"kbWorkspaces">[]
+): Promise<Map<string, PermissionLevel | null>> {
+  if (workspaceIds.length === 0) {
+    return new Map();
+  }
+
+  const result = new Map<string, PermissionLevel | null>();
+
+  // Check if user is global admin
+  const user = await ctx.db.get(userId);
+  if (user?.role === "admin") {
+    for (const wsId of workspaceIds) {
+      result.set(wsId, "admin");
+    }
+    return result;
+  }
+
+  // Get user's team IDs
+  const teamMemberships = await ctx.db
+    .query("teamMembers")
+    .withIndex("by_user", (q) => q.eq("userId", userId))
+    .collect();
+  const teamIds = teamMemberships.map((m) => m.teamId);
+
+  // Create a set of workspace IDs for filtering
+  const wsIdSet = new Set(workspaceIds.map(id => id as string));
+
+  // Fetch all user permissions on workspaces in one query
+  const userPermissions = await ctx.db
+    .query("kbResourcePermissions")
+    .withIndex("by_resource_user", (q) =>
+      q.eq("resourceType", "workspace").eq("userId", userId)
+    )
+    .collect();
+
+  const userPermMap = new Map<string, PermissionLevel>();
+  for (const perm of userPermissions) {
+    if (perm.workspaceId && wsIdSet.has(perm.workspaceId)) {
+      userPermMap.set(perm.workspaceId, perm.level);
+    }
+  }
+
+  // Fetch team permissions
+  const teamPermMap = new Map<string, PermissionLevel>();
+  for (const teamId of teamIds) {
+    const teamPerms = await ctx.db
+      .query("kbResourcePermissions")
+      .withIndex("by_resource_team", (q) =>
+        q.eq("resourceType", "workspace").eq("teamId", teamId)
+      )
+      .collect();
+
+    for (const perm of teamPerms) {
+      if (perm.workspaceId && wsIdSet.has(perm.workspaceId)) {
+        const existing = teamPermMap.get(perm.workspaceId);
+        teamPermMap.set(
+          perm.workspaceId,
+          getHigherPermission(existing ?? null, perm.level) ?? perm.level
+        );
+      }
+    }
+  }
+
+  // Compute effective permission for each workspace
+  for (const wsId of workspaceIds) {
+    const userPerm = userPermMap.get(wsId);
+    const teamPerm = teamPermMap.get(wsId);
+    result.set(wsId, getHigherPermission(userPerm ?? null, teamPerm ?? null));
+  }
+
+  return result;
+}
 
 /**
  * Parent resource information.

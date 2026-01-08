@@ -11,3 +11,6 @@ export type {
   DocumentMetadata,
   DocumentContent,
 } from "./use-document";
+
+export { useRecordAccess } from "./use-record-access";
+export type { UseRecordAccessOptions } from "./use-record-access";

@@ -8,6 +8,7 @@ import {
   validateWorkspaceRootLimit,
   validateFolderPath,
 } from "../lib/kbValidation";
+import { checkRateLimit } from "../lib/rateLimit";
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -334,6 +335,9 @@ export const create = mutation({
   returns: v.id("kbFolders"),
   handler: async (ctx, args) => {
     const { userId } = await requireKBAuth(ctx);
+
+    // Check rate limit (50 folder creations per hour)
+    await checkRateLimit(ctx, userId, "kb.folder.create");
 
     // Validate title
     validateDocumentTitle(args.name);

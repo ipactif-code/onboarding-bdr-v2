@@ -3,6 +3,8 @@ import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 import { Id, Doc } from "../_generated/dataModel";
 import { requireKBAuth, checkPermission } from "../lib/kbAuth";
+import { batchFilterAccessibleDocuments } from "./permissionHelpers";
+import { checkRateLimit } from "../lib/rateLimit";
 
 // ============================================================================
 // CONSTANTS
@@ -348,6 +350,9 @@ export const create = mutation({
   handler: async (ctx, args) => {
     const { userId } = await requireKBAuth(ctx);
 
+    // Check rate limit (100 document creations per hour)
+    await checkRateLimit(ctx, userId, "kb.document.create");
+
     // Verify folder exists
     const folder = await ctx.db.get(args.folderId);
     if (!folder) {
@@ -515,6 +520,9 @@ export const updateContent = mutation({
   handler: async (ctx, args) => {
     const { userId } = await requireKBAuth(ctx);
 
+    // Check rate limit (300 content updates per hour)
+    await checkRateLimit(ctx, userId, "kb.document.updateContent");
+
     // Verify document exists
     const document = await ctx.db.get(args.documentId);
     if (!document) {
@@ -584,6 +592,20 @@ export const updateContent = mutation({
     }
 
     await ctx.db.patch(args.documentId, documentUpdates);
+
+    // Log audit event for rate limiting tracking
+    await ctx.db.insert("kbAuditLogs", {
+      eventType: "document_content_updated",
+      resourceType: "document",
+      resourceId: args.documentId,
+      resourceName: document.title,
+      actorId: userId,
+      details: {
+        contentSize,
+        wordCount: args.wordCount,
+      },
+      timestamp: now,
+    });
 
     return null;
   },
@@ -923,6 +945,369 @@ export const restore = mutation({
       resourceName: document.title,
       actorId: userId,
       timestamp: now,
+    });
+
+    return null;
+  },
+});
+
+// ============================================================================
+// FAVORITES MUTATIONS (T032)
+// ============================================================================
+
+/**
+ * Add a document to user's favorites.
+ * Creates a kbUserFavorites record for quick access.
+ *
+ * @param documentId - The document ID to favorite
+ * @returns null
+ */
+export const addFavorite = mutation({
+  args: {
+    documentId: v.id("kbDocuments"),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const { userId } = await requireKBAuth(ctx);
+
+    // Check document exists
+    const document = await ctx.db.get(args.documentId);
+    if (!document) {
+      throw new ConvexError("Document not found");
+    }
+
+    // Check read access on document
+    const hasAccess = await checkPermission(
+      ctx,
+      userId,
+      "document",
+      args.documentId,
+      "read"
+    );
+    if (!hasAccess) {
+      throw new ConvexError("Forbidden: You do not have access to this document");
+    }
+
+    // Check if already favorited
+    const existing = await ctx.db
+      .query("kbUserFavorites")
+      .withIndex("by_user_document", (q) =>
+        q.eq("userId", userId).eq("documentId", args.documentId)
+      )
+      .unique();
+
+    if (existing) {
+      // Already favorited, no-op
+      return null;
+    }
+
+    await ctx.db.insert("kbUserFavorites", {
+      userId,
+      documentId: args.documentId,
+      createdAt: Date.now(),
+    });
+
+    return null;
+  },
+});
+
+/**
+ * Remove a document from user's favorites.
+ *
+ * @param documentId - The document ID to unfavorite
+ * @returns null
+ */
+export const removeFavorite = mutation({
+  args: {
+    documentId: v.id("kbDocuments"),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const { userId } = await requireKBAuth(ctx);
+
+    const existing = await ctx.db
+      .query("kbUserFavorites")
+      .withIndex("by_user_document", (q) =>
+        q.eq("userId", userId).eq("documentId", args.documentId)
+      )
+      .unique();
+
+    if (existing) {
+      await ctx.db.delete(existing._id);
+    }
+
+    return null;
+  },
+});
+
+/**
+ * Record document access for recents tracking.
+ * Upserts - creates if not exists, updates accessedAt if exists.
+ *
+ * @param documentId - The document ID being accessed
+ * @returns null
+ */
+export const recordAccess = mutation({
+  args: {
+    documentId: v.id("kbDocuments"),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const { userId } = await requireKBAuth(ctx);
+
+    // Check document exists
+    const document = await ctx.db.get(args.documentId);
+    if (!document) {
+      throw new ConvexError("Document not found");
+    }
+
+    // Check read access on document
+    const hasAccess = await checkPermission(
+      ctx,
+      userId,
+      "document",
+      args.documentId,
+      "read"
+    );
+    if (!hasAccess) {
+      throw new ConvexError("Forbidden: You do not have access to this document");
+    }
+
+    // Upsert recent record
+    const existing = await ctx.db
+      .query("kbUserRecents")
+      .withIndex("by_user_document", (q) =>
+        q.eq("userId", userId).eq("documentId", args.documentId)
+      )
+      .unique();
+
+    const now = Date.now();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, { accessedAt: now });
+    } else {
+      await ctx.db.insert("kbUserRecents", {
+        userId,
+        documentId: args.documentId,
+        accessedAt: now,
+      });
+    }
+
+    return null;
+  },
+});
+
+// ============================================================================
+// FAVORITES & RECENTS QUERIES (T033)
+// ============================================================================
+
+/**
+ * Get user's favorited documents.
+ * Returns documents the user has favorited and still has read access to.
+ *
+ * OPTIMIZED: Uses batch permission checking to avoid N+1 queries.
+ *
+ * @returns Array of document metadata
+ */
+export const getFavorites = query({
+  args: {},
+  returns: v.array(documentMetadataValidator),
+  handler: async (ctx) => {
+    const { userId } = await requireKBAuth(ctx);
+
+    // Get all favorites for user, ordered by creation time
+    const favorites = await ctx.db
+      .query("kbUserFavorites")
+      .withIndex("by_user_time", (q) => q.eq("userId", userId))
+      .order("desc")
+      .collect();
+
+    if (favorites.length === 0) {
+      return [];
+    }
+
+    // Batch fetch all documents at once
+    const documentIds = favorites.map((fav) => fav.documentId);
+    const documents = await Promise.all(
+      documentIds.map((id) => ctx.db.get(id))
+    );
+
+    // Create a map of valid (non-null, non-archived) documents
+    const validDocs = new Map<string, Doc<"kbDocuments">>();
+    const validDocIds: Id<"kbDocuments">[] = [];
+
+    for (const doc of documents) {
+      if (doc && doc.status !== "archived") {
+        validDocs.set(doc._id, doc);
+        validDocIds.push(doc._id);
+      }
+    }
+
+    // Batch check permissions for all valid documents at once
+    const accessibleIds = await batchFilterAccessibleDocuments(
+      ctx,
+      userId,
+      validDocIds,
+      "read"
+    );
+
+    // Filter to only accessible documents, maintaining favorites order
+    const result: Doc<"kbDocuments">[] = [];
+    for (const fav of favorites) {
+      if (accessibleIds.has(fav.documentId)) {
+        const doc = validDocs.get(fav.documentId);
+        if (doc) {
+          result.push(doc);
+        }
+      }
+    }
+
+    return result;
+  },
+});
+
+/**
+ * Check if a document is favorited by the current user.
+ *
+ * @param documentId - The document ID to check
+ * @returns True if favorited, false otherwise
+ */
+export const isFavorite = query({
+  args: {
+    documentId: v.id("kbDocuments"),
+  },
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    const { userId } = await requireKBAuth(ctx);
+
+    const existing = await ctx.db
+      .query("kbUserFavorites")
+      .withIndex("by_user_document", (q) =>
+        q.eq("userId", userId).eq("documentId", args.documentId)
+      )
+      .unique();
+
+    return existing !== null;
+  },
+});
+
+/**
+ * Get user's recently accessed documents.
+ * Returns documents ordered by most recent access first.
+ *
+ * OPTIMIZED: Uses batch permission checking to avoid N+1 queries.
+ *
+ * @param limit - Maximum number of documents to return (default: 10)
+ * @returns Array of document metadata
+ */
+export const getRecent = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  returns: v.array(documentMetadataValidator),
+  handler: async (ctx, args) => {
+    const { userId } = await requireKBAuth(ctx);
+    const limit = args.limit ?? 10;
+
+    // Get recent accesses ordered by time (newest first)
+    // Get extra to account for inaccessible/archived docs
+    const recents = await ctx.db
+      .query("kbUserRecents")
+      .withIndex("by_user_time", (q) => q.eq("userId", userId))
+      .order("desc")
+      .take(limit * 2);
+
+    if (recents.length === 0) {
+      return [];
+    }
+
+    // Batch fetch all documents at once
+    const documentIds = recents.map((recent) => recent.documentId);
+    const documents = await Promise.all(
+      documentIds.map((id) => ctx.db.get(id))
+    );
+
+    // Create a map of valid (non-null, non-archived) documents
+    const validDocs = new Map<string, Doc<"kbDocuments">>();
+    const validDocIds: Id<"kbDocuments">[] = [];
+
+    for (const doc of documents) {
+      if (doc && doc.status !== "archived") {
+        validDocs.set(doc._id, doc);
+        validDocIds.push(doc._id);
+      }
+    }
+
+    // Batch check permissions for all valid documents at once
+    const accessibleIds = await batchFilterAccessibleDocuments(
+      ctx,
+      userId,
+      validDocIds,
+      "read"
+    );
+
+    // Filter to only accessible documents, maintaining recents order
+    const result: Doc<"kbDocuments">[] = [];
+    for (const recent of recents) {
+      if (result.length >= limit) break;
+      if (accessibleIds.has(recent.documentId)) {
+        const doc = validDocs.get(recent.documentId);
+        if (doc) {
+          result.push(doc);
+        }
+      }
+    }
+
+    return result;
+  },
+});
+
+// ============================================================================
+// REORDER MUTATION (T034)
+// ============================================================================
+
+/**
+ * Reorder a document within its folder.
+ * Updates the displayOrder field for drag-and-drop reordering.
+ *
+ * @param id - Document ID
+ * @param newOrder - New display order value
+ * @returns null
+ */
+export const reorder = mutation({
+  args: {
+    id: v.id("kbDocuments"),
+    newOrder: v.number(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const { userId } = await requireKBAuth(ctx);
+
+    const document = await ctx.db.get(args.id);
+    if (!document) {
+      throw new ConvexError("Document not found");
+    }
+
+    // Check write permission on document
+    const hasAccess = await checkPermission(
+      ctx,
+      userId,
+      "document",
+      args.id,
+      "write"
+    );
+    if (!hasAccess) {
+      throw new ConvexError("Forbidden: You do not have permission to reorder this document");
+    }
+
+    // Validate order value
+    if (args.newOrder < 0) {
+      throw new ConvexError("Display order must be non-negative");
+    }
+
+    await ctx.db.patch(args.id, {
+      displayOrder: args.newOrder,
+      updatedAt: Date.now(),
     });
 
     return null;

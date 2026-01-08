@@ -8,12 +8,14 @@ import {
   BookOpen,
   ChevronDown,
   ChevronRight,
+  Clock,
   FileText,
   FolderClosed,
   FolderOpen,
   Home,
   Plus,
   Settings,
+  Star,
 } from "lucide-react";
 
 // Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
@@ -62,6 +64,182 @@ interface Workspace {
   description?: string;
   icon?: string;
   userPermission: "none" | "read" | "write" | "admin" | null;
+}
+
+// ============================================================================
+// Document Metadata Type (for Favorites/Recents)
+// ============================================================================
+
+interface DocumentMetadata {
+  _id: Id<"kbDocuments">;
+  title: string;
+  icon?: string;
+  status: "draft" | "published" | "archived";
+}
+
+// ============================================================================
+// Favorites Section Component
+// ============================================================================
+
+interface FavoritesSectionProps {
+  onNavigate?: () => void;
+}
+
+function FavoritesSection({ onNavigate }: FavoritesSectionProps): React.ReactElement {
+  const favorites = useQuery(api.knowledge.documents.getFavorites, {});
+  const pathname = usePathname();
+
+  if (favorites === undefined) {
+    return (
+      <div className="space-y-1 px-2">
+        <Skeleton className="h-6 w-full" />
+        <Skeleton className="h-6 w-3/4" />
+      </div>
+    );
+  }
+
+  if (favorites.length === 0) {
+    return (
+      <div className="px-2 py-2 text-xs text-muted-foreground">
+        No favorites yet. Star documents to add them here.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-0.5">
+      {favorites.map((doc: DocumentMetadata) => (
+        <Link
+          key={doc._id}
+          href={`/knowledge/doc/${doc._id}`}
+          onClick={() => onNavigate?.()}
+          className={cn(
+            "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-accent",
+            pathname.includes(doc._id) && "bg-accent text-accent-foreground"
+          )}
+        >
+          <Star className="size-4 shrink-0 fill-yellow-500 text-yellow-500" />
+          <span className="truncate">
+            {doc.icon ?? ""} {doc.title}
+          </span>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+// ============================================================================
+// Recents Section Component
+// ============================================================================
+
+interface RecentsSectionProps {
+  onNavigate?: () => void;
+}
+
+function RecentsSection({ onNavigate }: RecentsSectionProps): React.ReactElement {
+  const recents = useQuery(api.knowledge.documents.getRecent, { limit: 10 });
+  const pathname = usePathname();
+
+  if (recents === undefined) {
+    return (
+      <div className="space-y-1 px-2">
+        <Skeleton className="h-6 w-full" />
+        <Skeleton className="h-6 w-3/4" />
+      </div>
+    );
+  }
+
+  if (recents.length === 0) {
+    return (
+      <div className="px-2 py-2 text-xs text-muted-foreground">
+        No recent documents
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-0.5">
+      {recents.map((doc: DocumentMetadata) => (
+        <Link
+          key={doc._id}
+          href={`/knowledge/doc/${doc._id}`}
+          onClick={() => onNavigate?.()}
+          className={cn(
+            "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-accent",
+            pathname.includes(doc._id) && "bg-accent text-accent-foreground"
+          )}
+        >
+          <Clock className="size-4 shrink-0 text-muted-foreground" />
+          <span className="truncate">
+            {doc.icon ?? ""} {doc.title}
+          </span>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+// ============================================================================
+// Favorite Button Component
+// ============================================================================
+
+interface FavoriteButtonProps {
+  documentId: Id<"kbDocuments">;
+}
+
+export function FavoriteButton({ documentId }: FavoriteButtonProps): React.ReactElement {
+  const isFavorite = useQuery(api.knowledge.documents.isFavorite, { documentId });
+  const addFavorite = useMutation(api.knowledge.documents.addFavorite);
+  const removeFavorite = useMutation(api.knowledge.documents.removeFavorite);
+
+  const handleToggle = async (e: React.MouseEvent): Promise<void> => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    try {
+      if (isFavorite) {
+        await removeFavorite({ documentId });
+        toast.success("Removed from favorites");
+      } else {
+        await addFavorite({ documentId });
+        toast.success("Added to favorites");
+      }
+    } catch {
+      toast.error("Failed to update favorites");
+    }
+  };
+
+  // Show loading state while checking favorite status
+  if (isFavorite === undefined) {
+    return (
+      <Button
+        variant="ghost"
+        size="icon-xs"
+        className="size-5 shrink-0 opacity-0 group-hover:opacity-100"
+        disabled
+        aria-label="Loading favorite status"
+      >
+        <Star className="size-3 text-muted-foreground" />
+      </Button>
+    );
+  }
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon-xs"
+      onClick={handleToggle}
+      className="size-5 shrink-0 opacity-0 group-hover:opacity-100"
+      aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+    >
+      <Star
+        className={cn(
+          "size-3",
+          isFavorite ? "fill-yellow-500 text-yellow-500" : "text-muted-foreground"
+        )}
+      />
+    </Button>
+  );
 }
 
 // ============================================================================
@@ -374,6 +552,30 @@ export function KnowledgeSidebar({
             <Home className="size-4 shrink-0 text-muted-foreground" />
             <span>Home</span>
           </Link>
+
+          {/* Favorites Section */}
+          <Collapsible defaultOpen>
+            <CollapsibleTrigger className="flex w-full items-center gap-2 px-2 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground">
+              <ChevronDown className="size-3 transition-transform [[data-state=closed]_&]:-rotate-90" />
+              <Star className="size-3" />
+              Favorites
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <FavoritesSection onNavigate={onNavigate} />
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* Recents Section */}
+          <Collapsible defaultOpen>
+            <CollapsibleTrigger className="flex w-full items-center gap-2 px-2 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground">
+              <ChevronDown className="size-3 transition-transform [[data-state=closed]_&]:-rotate-90" />
+              <Clock className="size-3" />
+              Recent
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <RecentsSection onNavigate={onNavigate} />
+            </CollapsibleContent>
+          </Collapsible>
 
           {/* Divider */}
           <div className="my-2 border-t" />

@@ -998,6 +998,7 @@ export default defineSchema({
       v.literal("document_archived"),
       v.literal("document_deleted"),
       v.literal("document_restored"),
+      v.literal("document_content_updated"), // For rate limiting content updates
       v.literal("folder_created"),
       v.literal("folder_archived"),
       v.literal("workspace_created"),
@@ -1034,6 +1035,7 @@ export default defineSchema({
   })
     .index("by_resource", ["resourceType", "resourceId"])
     .index("by_actor", ["actorId"])
+    .index("by_actor_event", ["actorId", "eventType"]) // For rate limiting queries
     .index("by_event_type", ["eventType"])
     .index("by_timestamp", ["timestamp"])
     .index("by_resource_time", ["resourceType", "resourceId", "timestamp"]),

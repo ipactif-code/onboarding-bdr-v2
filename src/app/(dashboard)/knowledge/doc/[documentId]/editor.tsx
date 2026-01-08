@@ -14,6 +14,7 @@ import { ChevronRight, Home, Save, Loader2, Check } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useDebouncedCallback } from "@/hooks/use-debounce-callback";
+import { useRecordAccess } from "@/hooks/knowledge/use-record-access";
 import { EditorKit } from "@/components/editor/editor-kit";
 import { Editor, EditorContainer } from "@/components/plate-ui/editor";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -241,6 +242,9 @@ export function DocumentEditorClient({
   breadcrumbs,
 }: DocumentEditorClientProps): React.ReactElement {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+
+  // Record document access for recents tracking
+  useRecordAccess({ documentId });
 
   // Fetch document content (separate from metadata for performance)
   const contentData = useQuery(api.knowledge.documents.getContent, {

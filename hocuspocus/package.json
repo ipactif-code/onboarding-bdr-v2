@@ -1,0 +1,30 @@
+{
+  "name": "hocuspocus-server",
+  "version": "1.0.0",
+  "description": "Hocuspocus server for Knowledge Base real-time collaboration",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@clerk/backend": "^1.0.0",
+    "@hocuspocus/extension-sqlite": "^2.0.0",
+    "@hocuspocus/extension-throttle": "^2.0.0",
+    "@hocuspocus/server": "^2.0.0",
+    "dotenv": "^16.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.17.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["sqlite3"]
+  }
+}

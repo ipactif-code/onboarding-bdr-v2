@@ -14,3 +14,11 @@ export type {
 
 export { useRecordAccess } from "./use-record-access";
 export type { UseRecordAccessOptions } from "./use-record-access";
+
+export { useCollaboration } from "./use-collaboration";
+export type {
+  UseCollaborationOptions,
+  UseCollaborationReturn,
+  CollaborationConfig,
+  ConnectionStatus,
+} from "./use-collaboration";

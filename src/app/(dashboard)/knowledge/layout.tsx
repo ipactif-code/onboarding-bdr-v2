@@ -81,8 +81,16 @@ function KnowledgeLayoutContent({
         )}
         aria-label="Knowledge Base"
       >
-        {/* Content wrapper */}
-        <div className="flex min-h-0 flex-1 flex-col overflow-auto p-4 md:p-6">
+        {/* Content wrapper - no padding/overflow for document editor (needs full height) */}
+        <div
+          className={cn(
+            "flex min-h-0 flex-1 flex-col",
+            // Document pages need full height for the editor - no padding or overflow
+            isDocumentPage
+              ? "h-full"
+              : "overflow-auto p-4 md:p-6"
+          )}
+        >
           {children}
         </div>
       </main>

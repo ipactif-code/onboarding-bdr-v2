@@ -64,8 +64,9 @@ CLERK_WEBHOOK_SECRET=whsec_...
 # Clerk URLs (for redirects)
 NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
 NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/dashboard
-NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/dashboard
+# New redirect props (replaces deprecated afterSignInUrl/afterSignUpUrl)
+NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/dashboard
+NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/dashboard
 ```
 
 ### 5. Configure Clerk Webhook

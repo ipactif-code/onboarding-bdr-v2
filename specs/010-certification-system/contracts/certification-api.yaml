@@ -1,0 +1,533 @@
+# Certification System API Contracts
+# Feature: 010-certification-system
+# Date: 2026-01-09
+#
+# This file defines the Convex function contracts for the BDR Certification System.
+# Format: Convex-style pseudo-YAML (not OpenAPI - Convex uses its own type system)
+
+---
+# =============================================================================
+# QUERIES (Real-time subscriptions)
+# =============================================================================
+
+certifications.getCurrent:
+  description: Get the current user's certification status and progress
+  auth: requireAuth
+  args: {}
+  returns:
+    type: object
+    properties:
+      currentLevel: enum[none, bronze, silver, gold, platinum]
+      sessionsCompleted: number
+      evaluationsPassed: number
+      distinctionsEarned: number
+      passedScenarios: array[string]
+      nextLevel:
+        type: object | null
+        properties:
+          slug: string
+          name: LocalizedString
+          requirements: LevelRequirements
+          progress:
+            sessionsRemaining: number
+            evaluationsRemaining: number
+            scenariosRemaining: array[string]
+      levelHistory: array[LevelHistoryEntry]
+      lastUpdated: number
+  example:
+    currentLevel: "bronze"
+    sessionsCompleted: 5
+    evaluationsPassed: 1
+    distinctionsEarned: 0
+    passedScenarios: ["discovery-call"]
+    nextLevel:
+      slug: "silver"
+      name: { fr: "Argent", en: "Silver", ... }
+      requirements: { minEvaluations: 2, minScore: 70, ... }
+      progress:
+        sessionsRemaining: 0
+        evaluationsRemaining: 1
+        scenariosRemaining: ["demo-pitch"]
+
+---
+certifications.getUnlockedPersonas:
+  description: Get list of personas the user can access based on certification
+  auth: requireAuth
+  args: {}
+  returns:
+    type: array
+    items:
+      type: object
+      properties:
+        personaSlug: string
+        personaName: LocalizedString
+        difficulty: enum[easy, medium, hard, expert]
+        isUnlocked: boolean
+        requiredLevel: enum[bronze, silver, gold, platinum]
+  example:
+    - personaSlug: "enthusiastic-champion"
+      personaName: { fr: "Champion Enthousiaste", en: "Enthusiastic Champion" }
+      difficulty: "easy"
+      isUnlocked: true
+      requiredLevel: "bronze"
+    - personaSlug: "skeptical-analyst"
+      isUnlocked: false
+      requiredLevel: "silver"
+
+---
+certifications.getCooldowns:
+  description: Get active evaluation cooldowns for the current user
+  auth: requireAuth
+  args: {}
+  returns:
+    type: array
+    items:
+      type: object
+      properties:
+        scenarioSlug: string
+        scenarioName: LocalizedString
+        cooldownUntil: number  # Unix timestamp (ms)
+        remainingMs: number
+  example:
+    - scenarioSlug: "discovery-call"
+      scenarioName: { en: "Discovery Call", fr: "Appel Découverte" }
+      cooldownUntil: 1736524800000
+      remainingMs: 43200000  # 12 hours
+
+---
+certifications.getLevelDefinitions:
+  description: Get all certification level definitions (public reference data)
+  auth: none  # Public query
+  args: {}
+  returns:
+    type: array
+    items:
+      type: object
+      properties:
+        slug: enum[bronze, silver, gold, platinum]
+        name: LocalizedString
+        order: number
+        requirements: LevelRequirements
+        unlockedPersonas: array[string]
+        badge:
+          emoji: string
+          color: string
+
+---
+# =============================================================================
+# MUTATIONS (State changes)
+# =============================================================================
+
+certifications.initialize:
+  description: Initialize certification record for new user (called on first session)
+  auth: requireAuth
+  args: {}
+  returns:
+    type: id<bdrCertifications>
+  sideEffects:
+    - Creates bdrCertifications record with level "none"
+    - Creates pending LMS sync event (if configured)
+
+---
+certifications.recordSessionComplete:
+  description: Record a completed training session (called by Spec 004)
+  auth: internal  # Only called by internal functions
+  args:
+    userId: id<users>
+    sessionId: id<trainingSessions>
+    sessionType: enum[practice, evaluation]
+  returns:
+    type: object
+    properties:
+      sessionsCompleted: number
+      levelChanged: boolean
+      newLevel: string | null
+      badgesAwarded: array[string]
+  sideEffects:
+    - Increments sessionsCompleted counter
+    - May trigger level-up to Bronze
+    - Evaluates milestone badges
+    - Queues LMS sync event
+
+---
+certifications.recordEvaluationResult:
+  description: Record evaluation result and update certification progress
+  auth: internal  # Called by Spec 009 scoring
+  args:
+    userId: id<users>
+    sessionId: id<trainingSessions>
+    scenarioSlug: string
+    score: number
+    passed: boolean
+    isDistinction: boolean  # score >= 85
+  returns:
+    type: object
+    properties:
+      evaluationsPassed: number
+      distinctionsEarned: number
+      levelChanged: boolean
+      newLevel: string | null
+      badgesAwarded: array[string]
+      cooldownSet:
+        scenarioSlug: string
+        cooldownUntil: number
+  sideEffects:
+    - Updates evaluationsPassed/distinctionsEarned counters
+    - Adds scenario to passedScenarios (if passed)
+    - Sets 24h cooldown for scenario
+    - May trigger level-up (Silver/Gold/Platinum)
+    - Queues LMS sync event
+
+---
+certifications.checkCanStartEvaluation:
+  description: Check if user can start evaluation for a scenario
+  auth: requireAuth
+  args:
+    scenarioSlug: string
+    targetLevel: enum[silver, gold, platinum]
+  returns:
+    type: object
+    properties:
+      canStart: boolean
+      reason: string | null  # Error message if cannot start
+      cooldownRemaining: number | null  # ms until cooldown expires
+  errors:
+    - PREREQUISITE_MISSING: "Complete {level} certification first"
+    - COOLDOWN_ACTIVE: "Cooldown active: {hours}h {minutes}m remaining"
+    - EVALUATION_IN_PROGRESS: "Evaluation already in progress"
+
+---
+cooldowns.reset:
+  description: Reset cooldown for a user (admin/team lead only)
+  auth: requireAuth + (admin OR team_lead)
+  args:
+    targetUserId: id<users>
+    scenarioSlug: string
+    reason: string  # Required, min 10 chars
+  returns:
+    type: object
+    properties:
+      success: boolean
+      resetId: id<cooldownResets>
+  errors:
+    - UNAUTHORIZED: "Only admins and team leads can reset cooldowns"
+    - TEAM_SCOPE: "Team leads can only reset for their team members"
+    - INVALID_REASON: "Reason must be at least 10 characters"
+    - NO_COOLDOWN: "No active cooldown for this scenario"
+  sideEffects:
+    - Removes cooldown entry from bdrCertifications
+    - Creates cooldownResets audit record
+
+---
+# =============================================================================
+# BADGE QUERIES & MUTATIONS
+# =============================================================================
+
+badges.getEarned:
+  description: Get all badges earned by the current user
+  auth: requireAuth
+  args: {}
+  returns:
+    type: array
+    items:
+      type: object
+      properties:
+        badgeId: id<badges>
+        slug: string
+        name: LocalizedString
+        description: LocalizedString
+        emoji: string
+        category: enum[milestone, skill, certification, streak]
+        earnedAt: number
+        viewed: boolean
+        isShareable: boolean
+  example:
+    - slug: "first-session"
+      name: { en: "First Session", fr: "Première Session" }
+      emoji: "🎯"
+      category: "milestone"
+      earnedAt: 1736438400000
+      viewed: true
+      isShareable: false
+
+---
+badges.getProgress:
+  description: Get progress toward unearned badges
+  auth: requireAuth
+  args: {}
+  returns:
+    type: array
+    items:
+      type: object
+      properties:
+        badgeId: id<badges>
+        slug: string
+        name: LocalizedString
+        emoji: string
+        category: string
+        criteria: BadgeCriteria
+        progress:
+          current: number
+          target: number
+          percentage: number
+  example:
+    - slug: "spin-master"
+      name: { en: "SPIN Master" }
+      emoji: "🔄"
+      category: "skill"
+      criteria: { type: "dimension_score", threshold: 85, count: 3 }
+      progress: { current: 2, target: 3, percentage: 66.7 }
+
+---
+badges.markViewed:
+  description: Mark a badge as viewed (for engagement tracking)
+  auth: requireAuth
+  args:
+    badgeId: id<bdrBadges>
+  returns:
+    type: object
+    properties:
+      success: boolean
+      viewedAt: number
+
+---
+badges.getUnviewed:
+  description: Get count of unviewed badges (for notification badge)
+  auth: requireAuth
+  args: {}
+  returns:
+    type: object
+    properties:
+      count: number
+      badges: array[{ slug: string, emoji: string }]
+
+---
+# =============================================================================
+# TEAM DASHBOARD QUERIES (Team Lead / Admin)
+# =============================================================================
+
+team.getCertificationOverview:
+  description: Get certification distribution for team
+  auth: requireAuth + (admin OR team_lead)
+  args:
+    teamId: id<teams> | null  # null = all teams (admin only)
+  returns:
+    type: object
+    properties:
+      distribution:
+        none: number
+        bronze: number
+        silver: number
+        gold: number
+        platinum: number
+      totalMembers: number
+      averageLevel: number  # 0-4 scale
+      recentLevelUps: array[{ userId, userName, newLevel, achievedAt }]
+
+---
+team.getMemberProgress:
+  description: Get detailed progress for all team members
+  auth: requireAuth + (admin OR team_lead)
+  args:
+    teamId: id<teams> | null
+    filter:
+      level: enum[all, none, bronze, silver, gold, platinum] | null
+      status: enum[all, progressing, stalled, close_to_next] | null
+    sort: enum[name, level, last_progress] | null
+    limit: number | null  # default 50
+    cursor: string | null
+  returns:
+    type: object
+    properties:
+      members: array[TeamMemberProgress]
+      hasMore: boolean
+      nextCursor: string | null
+
+---
+team.getMemberDetail:
+  description: Get detailed certification info for a specific team member
+  auth: requireAuth + (admin OR team_lead for own team)
+  args:
+    userId: id<users>
+  returns:
+    type: object
+    properties:
+      user:
+        id: id<users>
+        name: string
+        email: string
+      certification:
+        currentLevel: string
+        sessionsCompleted: number
+        evaluationsPassed: number
+        distinctionsEarned: number
+        passedScenarios: array[string]
+        levelHistory: array[LevelHistoryEntry]
+        lastProgressAt: number
+        daysStalled: number
+      badges:
+        earned: number
+        total: number
+        recent: array[{ slug, emoji, earnedAt }]
+      evaluations:
+        recentAttempts: array[{
+          scenarioSlug: string
+          score: number
+          passed: boolean
+          attemptedAt: number
+        }]
+
+---
+# =============================================================================
+# LMS SYNC (Internal Actions)
+# =============================================================================
+
+lmsSync.processQueue:
+  description: Process pending LMS sync events (scheduled action)
+  auth: internal  # Scheduled function
+  args:
+    limit: number  # default 10
+  returns:
+    type: object
+    properties:
+      processed: number
+      succeeded: number
+      failed: number
+      errors: array[{ eventId, error }]
+  schedule: "*/30 * * * * *"  # Every 30 seconds
+
+---
+lmsSync.getQueueStatus:
+  description: Get LMS sync queue status (admin only)
+  auth: requireAdmin
+  args: {}
+  returns:
+    type: object
+    properties:
+      pending: number
+      processing: number
+      failed: number
+      completedLast24h: number
+      avgLatencyMs: number
+      failedEvents: array[{
+        id: id<lmsSyncQueue>
+        eventType: string
+        userId: id<users>
+        attempts: number
+        lastError: string
+        createdAt: number
+      }]
+
+---
+lmsSync.retryFailed:
+  description: Retry all failed sync events (admin only)
+  auth: requireAdmin
+  args: {}
+  returns:
+    type: object
+    properties:
+      retriedCount: number
+
+---
+# =============================================================================
+# TYPE DEFINITIONS
+# =============================================================================
+
+types:
+  LocalizedString:
+    type: object
+    properties:
+      fr: string
+      en: string
+      it: string
+      es: string
+      de: string
+
+  LevelRequirements:
+    type: object
+    properties:
+      minSessions: number
+      minEvaluations: number
+      minScore: number
+      distinctionRequired: boolean
+      prerequisiteLevel: string | null
+
+  LevelHistoryEntry:
+    type: object
+    properties:
+      level: string
+      achievedAt: number
+      evaluationId: id<trainingSessions> | null
+
+  BadgeCriteria:
+    type: object
+    properties:
+      type: string
+      threshold: number
+      dimension: string | null
+      minScore: number | null
+      count: number | null
+      level: string | null
+
+  TeamMemberProgress:
+    type: object
+    properties:
+      userId: id<users>
+      userName: string
+      currentLevel: string
+      sessionsCompleted: number
+      evaluationsPassed: number
+      lastProgressAt: number
+      daysStalled: number
+      isStalled: boolean  # > 14 days
+      closeToNext: boolean  # 1 evaluation away
+
+---
+# =============================================================================
+# LMS REST API CONTRACTS (External - for Convex Actions)
+# =============================================================================
+
+external_api:
+  base_url: "${LMS_API_BASE_URL}"  # From Convex env
+
+  POST /api/lms/progress:
+    description: Report session completion to LMS
+    request:
+      body:
+        userId: string
+        moduleId: "ai-sales-trainer"
+        lessonId: string
+        completedAt: string  # ISO8601
+        score: number
+        duration: number  # seconds
+    response:
+      success: boolean
+      progressId: string
+
+  POST /api/lms/certifications:
+    description: Report certification earned to LMS
+    request:
+      body:
+        userId: string
+        certificationId: string
+        level: enum[bronze, silver, gold, platinum]
+        earnedAt: string  # ISO8601
+    response:
+      success: boolean
+      certificationRecordId: string
+
+  POST /api/lms/badges:
+    description: Report badge awarded to LMS
+    request:
+      body:
+        userId: string
+        badgeId: string
+        awardedAt: string  # ISO8601
+    response:
+      success: boolean
+      badgeRecordId: string
+
+  error_handling:
+    retry_codes: [429, 500, 502, 503, 504]
+    max_retries: 5
+    backoff: exponential  # 30s, 2m, 8m, 32m, 2h

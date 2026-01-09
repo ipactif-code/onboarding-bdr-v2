@@ -31,10 +31,23 @@ const MAX_CONCURRENT_EDITORS = 25;
 const MAX_CONNECTION_ID_LENGTH = 64;
 
 // ============ SLATE TYPE VALIDATORS ============
+//
+// These validators are intentionally kept local to this file rather than in
+// convex/lib/validators.ts because:
+// 1. They are specific to collaboration/cursor tracking (not general-purpose)
+// 2. They are only used within this file for cursor position/selection args
+// 3. The schema uses v.any() for flexibility; these provide stricter validation
+//    at the function level for better type safety
+//
+// Note: Convex validators (v.object) cannot be shared with TypeScript interfaces.
+// If other collaboration-related files need these validators, consider moving
+// them to convex/lib/slateValidators.ts.
 
 /**
  * Slate Point validator - represents a position in the document.
  * A point has a path (array of indices into the tree) and an offset (character position).
+ *
+ * @see https://docs.slatejs.org/concepts/03-locations#point
  */
 const slatePointValidator = v.object({
   path: v.array(v.number()),
@@ -44,6 +57,8 @@ const slatePointValidator = v.object({
 /**
  * Slate Range validator - represents a selection range.
  * A range has an anchor point (start) and focus point (end).
+ *
+ * @see https://docs.slatejs.org/concepts/03-locations#range
  */
 const slateRangeValidator = v.object({
   anchor: slatePointValidator,

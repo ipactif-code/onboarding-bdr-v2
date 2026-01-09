@@ -3,6 +3,9 @@
 export { useBreadcrumbs } from "./use-breadcrumbs";
 export type { BreadcrumbItem } from "./use-breadcrumbs";
 
+// Utility hooks
+export { useCallbackRef } from "./use-callback-ref";
+
 export { useMessageScroll } from "./use-message-scroll";
 export { useMessageIntersection } from "./use-message-intersection";
 export { useThread } from "./use-thread";

@@ -1009,10 +1009,9 @@ Add this to code review checklist:
 ```
 
 ## Recent Changes
+- 010-certification-system: Added TypeScript 5.x (strict mode)
 - 009-scoring-evaluation: Added TypeScript 5.x (strict mode) + Next.js 15, React 19, Convex (EU region), Claude Sonnet API (via Anthropic SDK)
 - 008-praiz-pipeline: Added TypeScript 5.x (strict mode) + Next.js 15, React 19, Convex, Claude Sonnet API, Praiz API
-- 007-realtime-coaching: Added TypeScript 5.x (strict mode) + Next.js 15, React 19, Convex, Web Audio API, Framer Motion
 
 ## Active Technologies
-- TypeScript 5.x (strict mode) + Next.js 15, React 19, Convex (EU region), Claude Sonnet API (via Anthropic SDK) (009-scoring-evaluation)
-- Convex tables (sessionScores, scoringJobs, certificationRecords) (009-scoring-evaluation)
+- Convex (6 new tables: certificationLevels, bdrCertifications, badges, bdrBadges, cooldownResets, lmsSyncQueue) (010-certification-system)

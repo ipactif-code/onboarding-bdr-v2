@@ -38,6 +38,9 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-highlight: var(--highlight);
+  --color-subtle-foreground: var(--subtle-foreground);
+  --color-brand: var(--brand);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -80,6 +83,12 @@
   --sidebar-accent-foreground: oklch(0.985 0.002 247.839);
   --sidebar-border: oklch(0.928 0.006 264.531);
   --sidebar-ring: oklch(0.707 0.022 261.325);
+  /* Comment highlight yellow */
+  --highlight: oklch(0.89 0.17 95);
+  /* Subtle text foreground */
+  --subtle-foreground: oklch(0.65 0.02 264);
+  /* Brand accent color */
+  --brand: oklch(0.55 0.2 250);
 }
 
 .dark {
@@ -114,6 +123,12 @@
   --sidebar-accent-foreground: oklch(0.21 0.034 264.665);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.551 0.027 264.364);
+  /* Comment highlight yellow (slightly darker for dark mode) */
+  --highlight: oklch(0.75 0.15 95);
+  /* Subtle text foreground */
+  --subtle-foreground: oklch(0.55 0.02 264);
+  /* Brand accent color */
+  --brand: oklch(0.6 0.2 250);
 }
 
 @layer base {

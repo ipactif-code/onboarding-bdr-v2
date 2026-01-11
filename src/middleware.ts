@@ -6,6 +6,7 @@ const isProtectedRoute = createRouteMatcher([
   "/courses(.*)",
   "/messages(.*)",
   "/profile(.*)",
+  "/knowledge(.*)",
 ]);
 
 const _isPublicRoute = createRouteMatcher([

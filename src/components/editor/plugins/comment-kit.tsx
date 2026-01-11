@@ -8,8 +8,7 @@ import {
 
 import type { ExtendConfig, Path } from 'platejs';
 import { isSlateElement, isSlateString } from 'platejs';
-import { toTPlatePlugin, useEditorContainerRef } from 'platejs/react';
-import { useEffect } from 'react';
+import { toTPlatePlugin } from 'platejs/react';
 
 import { CommentLeaf } from '@/components/plate-ui/comment-node';
 import { FloatingDiscussion } from '@/components/plate-ui/floating-discussion';
@@ -21,6 +20,7 @@ type CommentConfig = ExtendConfig<
     commentingBlock: Path | null;
     hoverId: string | null;
     isOverlapWithEditor: boolean;
+    isSubmitting: boolean;
     uniquePathMap: Map<string, Path>;
     updateTimestamp: number | null;
   }
@@ -68,34 +68,12 @@ export const commentPlugin = toTPlatePlugin<CommentConfig>(BaseCommentPlugin, {
     activeId: null,
     commentingBlock: null,
     hoverId: null,
-    isOverlapWithEditor: false,
+    isOverlapWithEditor: true, // Always true - force block mode for comments
+    isSubmitting: false, // Prevents premature draft mark removal during async submission
     uniquePathMap: new Map(),
     updateTimestamp: null,
   },
-  useHooks: ({ editor, setOption }) => {
-    const editorContainerRef = useEditorContainerRef();
-
-    useEffect(() => {
-      if (!editorContainerRef.current) return;
-
-      const editable = editor.api.toDOMNode(editor);
-
-      if (!editable) return;
-
-      const observer = new ResizeObserver((entries) => {
-        const width = entries[0]?.contentRect.width ?? 0;
-        const isOverlap = width < 700;
-
-        setOption('isOverlapWithEditor', isOverlap);
-      });
-
-      observer.observe(editable);
-
-      return () => {
-        observer.disconnect();
-      };
-    }, [editor, editorContainerRef, setOption]);
-  },
+  // Removed ResizeObserver hook - comments always display in block mode
 })
   .extendTransforms(
     ({

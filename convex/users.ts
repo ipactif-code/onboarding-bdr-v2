@@ -388,6 +388,12 @@ export const me = query({
 
 /**
  * Search users for mentions and messaging.
+ *
+ * When query is empty, returns recently created users for immediate suggestions.
+ *
+ * @param query - Search string (empty string returns recent users)
+ * @param limit - Maximum results to return (default: 10)
+ * @returns Array of users with basic metadata
  */
 export const search = query({
   args: {
@@ -405,11 +411,24 @@ export const search = query({
   handler: async (ctx, args) => {
     await requireAuth(ctx);
 
-    if (args.query.length < 2) {
-      return [];
+    const limit = args.limit ?? 10;
+
+    // If query is empty or very short, return recent/suggested users
+    if (!args.query || args.query.length < 1) {
+      // Return first N users ordered by most recently created
+      const users = await ctx.db
+        .query("users")
+        .order("desc")
+        .take(limit);
+
+      return users.map((u) => ({
+        _id: u._id,
+        name: u.name,
+        avatarUrl: u.avatarUrl,
+        role: u.role,
+      }));
     }
 
-    const limit = args.limit ?? 10;
     const searchLower = args.query.toLowerCase();
 
     const users = await ctx.db.query("users").collect();

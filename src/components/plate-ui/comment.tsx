@@ -2,6 +2,8 @@
 
 import { getCommentKey, getDraftCommentKey } from '@platejs/comment';
 import { CommentPlugin, useCommentId } from '@platejs/comment/react';
+import { YjsPlugin } from '@platejs/yjs/react';
+import type { HocuspocusProvider } from '@hocuspocus/provider';
 import {
   differenceInDays,
   differenceInHours,
@@ -16,7 +18,7 @@ import {
   TrashIcon,
   XIcon,
 } from 'lucide-react';
-import { NodeApi, nanoid, type Value } from 'platejs';
+import { NodeApi, type Path, type SlateEditor, nanoid, type Value } from 'platejs';
 import {
   type CreatePlateEditorOptions,
   Plate,
@@ -26,13 +28,16 @@ import {
   usePluginOption,
 } from 'platejs/react';
 import React, { useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
 import { cn } from '@/lib/utils';
 import { BasicMarksKit } from '@/components/editor/plugins/basic-marks-kit';
+import { commentPlugin } from '@/components/editor/plugins/comment-kit';
 import {
   discussionPlugin,
   type TDiscussion,
 } from '@/components/editor/plugins/discussion-kit';
+import { useOptionalDiscussionContext } from '@/components/knowledge/discussions';
 
 import { Avatar, AvatarFallback, AvatarImage } from './avatar';
 import { Button } from './button';
@@ -44,6 +49,176 @@ import {
   DropdownMenuTrigger,
 } from './dropdown-menu';
 import { Editor, EditorContainer } from './editor';
+
+// ============================================================================
+// Yjs Sync Helper
+// ============================================================================
+
+/**
+ * Interface for accessing the underlying Hocuspocus provider from Plate's wrapper.
+ * The HocuspocusProviderWrapper stores the actual provider in the `provider` property.
+ */
+interface HocuspocusProviderWrapper {
+  type: string;
+  provider: HocuspocusProvider;
+}
+
+/**
+ * Wait for Yjs changes to sync to Hocuspocus server.
+ * Uses the provider's unsyncedChanges tracking to confirm sync.
+ * Falls back to a delay if provider not accessible.
+ *
+ * @param editor - The Plate.js editor instance with YjsPlugin configured
+ * @param timeoutMs - Maximum time to wait for sync (default: 5000ms)
+ * @returns Promise that resolves to true if synced, false if timed out or fallback used
+ */
+async function waitForYjsSync(
+  editor: SlateEditor,
+  timeoutMs = 5000
+): Promise<boolean> {
+  try {
+    // Access Hocuspocus provider via YjsPlugin options
+    const yjsOptions = editor.getOptions(YjsPlugin);
+
+    // _providers is an array of provider wrappers
+    // Find the Hocuspocus provider wrapper
+    // We need to cast to unknown first because UnifiedProvider doesn't expose the underlying provider
+    const providers = yjsOptions._providers;
+    const wrapper = providers?.find((p) => p.type === 'hocuspocus');
+
+    if (!wrapper) {
+      // Provider not available - fallback to delay
+      console.log('[Comment] Hocuspocus provider not found, using fallback delay');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return false;
+    }
+
+    // The wrapper has a `provider` property that contains the actual HocuspocusProvider
+    // This is not exposed in the UnifiedProvider interface but exists at runtime
+    const hocuspocusProvider = (wrapper as unknown as HocuspocusProviderWrapper).provider;
+
+    if (!hocuspocusProvider) {
+      console.log('[Comment] Hocuspocus provider instance not found, using fallback delay');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return false;
+    }
+
+    // Check if already synced (no pending changes)
+    if (!hocuspocusProvider.hasUnsyncedChanges) {
+      console.log('[Comment] No unsynced changes, already synced!');
+      return true;
+    }
+
+    console.log('[Comment] Waiting for Yjs sync, unsynced changes:', hocuspocusProvider.unsyncedChanges);
+
+    // Wait for sync via event listener
+    return new Promise<boolean>((resolve) => {
+      let timeoutId: NodeJS.Timeout | undefined;
+      let resolved = false;
+
+      const handleUnsyncedChanges = ({ number }: { number: number }): void => {
+        console.log('[Comment] unsyncedChanges event fired, count:', number);
+
+        if (number === 0 && !resolved) {
+          resolved = true;
+          cleanup();
+          console.log('[Comment] Sync confirmed!');
+          resolve(true);
+        }
+      };
+
+      const cleanup = (): void => {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = undefined;
+        }
+        // Remove event listener
+        hocuspocusProvider.off('unsyncedChanges', handleUnsyncedChanges);
+      };
+
+      // Set up timeout
+      timeoutId = setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          cleanup();
+          console.warn('[Comment] Sync timeout after', timeoutMs, 'ms');
+          resolve(false);
+        }
+      }, timeoutMs);
+
+      // Listen for unsyncedChanges event
+      hocuspocusProvider.on('unsyncedChanges', handleUnsyncedChanges);
+
+      // Double-check current state (race condition protection)
+      // The changes might have synced between our initial check and adding the listener
+      if (!hocuspocusProvider.hasUnsyncedChanges && !resolved) {
+        resolved = true;
+        cleanup();
+        console.log('[Comment] Sync already complete (race condition handled)');
+        resolve(true);
+      }
+    });
+  } catch (error) {
+    // Any error accessing provider - fallback to delay
+    console.warn('[Comment] Error accessing Yjs provider, using fallback delay:', error);
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return false;
+  }
+}
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+/**
+ * Calculate the character offset from the beginning of the document to a given path.
+ * This is used to get selectionStart for inline comments.
+ *
+ * @param editor - The Plate.js editor instance
+ * @param targetPath - The path to calculate offset for
+ * @returns The character offset from document start
+ */
+function getCharacterOffsetFromPath(editor: SlateEditor, targetPath: Path): number {
+  let offset = 0;
+
+  // Iterate through all text nodes before the target path
+  const textNodes = editor.api.nodes({
+    at: [],
+    match: (node) => 'text' in node && typeof node.text === 'string',
+  });
+
+  for (const [node, path] of textNodes) {
+    // Check if this path is before the target path
+    // Compare paths element by element
+    let isBefore = false;
+    let isEqual = true;
+
+    for (let i = 0; i < Math.max(path.length, targetPath.length); i++) {
+      const pathPart = path[i] ?? 0;
+      const targetPart = targetPath[i] ?? 0;
+
+      if (pathPart < targetPart) {
+        isBefore = true;
+        isEqual = false;
+        break;
+      } else if (pathPart > targetPart) {
+        isEqual = false;
+        break;
+      }
+    }
+
+    if (isBefore) {
+      // Add the text length of nodes before the target
+      const textNode = node as { text: string };
+      offset += textNode.text.length;
+    } else if (isEqual) {
+      // We've reached the target path, stop here
+      break;
+    }
+  }
+
+  return offset;
+}
 
 export type TComment = {
   id: string;
@@ -77,11 +252,15 @@ export function Comment(props: {
 
   const editor = useEditorRef();
 
+  // Get discussion context for Convex mutations (optional - allows graceful fallback)
+  const ctx = useOptionalDiscussionContext();
+
   const discussions = usePluginOption(discussionPlugin, 'discussions');
   const userInfo = usePluginOption(discussionPlugin, 'user', comment.userId);
   const currentUserId = usePluginOption(discussionPlugin, 'currentUserId');
 
-  const resolveDiscussion = (id: string): void => {
+  // Local state update for resolving discussions (optimistic UI)
+  const resolveDiscussionLocal = (id: string): void => {
     const updatedDiscussions = discussions.map((discussion) => {
       if (discussion.id === id) {
         return { ...discussion, isResolved: true };
@@ -92,7 +271,8 @@ export function Comment(props: {
     editor.setOption(discussionPlugin, 'discussions', updatedDiscussions);
   };
 
-  const removeDiscussion = (id: string): void => {
+  // Local state update for removing discussions (optimistic UI)
+  const removeDiscussionLocal = (id: string): void => {
     const updatedDiscussions = discussions.filter(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (discussion: any) => discussion.id !== id
@@ -100,7 +280,8 @@ export function Comment(props: {
     editor.setOption(discussionPlugin, 'discussions', updatedDiscussions);
   };
 
-  const updateComment = (input: {
+  // Local state update for editing comments (optimistic UI)
+  const updateCommentLocal = (input: {
     id: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     contentRich: any;
@@ -109,17 +290,17 @@ export function Comment(props: {
   }): void => {
     const updatedDiscussions = discussions.map((discussion) => {
       if (discussion.id === input.discussionId) {
-        const updatedComments = discussion.comments.map((comment) => {
-          if (comment.id === input.id) {
+        const updatedComments = discussion.comments.map((c) => {
+          if (c.id === input.id) {
             return {
-              ...comment,
+              ...c,
               contentRich: input.contentRich,
               isEdited: true,
               updatedAt: new Date(),
             };
           }
 
-          return comment;
+          return c;
         });
 
         return { ...discussion, comments: updatedComments };
@@ -153,20 +334,52 @@ export function Comment(props: {
     });
   };
 
-  const onSave = (): void => {
+  const onSave = async (): Promise<void> => {
     if (!commentEditor) return;
-    void updateComment({
+
+    const newContent = commentEditor.children;
+
+    // Optimistic UI update (local state)
+    updateCommentLocal({
       id: comment.id,
-      contentRich: commentEditor.children,
+      contentRich: newContent,
       discussionId: comment.discussionId,
       isEdited: true,
     });
     setEditingId(null);
+
+    // Persist to Convex if context is available
+    if (ctx) {
+      try {
+        await ctx.editComment(comment.id, newContent);
+      } catch {
+        // Revert optimistic update on error
+        updateCommentLocal({
+          id: comment.id,
+          contentRich: initialValue,
+          discussionId: comment.discussionId,
+          isEdited: comment.isEdited,
+        });
+        toast.error('Failed to save comment. Please try again.');
+      }
+    }
   };
 
-  const onResolveComment = (): void => {
-    void resolveDiscussion(comment.discussionId);
+  const onResolveComment = async (): Promise<void> => {
+    // Optimistic UI update (local state)
+    resolveDiscussionLocal(comment.discussionId);
     tf.comment.unsetMark({ id: comment.discussionId });
+
+    // Persist to Convex if context is available
+    if (ctx) {
+      try {
+        await ctx.resolveDiscussion(comment.discussionId);
+      } catch {
+        // Note: Reverting resolve is complex since the mark is already unset
+        // In practice, the Convex subscription will sync the correct state
+        toast.error('Failed to resolve discussion. Please try again.');
+      }
+    }
   };
 
   const isFirst = index === 0;
@@ -221,10 +434,13 @@ export function Comment(props: {
                   commentEditor?.tf.focus({ edge: 'endEditor' });
                 }, 0);
               }}
-              onRemoveComment={() => {
+              onRemoveComment={async () => {
                 if (discussionLength === 1) {
                   tf.comment.unsetMark({ id: comment.discussionId });
-                  void removeDiscussion(comment.discussionId);
+                  // Local state update
+                  removeDiscussionLocal(comment.discussionId);
+                  // Note: Discussion removal in Convex is handled by deleteComment
+                  // when it's the last comment - the backend handles this automatically
                 }
               }}
               setDropdownOpen={setDropdownOpen}
@@ -310,15 +526,16 @@ function CommentMoreDropdown(props: {
     onRemoveComment,
   } = props;
 
+  // Get discussion context for Convex mutations (optional - allows graceful fallback)
+  const ctx = useOptionalDiscussionContext();
+
   const discussions = usePluginOption(discussionPlugin, 'discussions');
   const editor = useEditorRef();
 
   const selectedEditCommentRef = React.useRef<boolean>(false);
 
-  const onDeleteComment = React.useCallback((): void => {
-    if (!comment.id)
-      return alert('You are operating too quickly, please try again later.');
-
+  // Local state update for deleting comments (optimistic UI)
+  const deleteCommentLocal = React.useCallback((): void => {
     // Find and update the discussion
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updatedDiscussions = discussions.map((discussion: any) => {
@@ -344,16 +561,39 @@ function CommentMoreDropdown(props: {
       };
     });
 
-    // Save back to session storage
+    // Update local state
     editor.setOption(discussionPlugin, 'discussions', updatedDiscussions);
     onRemoveComment?.();
   }, [comment.discussionId, comment.id, discussions, editor, onRemoveComment]);
 
+  const onDeleteComment = React.useCallback(async (): Promise<void> => {
+    if (!comment.id) {
+      toast.error('You are operating too quickly, please try again later.');
+      return;
+    }
+
+    // Optimistic UI update (local state)
+    deleteCommentLocal();
+
+    // Persist to Convex if context is available
+    if (ctx) {
+      try {
+        await ctx.deleteComment(comment.id);
+      } catch {
+        // Note: Reverting delete is complex since local state is already updated
+        // In practice, the Convex subscription will sync the correct state
+        toast.error('Failed to delete comment. Please try again.');
+      }
+    }
+  }, [comment.id, ctx, deleteCommentLocal]);
+
   const onEditComment = React.useCallback((): void => {
     selectedEditCommentRef.current = true;
 
-    if (!comment.id)
-      return alert('You are operating too quickly, please try again later.');
+    if (!comment.id) {
+      toast.error('You are operating too quickly, please try again later.');
+      return;
+    }
 
     setEditingId(comment.id);
   }, [comment.id, setEditingId]);
@@ -430,6 +670,9 @@ export function CommentCreateForm({
   const commentId = useCommentId();
   const discussionId = discussionIdProp ?? commentId;
 
+  // Get discussion context for Convex mutations (optional - allows graceful fallback)
+  const ctx = useOptionalDiscussionContext();
+
   const userInfo = usePluginOption(discussionPlugin, 'currentUser');
   const [commentValue, setCommentValue] = React.useState<Value | undefined>();
   const commentContent = useMemo(
@@ -448,7 +691,7 @@ export function CommentCreateForm({
     }
   }, [commentEditor, focusOnMount]);
 
-  const onAddComment = React.useCallback((): void => {
+  const onAddComment = React.useCallback(async (): Promise<void> => {
     if (!commentValue || !commentEditor) return;
 
     commentEditor.tf.reset();
@@ -459,7 +702,7 @@ export function CommentCreateForm({
       const discussion = discussions.find((d: any) => d.id === discussionId);
 
       if (!discussion) {
-        // Mock creating suggestion
+        // Create new discussion (page-level comment)
         const newDiscussion: TDiscussion = {
           id: discussionId,
           comments: [
@@ -477,10 +720,23 @@ export function CommentCreateForm({
           userId: editor.getOption(discussionPlugin, 'currentUserId'),
         };
 
+        // Optimistic UI update
         editor.setOption(discussionPlugin, 'discussions', [
           ...discussions,
           newDiscussion,
         ]);
+
+        // Persist to Convex
+        if (ctx) {
+          try {
+            await ctx.createComment({
+              type: 'page',
+              content: commentValue,
+            });
+          } catch {
+            toast.error('Failed to save comment. Please try again.');
+          }
+        }
 
         return;
       }
@@ -507,11 +763,26 @@ export function CommentCreateForm({
         .filter((d: any) => d.id !== discussionId)
         .concat(updatedDiscussion);
 
+      // Optimistic UI update
       editor.setOption(discussionPlugin, 'discussions', updatedDiscussions);
+
+      // Persist reply to Convex
+      if (ctx) {
+        try {
+          await ctx.createComment({
+            type: 'inline',
+            content: commentValue,
+            parentId: discussionId,
+          });
+        } catch {
+          toast.error('Failed to save reply. Please try again.');
+        }
+      }
 
       return;
     }
 
+    // Handle inline comment (text selection)
     const commentsNodeEntry = editor
       .getApi(CommentPlugin)
       .comment.nodes({ at: [], isDraft: true });
@@ -522,16 +793,39 @@ export function CommentCreateForm({
       .map(([node]) => node.text)
       .join('');
 
-    const _discussionId = nanoid();
-    // Mock creating new discussion
+    // Calculate selection positions for the inline comment
+    // Get the path of the first selected node to calculate the start offset
+    const firstPath = commentsNodeEntry[0]?.[1];
+    const selectionStart = firstPath
+      ? getCharacterOffsetFromPath(editor, firstPath)
+      : 0;
+    const selectionEnd = selectionStart + documentContent.length;
+
+    // Store paths of draft nodes BEFORE any changes
+    // This is critical because Convex call is async and paths may change
+    const draftNodePaths = commentsNodeEntry.map(([, path]) => [...path]);
+
+    // FIX: Don't apply nanoid mark - wait for Convex ID
+    // The problem: nanoid marks sync to Yjs immediately, but Convex uses different IDs.
+    // On refresh, Yjs has nanoid marks but Convex has real IDs -> mismatch.
+    //
+    // NEW FLOW:
+    // 1. Keep draft mark visible for optimistic UI (don't remove it yet)
+    // 2. Call Convex to get the real ID
+    // 3. Only then replace draft mark with Convex ID mark
+    // 4. This ensures only Convex IDs are synced to Yjs
+
+    // Create placeholder discussion with temp ID for UI feedback
+    // This will be updated with the real Convex ID after the API call
+    const tempId = `temp_${nanoid()}`;
     const newDiscussion: TDiscussion = {
-      id: _discussionId,
+      id: tempId,
       comments: [
         {
           id: nanoid(),
           contentRich: commentValue,
           createdAt: new Date(),
-          discussionId: _discussionId,
+          discussionId: tempId,
           isEdited: false,
           userId: editor.getOption(discussionPlugin, 'currentUserId'),
         },
@@ -542,23 +836,194 @@ export function CommentCreateForm({
       userId: editor.getOption(discussionPlugin, 'currentUserId'),
     };
 
+    // Optimistic UI update - add temp discussion for immediate feedback
     editor.setOption(discussionPlugin, 'discussions', [
       ...discussions,
       newDiscussion,
     ]);
 
-    const id = newDiscussion.id;
+    // Persist inline comment to Convex BEFORE applying marks
+    if (ctx) {
+      // Set flag to prevent premature draft mark removal by BlockDiscussion
+      editor.setOption(commentPlugin, 'isSubmitting', true);
+      try {
+        const convexId = await ctx.createComment({
+          type: 'inline',
+          content: commentValue,
+          selectedText: documentContent,
+          selectionStart,
+          selectionEnd,
+        });
 
-    commentsNodeEntry.forEach(([_, path]) => {
-      editor.tf.setNodes(
-        {
-          [getCommentKey(id)]: true,
-        },
-        { at: path, split: true }
+        // NOW apply the mark with the real Convex ID using retry mechanism
+        // This is the only mark that will be synced to Yjs
+        const applyMarkWithRetry = async (convexIdToApply: string, maxRetries = 3): Promise<boolean> => {
+          const markKey = getCommentKey(convexIdToApply);
+
+          for (let attempt = 0; attempt < maxRetries; attempt++) {
+            // Find ALL draft nodes currently in editor (not using stored paths)
+            // This handles the case where paths shifted during async Convex call
+            const draftNodes = Array.from(editor.api.nodes({
+              at: [],
+              match: (node) =>
+                typeof node === 'object' &&
+                node !== null &&
+                'text' in node &&
+                getDraftCommentKey() in node &&
+                (node as Record<string, unknown>)[getDraftCommentKey()] === true,
+            }));
+
+            if (draftNodes.length > 0) {
+              editor.tf.withMerging(() => {
+                for (const [node, path] of draftNodes) {
+                  editor.tf.unsetNodes([getDraftCommentKey()], { at: path });
+
+                  // FIX: Preserve existing comment marks when adding new ones
+                  // This allows multiple comments on the same text selection
+                  // Without this, setNodes might overwrite existing marks in edge cases
+                  const existingMarks: Record<string, boolean> = {};
+                  const nodeObj = node as Record<string, unknown>;
+                  Object.keys(nodeObj).forEach(key => {
+                    // Preserve all existing comment_* marks except the draft key
+                    if (key.startsWith('comment_') && key !== getDraftCommentKey()) {
+                      existingMarks[key] = true;
+                    }
+                  });
+
+                  // Log for debugging multiple comments on same text
+                  if (Object.keys(existingMarks).length > 0) {
+                    console.log('[Comment] Preserving existing marks:', Object.keys(existingMarks));
+                  }
+
+                  // IMPORTANT: Apply ALL marks - existing ones + new ones
+                  // 1. Existing marks - preserve any comment_* marks already on the node
+                  // 2. Base mark (comment: true) - for api.comment.nodes() detection
+                  // 3. ID mark ([markKey]: true) - for identifying this discussion
+                  editor.tf.setNodes({
+                    ...existingMarks,  // Preserve existing comment marks
+                    [markKey]: true,   // Add new ID mark
+                    comment: true,     // Ensure base mark exists
+                  }, { at: path, split: true });
+                }
+              });
+
+              // Verify mark was applied and log ALL marks on the node
+              const verifyNodes = Array.from(editor.api.nodes({
+                at: [],
+                match: (node) =>
+                  typeof node === 'object' &&
+                  node !== null &&
+                  'text' in node &&
+                  markKey in node &&
+                  (node as Record<string, unknown>)[markKey] === true,
+              }));
+
+              if (verifyNodes.length > 0) {
+                // Log all comment marks on the node to verify multiple comments work
+                for (const [node, path] of verifyNodes) {
+                  const nodeObj = node as Record<string, unknown>;
+                  const allCommentMarks = Object.keys(nodeObj).filter(k =>
+                    k.startsWith('comment_') && !k.includes('draft')
+                  );
+                  console.log(`[Comment] Node at ${JSON.stringify(path)} has marks:`, allCommentMarks);
+                  console.log('[Comment] Full node:', nodeObj);
+                }
+
+                // Wait for Yjs to sync the mark to Hocuspocus server
+                // Uses event-driven sync confirmation instead of arbitrary delay
+                console.log('[Comment] Mark applied successfully, waiting for Yjs sync...');
+                const synced = await waitForYjsSync(editor);
+                if (synced) {
+                  console.log('[Comment] Yjs sync confirmed!');
+                } else {
+                  console.warn('[Comment] Yjs sync may be incomplete, mark saved locally');
+                }
+                return true; // Success - mark is applied, sync was attempted
+              }
+            }
+
+            // Wait and retry with exponential backoff
+            if (attempt < maxRetries - 1) {
+              await new Promise(resolve => setTimeout(resolve, 100 * (attempt + 1)));
+            }
+          }
+
+          return false; // Failed after retries
+        };
+
+        // Call the retry mechanism
+        const markApplied = await applyMarkWithRetry(convexId);
+        if (!markApplied) {
+          // Mark application failed, but comment is saved in Convex
+          // It will be visible after refresh via injectCommentMarks
+          console.warn('[Comment] Mark not applied, will be visible after refresh');
+        }
+
+        // Update local discussions state with correct Convex ID
+        const currentDiscussions = editor.getOption(
+          discussionPlugin,
+          'discussions'
+        );
+        const updatedDiscussions = currentDiscussions.map((d: TDiscussion) =>
+          d.id === tempId ? { ...d, id: convexId, comments: d.comments.map(c => ({ ...c, discussionId: convexId })) } : d
+        );
+        editor.setOption(discussionPlugin, 'discussions', updatedDiscussions);
+      } catch {
+        toast.error('Failed to save comment. Please try again.');
+
+        // Rollback: remove draft marks since Convex save failed
+        const draftNodes = Array.from(
+          editor.api.nodes({
+            at: [],
+            match: (node) =>
+              typeof node === 'object' &&
+              node !== null &&
+              getDraftCommentKey() in node &&
+              node[getDraftCommentKey()] === true,
+          })
+        );
+        for (const [, path] of draftNodes) {
+          try {
+            editor.tf.unsetNodes([getDraftCommentKey()], { at: path });
+          } catch {
+            // Node may no longer exist - skip silently
+          }
+        }
+
+        // Remove temp discussion from local state
+        const currentDiscussions = editor.getOption(
+          discussionPlugin,
+          'discussions'
+        );
+        const filteredDiscussions = currentDiscussions.filter(
+          (d: TDiscussion) => d.id !== tempId
+        );
+        editor.setOption(discussionPlugin, 'discussions', filteredDiscussions);
+      } finally {
+        // Always reset the isSubmitting flag
+        editor.setOption(commentPlugin, 'isSubmitting', false);
+      }
+    } else {
+      // No Convex context - just remove draft marks without persisting
+      // This case shouldn't normally happen in production
+      for (const path of draftNodePaths) {
+        try {
+          editor.tf.unsetNodes([getDraftCommentKey()], { at: path });
+        } catch {
+          // Skip invalid paths
+        }
+      }
+      // Remove temp discussion
+      const currentDiscussions = editor.getOption(
+        discussionPlugin,
+        'discussions'
       );
-      editor.tf.unsetNodes([getDraftCommentKey()], { at: path });
-    });
-  }, [commentValue, commentEditor, discussionId, editor, discussions]);
+      const filteredDiscussions = currentDiscussions.filter(
+        (d: TDiscussion) => d.id !== tempId
+      );
+      editor.setOption(discussionPlugin, 'discussions', filteredDiscussions);
+    }
+  }, [commentValue, commentEditor, discussionId, editor, discussions, ctx]);
 
   return (
     <div className={cn('flex w-full', className)}>

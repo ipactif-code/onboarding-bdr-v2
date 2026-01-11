@@ -59,3 +59,51 @@ export {
   TOKEN_REFRESH_INTERVAL_MS,
   CONNECTION_TIMEOUT_MS,
 } from "./use-hocuspocus-provider";
+
+// Comments hook (for document commenting system)
+export { useComments, useCommentReplies, useCommentDetail } from "./use-comments";
+export type {
+  UseCommentsOptions,
+  UseCommentsReturn,
+  CommentListItem,
+  CommentDetail,
+  CommentReply,
+  CommentAuthor,
+  ReactionGroup,
+  CommentMention,
+  UnreadMention,
+  CreateCommentArgs,
+} from "./use-comments";
+
+// Current user hook (for Plate.js collaboration)
+export { useCurrentUser } from "./use-current-user";
+export type { PlateUser, UseCurrentUserReturn } from "./use-current-user";
+
+// KB Discussions hook (transforms Convex comments to Plate.js TDiscussion format)
+export {
+  useKBDiscussions,
+  useTransformToDiscussion,
+  normalizeContent,
+  transformToTComment,
+  transformToDiscussion,
+} from "./use-kb-discussions";
+export type {
+  TComment,
+  TDiscussion,
+  UseKBDiscussionsOptions,
+  UseKBDiscussionsReturn,
+} from "./use-kb-discussions";
+
+// Search hook (for Knowledge Base document search)
+export { useSearch } from "./use-search";
+export type {
+  SearchMode,
+  SearchFilters,
+  SearchResult,
+  QuickSearchResult,
+  SearchSuggestion,
+  RecentSearch,
+  SearchResponse,
+  UseSearchOptions,
+  UseSearchReturn,
+} from "./use-search";

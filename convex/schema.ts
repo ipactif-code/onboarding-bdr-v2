@@ -2,6 +2,10 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  // ============================================================================
+  // CORE - Users, Teams, Membership
+  // ============================================================================
+
   // Users (synced from Clerk)
   users: defineTable({
     clerkId: v.string(),
@@ -43,6 +47,10 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_team", ["teamId"])
     .index("by_user_team", ["userId", "teamId"]),
+
+  // ============================================================================
+  // LMS - Courses, Lessons, Progress
+  // ============================================================================
 
   // Tags for courses
   tags: defineTable({
@@ -199,6 +207,10 @@ export default defineSchema({
     .index("by_quiz", ["quizConfigId"])
     .index("by_user_quiz", ["userId", "quizConfigId"]),
 
+  // ============================================================================
+  // MESSAGING - Channels, Conversations, Messages
+  // ============================================================================
+
   // Conversations (for messaging)
   conversations: defineTable({
     type: v.union(
@@ -307,7 +319,7 @@ export default defineSchema({
       filterFields: ["channelId", "conversationId", "senderId", "contentType"],
     }),
 
-  // Comments on courses/lessons
+  // LMS course/lesson comments (NOT KB comments)
   comments: defineTable({
     authorId: v.id("users"),
     courseId: v.optional(v.id("courses")),
@@ -322,6 +334,10 @@ export default defineSchema({
     .index("by_lesson", ["lessonId"])
     .index("by_parent", ["parentId"])
     .index("by_author", ["authorId"]),
+
+  // ============================================================================
+  // ANALYTICS & ACTIVITY LOGS
+  // ============================================================================
 
   // Activity logs for analytics
   activityLogs: defineTable({
@@ -363,10 +379,6 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_started", ["startedAt"]),
-
-  // ============================================================================
-  // MESSAGING SYSTEM TABLES
-  // ============================================================================
 
   // Channels for group communication
   channels: defineTable({
@@ -481,7 +493,7 @@ export default defineSchema({
     .index("by_message", ["messageId"])
     .index("by_transcription_status", ["transcriptionStatus"]),
 
-  // Emoji reactions on messages
+  // Message reactions (NOT KB comment reactions)
   reactions: defineTable({
     messageId: v.id("messages"),
     userId: v.id("users"),
@@ -493,7 +505,7 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_message_user", ["messageId", "userId"]),
 
-  // @mentions extracted from messages
+  // Message mentions (NOT KB comment mentions)
   mentions: defineTable({
     messageId: v.id("messages"),
     // Mention type
@@ -606,7 +618,7 @@ export default defineSchema({
   }).index("by_user_type", ["userId", "type"]),
 
   // ============================================================================
-  // TRANSCRIPTION COST CONTROL
+  // TRANSCRIPTION & AI TRAINING
   // ============================================================================
 
   // Daily transcription usage per user
@@ -635,10 +647,6 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index("by_month", ["month"]),
-
-  // ============================================================================
-  // AI TRAINING CORPUS
-  // ============================================================================
 
   // Anonymized messages for AI training
   aiTrainingCorpus: defineTable({
@@ -753,7 +761,7 @@ export default defineSchema({
     .index("by_requested", ["requestedAt"]),
 
   // ============================================================================
-  // KNOWLEDGE BASE TABLES
+  // KNOWLEDGE BASE - Workspaces, Folders, Documents
   // ============================================================================
 
   /**
@@ -942,6 +950,10 @@ export default defineSchema({
     .index("by_document_time", ["documentId", "createdAt"])
     .index("by_expires", ["expiresAt"]),
 
+  // ============================================================================
+  // KNOWLEDGE BASE - Permissions & Audit
+  // ============================================================================
+
   /**
    * Knowledge Base Resource Permissions - RBAC grants for KB resources.
    * Polymorphic: links to workspaces, folders, or documents.
@@ -1040,6 +1052,10 @@ export default defineSchema({
     .index("by_timestamp", ["timestamp"])
     .index("by_resource_time", ["resourceType", "resourceId", "timestamp"]),
 
+  // ============================================================================
+  // KNOWLEDGE BASE - Comments & Collaboration
+  // ============================================================================
+
   /**
    * Knowledge Base Document Comments - Comment threads on documents.
    * Supports both page-level and inline (text selection) comments.
@@ -1054,16 +1070,22 @@ export default defineSchema({
       v.literal("inline") // Attached to text selection
     ),
 
-    // For inline comments
+    // For inline comments - text selection position
     selectionStart: v.optional(v.number()), // Slate point
     selectionEnd: v.optional(v.number()),
     selectedText: v.optional(v.string()), // Quoted text
 
+    // DEPRECATED: Block-relative fields (kept for backward compatibility with existing data)
+    // These fields are no longer used - Yjs marks are now source of truth for positions
+    blockId: v.optional(v.string()),
+    offsetStart: v.optional(v.number()),
+    offsetEnd: v.optional(v.number()),
+
     // Threading
     parentId: v.optional(v.id("kbDocumentComments")), // Reply to
 
-    // Content
-    content: v.string(),
+    // Content - Plate.js rich text Value (array of nodes) or plain string
+    content: v.any(),
 
     // Author
     authorId: v.id("users"),
@@ -1086,6 +1108,40 @@ export default defineSchema({
     .index("by_parent", ["parentId"])
     .index("by_author", ["authorId"])
     .index("by_resolved", ["documentId", "isResolved"]),
+
+  /**
+   * Knowledge Base Comment Mentions - @mentions extracted from comments.
+   * Tracks who was mentioned for notification and unread tracking.
+   */
+  kbCommentMentions: defineTable({
+    commentId: v.id("kbDocumentComments"),
+    type: v.union(
+      v.literal("user"), // @username
+      v.literal("here"), // @here (online users)
+      v.literal("everyone") // @everyone (all users)
+    ),
+    mentionedUserId: v.optional(v.id("users")), // For type: "user"
+    notifiedAt: v.optional(v.number()), // Read tracking - undefined = unread
+    createdAt: v.number(),
+  })
+    .index("by_comment", ["commentId"])
+    .index("by_mentioned_user", ["mentionedUserId"])
+    .index("by_user_unread", ["mentionedUserId", "notifiedAt"]),
+
+  /**
+   * Knowledge Base Comment Reactions - Emoji reactions on comments.
+   * Follows the same pattern as the messaging `reactions` table.
+   */
+  kbCommentReactions: defineTable({
+    commentId: v.id("kbDocumentComments"),
+    userId: v.id("users"),
+    emoji: v.string(), // Unicode emoji character
+    createdAt: v.number(),
+  })
+    .index("by_comment", ["commentId"])
+    .index("by_comment_emoji", ["commentId", "emoji"])
+    .index("by_user", ["userId"])
+    .index("by_comment_user", ["commentId", "userId"]),
 
   /**
    * Knowledge Base User Favorites - User-starred documents.
@@ -1112,10 +1168,6 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_user_document", ["userId", "documentId"])
     .index("by_user_time", ["userId", "accessedAt"]),
-
-  // ============================================================================
-  // KNOWLEDGE BASE REAL-TIME COLLABORATION TABLES
-  // ============================================================================
 
   /**
    * Knowledge Base Document Collaborators - Real-time presence tracking.
@@ -1169,4 +1221,67 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_document_active", ["documentId", "leftAt"]) // null leftAt = active
     .index("by_connection", ["connectionId"]),
+
+  // ============================================================================
+  // KNOWLEDGE BASE - Search & Embeddings
+  // ============================================================================
+
+  /**
+   * Knowledge Base Document Embeddings - Vector embeddings for semantic search.
+   * Documents are chunked and each chunk is embedded separately for RAG.
+   * Uses OpenAI text-embedding-3-small (1536 dimensions).
+   */
+  kbDocumentEmbeddings: defineTable({
+    // Reference
+    documentId: v.id("kbDocuments"),
+
+    // Chunking
+    chunkIndex: v.number(), // 0-based index for multi-chunk documents
+
+    // Content
+    content: v.string(), // The text chunk that was embedded
+
+    // Vector embedding
+    embedding: v.array(v.float64()), // 1536 dimensions for text-embedding-3-small
+
+    // Timestamps (milliseconds)
+    createdAt: v.number(),
+  })
+    .index("by_document", ["documentId"])
+    .vectorIndex("by_embedding", {
+      vectorField: "embedding",
+      dimensions: 1536,
+      filterFields: ["documentId"],
+    }),
+
+  /**
+   * Knowledge Base Search History - User search queries for analytics.
+   * Tracks search queries with mode, filters, and result counts.
+   */
+  kbSearchHistory: defineTable({
+    // User reference
+    userId: v.id("users"),
+
+    // Query details
+    query: v.string(),
+    mode: v.union(v.literal("keyword"), v.literal("semantic")),
+
+    // Filters applied
+    filters: v.optional(
+      v.object({
+        workspaceIds: v.optional(v.array(v.id("kbWorkspaces"))),
+        creatorIds: v.optional(v.array(v.id("users"))),
+      })
+    ),
+
+    // Results
+    resultCount: v.number(),
+
+    // Timestamps (milliseconds)
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId", "createdAt"])
+    .searchIndex("search_query", {
+      searchField: "query",
+    }),
 });

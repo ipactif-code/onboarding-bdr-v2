@@ -21,16 +21,18 @@ const api: any = require("../../../convex/_generated/api").api;
 export const SAVE_STATUS_DISPLAY_MS = 2000;
 
 /**
- * Debounce delay for auto-save when in collaborative mode (offline fallback).
- * Longer delay since Yjs handles real-time sync when connected.
+ * Debounce delay for auto-save when in collaborative mode.
+ * Longer delay since Yjs handles real-time sync - Convex save is for persistence/search.
+ * Using 5 seconds to reduce Convex API calls while maintaining data durability.
  */
-export const COLLAB_SAVE_DEBOUNCE_MS = 1000;
+export const COLLAB_SAVE_DEBOUNCE_MS = 5000;
 
 /**
  * Maximum wait time for debounced save in collaborative mode.
  * Ensures save occurs within this window regardless of continued typing.
+ * Set to 15 seconds to allow batching during intensive collaborative editing.
  */
-export const COLLAB_SAVE_MAX_WAIT_MS = 5000;
+export const COLLAB_SAVE_MAX_WAIT_MS = 15000;
 
 /**
  * Debounce delay for auto-save in standalone (non-collaborative) mode.
@@ -169,15 +171,11 @@ export function useEditorSave({
     (isConnected ? COLLAB_SAVE_MAX_WAIT_MS : STANDALONE_SAVE_MAX_WAIT_MS);
 
   // Debounced save handler
+  // DUAL-WRITE PATTERN: Always save to Convex for persistence and search indexing,
+  // even when Yjs/Hocuspocus handles real-time collaboration sync.
+  // In collaborative mode, we use a longer debounce to reduce API calls.
   const debouncedSave = useDebouncedCallback(
     async (value: Value) => {
-      // In collaborative mode when connected, skip local save
-      // (Yjs handles persistence via Hocuspocus server)
-      if (isConnected) {
-        onSaveStatusChangeRef.current?.("idle");
-        return;
-      }
-
       // Prevent concurrent saves
       if (isSavingRef.current) {
         return;

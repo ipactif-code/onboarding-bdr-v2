@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Hash, Clock, User } from "lucide-react";
+import { Hash, Clock, User, FileText, FolderOpen, BookOpen } from "lucide-react";
 import { useQuery } from "convex/react";
 
 // Use require pattern for Convex API to bypass TypeScript type inference
@@ -49,6 +49,16 @@ interface ChannelSearchResult {
   description?: string;
   type: "public" | "private" | "course";
   memberCount: number;
+}
+
+interface KBDocumentSearchResult {
+  _id: Id<"kbDocuments">;
+  title: string;
+  icon?: string;
+  workspaceName: string;
+  folderName: string;
+  snippet?: string;
+  updatedAt: number;
 }
 
 // ============================================================================
@@ -101,6 +111,14 @@ export function CommandPalette({
 
   const isChannelLoading = query.trim().length >= 2 && channelSearchResults === undefined;
 
+  // Knowledge Base quick search - returns recent documents when empty, search results when query
+  const kbSearchResults = useQuery(
+    api.knowledge.search.quick,
+    { query: query.trim(), limit: 5 }
+  ) as KBDocumentSearchResult[] | undefined;
+
+  const isKBLoading = kbSearchResults === undefined;
+
   // ========================================================================
   // Handlers
   // ========================================================================
@@ -136,6 +154,21 @@ export function CommandPalette({
     setSelectedMessageId(null);
   }, []);
 
+  const handleKBDocumentSelect = useCallback(
+    (documentId: Id<"kbDocuments">) => {
+      router.push(`/knowledge/doc/${documentId}`);
+      onOpenChange(false);
+      setQuery("");
+    },
+    [router, onOpenChange, setQuery]
+  );
+
+  const handleKBSearchPage = useCallback(() => {
+    router.push(`/knowledge/search?q=${encodeURIComponent(query)}`);
+    onOpenChange(false);
+    setQuery("");
+  }, [router, query, onOpenChange, setQuery]);
+
   const handleOpenChange = useCallback(
     (newOpen: boolean) => {
       onOpenChange(newOpen);
@@ -154,6 +187,7 @@ export function CommandPalette({
   const showSuggestions = !hasQuery && suggestions.length > 0;
   const showChannels = hasQuery && query.trim().length >= 2;
   const showMessages = hasQuery && debouncedQuery.length >= 2;
+  const showKBResults = kbSearchResults && kbSearchResults.length > 0;
 
   // ========================================================================
   // Render
@@ -165,7 +199,7 @@ export function CommandPalette({
         <DialogHeader className="sr-only">
           <DialogTitle>Command Palette</DialogTitle>
           <DialogDescription>
-            Search for channels and messages
+            Search for channels, messages, and documents
           </DialogDescription>
         </DialogHeader>
         <DialogContent
@@ -183,7 +217,7 @@ export function CommandPalette({
             shouldFilter={false}
           >
             <CommandInput
-              placeholder="Search channels and messages..."
+              placeholder="Search channels, messages, and documents..."
               value={query}
               onValueChange={setQuery}
               aria-keyshortcuts={
@@ -194,7 +228,7 @@ export function CommandPalette({
             />
             <CommandList className="max-h-[400px]">
               <CommandEmpty>
-                {isChannelLoading || isMessageLoading ? (
+                {isChannelLoading || isMessageLoading || isKBLoading ? (
                   <span className="text-muted-foreground">Searching...</span>
                 ) : hasQuery ? (
                   <span className="text-muted-foreground">No results found.</span>
@@ -282,6 +316,55 @@ export function CommandPalette({
                         </div>
                       </CommandItem>
                     ))}
+                  </CommandGroup>
+                </>
+              )}
+
+              {/* Knowledge Base Documents */}
+              {showKBResults && (
+                <>
+                  <CommandSeparator />
+                  <CommandGroup heading="Knowledge Base">
+                    {kbSearchResults.slice(0, 5).map((doc) => (
+                      <CommandItem
+                        key={doc._id}
+                        value={`kb-${doc._id}`}
+                        onSelect={() => handleKBDocumentSelect(doc._id)}
+                        className="flex-col items-start gap-1 py-2"
+                      >
+                        <div className="flex items-center gap-2 w-full">
+                          <FileText className="size-4 text-muted-foreground shrink-0" />
+                          <span className="font-medium text-sm truncate">
+                            {doc.icon && <span className="mr-1">{doc.icon}</span>}
+                            {doc.title}
+                          </span>
+                        </div>
+                        {doc.snippet && (
+                          <div className="pl-6 text-sm text-muted-foreground truncate w-full">
+                            {doc.snippet}
+                          </div>
+                        )}
+                        <div className="pl-6 flex items-center gap-1 text-xs text-muted-foreground">
+                          <FolderOpen className="size-3" />
+                          <span className="truncate">
+                            {doc.workspaceName} / {doc.folderName}
+                          </span>
+                        </div>
+                      </CommandItem>
+                    ))}
+                    {/* Link to advanced KB search */}
+                    {hasQuery && query.length >= 2 && (
+                      <CommandItem
+                        value="kb-search-page"
+                        onSelect={handleKBSearchPage}
+                        className="text-muted-foreground"
+                      >
+                        <BookOpen className="size-4" />
+                        <span>
+                          Search Knowledge Base for &quot;{query}&quot;...
+                        </span>
+                      </CommandItem>
+                    )}
                   </CommandGroup>
                 </>
               )}

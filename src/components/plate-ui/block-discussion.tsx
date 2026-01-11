@@ -28,6 +28,7 @@ import {
   discussionPlugin,
   type TDiscussion,
 } from '@/components/editor/plugins/discussion-kit';
+import { useOptionalDiscussionContext } from '@/components/knowledge/discussions';
 import { suggestionPlugin } from '@/components/editor/plugins/suggestion-kit';
 import { Button } from '@/components/plate-ui/button';
 import {
@@ -45,16 +46,13 @@ import {
 import { Comment, CommentCreateForm } from './comment';
 
 export const BlockDiscussion: RenderNodeWrapper<AnyPluginConfig> = (props) => {
-  const isOverlapWithEditor = usePluginOption(
-    commentPlugin,
-    'isOverlapWithEditor'
-  );
-
-  if (!isOverlapWithEditor) return;
-
+  // Always render in block mode - isOverlapWithEditor is always true now
   const { api, editor, element } = props;
 
   const blockPath = editor.api.findPath(element);
+
+  // DEBUG: Log rendering
+  console.log('[BlockDiscussion] Rendering for element:', element, 'at path:', blockPath);
 
   // avoid duplicate in table or column
   if (!blockPath || blockPath.length > 1) return;
@@ -62,6 +60,19 @@ export const BlockDiscussion: RenderNodeWrapper<AnyPluginConfig> = (props) => {
   const draftCommentNode = api.comment.node({ at: blockPath, isDraft: true });
 
   const commentNodes = [...api.comment.nodes({ at: blockPath })];
+
+  // DEBUG: Log api.comment.nodes() results
+  console.log('[BlockDiscussion] api.comment.nodes() returned:', commentNodes.length, 'nodes');
+  console.log('[BlockDiscussion] Comment nodes:', commentNodes);
+
+  // DEBUG: Log all nodes at this path with any comment_* key
+  const allNodesAtPath = [...editor.api.nodes({ at: blockPath })];
+  const nodesWithCommentKey = allNodesAtPath.filter(([node]) => {
+    if (!('text' in node)) return false;
+    return Object.keys(node).some(k => k.startsWith('comment_'));
+  });
+  console.log('[BlockDiscussion] Nodes with comment_* key:', nodesWithCommentKey.length);
+  console.log('[BlockDiscussion] Raw nodes:', nodesWithCommentKey);
 
   const suggestionNodes = [
     ...editor.getApi(SuggestionPlugin).suggestion.nodes({ at: blockPath }),
@@ -72,8 +83,10 @@ export const BlockDiscussion: RenderNodeWrapper<AnyPluginConfig> = (props) => {
     suggestionNodes.length === 0 &&
     !draftCommentNode
   ) {
+    console.log('[BlockDiscussion] Early return - no comments, suggestions, or drafts');
     return;
   }
+  console.log('[BlockDiscussion] Will render - found content');
 
   const BlockCommentsWrapper = (props: PlateElementProps): React.ReactElement => (
     <BlockCommentsContent
@@ -102,13 +115,31 @@ const BlockCommentsContent = ({
 }): React.ReactElement => {
   const editor = useEditorRef();
 
+  console.log('[BlockCommentsContent] START - Input:', {
+    blockPath,
+    commentNodesCount: commentNodes.length,
+    hasDraft: !!draftCommentNode,
+    suggestionNodesCount: suggestionNodes.length,
+  });
+
   const resolvedSuggestion = useResolveSuggestion(suggestionNodes, blockPath);
 
   const resolvedDiscussions = useResolvedDiscussion(commentNodes, blockPath);
+  console.log('[BlockCommentsContent] After useResolvedDiscussion:', {
+    resolvedDiscussionsCount: resolvedDiscussions.length,
+    resolvedDiscussions,
+  });
 
   const suggestionsCount = resolvedSuggestion.length;
   const discussionsCount = resolvedDiscussions.length;
   const totalCount = suggestionsCount + discussionsCount;
+
+  console.log('[BlockCommentsContent] Counts:', {
+    suggestionsCount,
+    discussionsCount,
+    totalCount,
+    hasDraft: !!draftCommentNode,
+  });
 
   const activeSuggestionId = usePluginOption(suggestionPlugin, 'activeId');
   const activeSuggestion =
@@ -117,6 +148,7 @@ const BlockCommentsContent = ({
 
   const commentingBlock = usePluginOption(commentPlugin, 'commentingBlock');
   const activeCommentId = usePluginOption(commentPlugin, 'activeId');
+  const isSubmitting = usePluginOption(commentPlugin, 'isSubmitting');
   const isCommenting = activeCommentId === getDraftCommentKey();
   const activeDiscussion =
     activeCommentId &&
@@ -179,19 +211,27 @@ const BlockCommentsContent = ({
     commentNodes,
   ]);
 
-  if (suggestionsCount + resolvedDiscussions.length === 0 && !draftCommentNode)
+  if (suggestionsCount + resolvedDiscussions.length === 0 && !draftCommentNode) {
+    console.log('[BlockCommentsContent] EARLY RETURN - No content to show');
     return <div className="w-full">{children}</div>;
+  }
+
+  console.log('[BlockCommentsContent] Will render Popover with totalCount:', totalCount);
 
   return (
     <div className="flex w-full justify-between">
       <Popover
         onOpenChange={(_open_) => {
           if (!_open_ && isCommenting && draftCommentNode) {
-            editor.tf.unsetNodes(getDraftCommentKey(), {
-              at: [],
-              mode: 'lowest',
-              match: (n) => n[getDraftCommentKey()],
-            });
+            // Only remove draft marks if NOT currently submitting
+            // This prevents premature removal during async Convex calls
+            if (!isSubmitting) {
+              editor.tf.unsetNodes(getDraftCommentKey(), {
+                at: [],
+                mode: 'lowest',
+                match: (n) => n[getDraftCommentKey()],
+              });
+            }
           }
 
           setOpen(_open_);
@@ -251,7 +291,9 @@ const BlockCommentsContent = ({
           )}
         </PopoverContent>
 
-        {totalCount > 0 && (
+        {totalCount > 0 && (() => {
+          console.log('[BlockCommentsContent] Rendering trigger button with totalCount:', totalCount);
+          return (
           <div className="relative left-0 size-0 select-none">
             <PopoverTrigger asChild>
               <Button
@@ -276,7 +318,8 @@ const BlockCommentsContent = ({
               </Button>
             </PopoverTrigger>
           </div>
-        )}
+          );
+        })()}
       </Popover>
     </div>
   );
@@ -314,14 +357,37 @@ function BlockComment({
   );
 }
 
+/**
+ * Hook to resolve discussion data from context or plugin options.
+ * Prefers context data (real-time Convex) over plugin options (for backward compatibility).
+ */
 const useResolvedDiscussion = (
   commentNodes: NodeEntry<TCommentText>[],
   blockPath: Path
 ): TDiscussion[] => {
   const { api, getOption, setOption } = useEditorPlugin(commentPlugin);
 
-  const discussions = usePluginOption(discussionPlugin, 'discussions');
+  // Get discussions from context (real-time Convex data) or fall back to plugin options
+  const ctx = useOptionalDiscussionContext();
+  const pluginDiscussions = usePluginOption(discussionPlugin, 'discussions');
 
+  // Subscribe to marksInjectedAt to trigger re-render after mark injection
+  // This solves the race condition where BlockDiscussion renders before marks exist
+  const marksInjectedAt = usePluginOption(discussionPlugin, 'marksInjectedAt');
+
+  // Prefer context discussions (real-time) over plugin options
+  const discussions = ctx?.discussions ?? pluginDiscussions;
+
+  console.log('[useResolvedDiscussion] Input:', {
+    commentNodesCount: commentNodes.length,
+    blockPath,
+    hasContext: !!ctx,
+    discussionsCount: discussions.length,
+    discussions,
+    marksInjectedAt,
+  });
+
+  // Track comment nodes by their IDs for marks that exist in editor
   useEffect(() => {
     commentNodes.forEach(([node]) => {
       const id = api.comment.nodeId(node);
@@ -348,27 +414,89 @@ const useResolvedDiscussion = (
     });
   }, [api, blockPath, commentNodes, getOption, setOption]);
 
-  const commentsIds = new Set(
+  // Build set of discussion IDs that have marks in the editor
+  const commentsWithMarks = new Set(
     commentNodes.map(([node]) => api.comment.nodeId(node)).filter(Boolean)
   );
 
-  return discussions
+  console.log('[useResolvedDiscussion] commentsWithMarks:', {
+    count: commentsWithMarks.size,
+    ids: [...commentsWithMarks],
+  });
+
+  // Enhanced logging to analyze ID formats
+  console.log('[useResolvedDiscussion] commentsWithMarks DETAILED:', {
+    count: commentsWithMarks.size,
+    idAnalysis: [...commentsWithMarks].filter((id): id is string => id !== undefined).map(id => ({
+      id,
+      length: id.length,
+      isNanoidFormat: id.length === 21 && /^[A-Za-z0-9_-]+$/.test(id) && !id.startsWith('q'),
+      isConvexFormat: id.startsWith('q') || id.startsWith('k') || id.startsWith('j'),
+    })),
+    discussionIdAnalysis: discussions.map((d: TDiscussion) => ({
+      id: d.id,
+      length: d.id.length,
+      isNanoidFormat: d.id.length === 21 && /^[A-Za-z0-9_-]+$/.test(d.id) && !d.id.startsWith('q'),
+      isConvexFormat: d.id.startsWith('q') || d.id.startsWith('k') || d.id.startsWith('j'),
+    })),
+  });
+
+  // NOTE: Removed fallback useEffect that was causing race condition
+  // The mark injection (injectCommentMarks) handles positioning correctly
+  // Fallback logic was pre-populating uniquePathMap with wrong values before marks were injected
+
+  const filteredDiscussions = discussions
     .map((d: TDiscussion) => ({
       ...d,
       createdAt: new Date(d.createdAt),
     }))
     .filter((item: TDiscussion) => {
-      /** If comment cross blocks just show it in the first block */
       const commentsPathMap = getOption('uniquePathMap');
       const firstBlockPath = commentsPathMap.get(item.id);
+      const hasMarkInEditor = commentsWithMarks.has(item.id);
+      const hasCommentNode = api.comment.has({ id: item.id });
 
-      if (!firstBlockPath) return false;
-      if (!PathApi.equals(firstBlockPath, blockPath)) return false;
+      console.log('[useResolvedDiscussion] Filtering discussion:', {
+        discussionId: item.id,
+        isResolved: item.isResolved,
+        hasMarkInEditor,
+        firstBlockPath,
+        currentBlockPath: blockPath,
+        pathsEqual: firstBlockPath ? PathApi.equals(firstBlockPath, blockPath) : false,
+        hasCommentNode,
+      });
 
-      return (
-        api.comment.has({ id: item.id }) &&
-        commentsIds.has(item.id) &&
-        !item.isResolved
-      );
+      // Skip resolved discussions
+      if (item.isResolved) {
+        console.log('[useResolvedDiscussion] ❌ Filtered out - resolved');
+        return false;
+      }
+
+      // If discussion has an editor mark at this block, show it
+      // hasMarkInEditor = true means api.comment.nodes({ at: blockPath }) found this ID
+      // So we KNOW the mark is on this block - no need to check uniquePathMap
+      if (hasMarkInEditor) {
+        console.log('[useResolvedDiscussion] ✅ PASSED - mark found at this blockPath');
+        return true;
+      }
+
+      // For discussions without path mapping, wait for mark injection
+      // Don't display at block 0 - marks will be injected and path map will update
+      if (!firstBlockPath) {
+        console.log('[useResolvedDiscussion] ❌ Filtered out - no mark and no firstBlockPath');
+        return false;
+      }
+
+      // Show if this block matches the assigned path
+      const result = PathApi.equals(firstBlockPath, blockPath);
+      console.log('[useResolvedDiscussion]', result ? '✅ PASSED' : '❌ Filtered out - wrong path');
+      return result;
     });
+
+  console.log('[useResolvedDiscussion] Final result:', {
+    filteredCount: filteredDiscussions.length,
+    filteredDiscussions,
+  });
+
+  return filteredDiscussions;
 };

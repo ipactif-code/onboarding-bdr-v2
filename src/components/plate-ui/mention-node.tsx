@@ -2,7 +2,8 @@
 
 import { DatePlugin } from '@platejs/date/react';
 import { MentionPlugin } from '@platejs/mention/react';
-import { ArrowUpRightIcon, FileTextIcon } from 'lucide-react';
+import { useQuery } from 'convex/react';
+import { ArrowUpRightIcon, FileTextIcon, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { IS_APPLE, type Value } from 'platejs';
 import {
@@ -22,6 +23,10 @@ import { BaseEditorKit } from '@/components/editor/editor-base-kit';
 import type { MyMentionElement } from '@/components/editor/plate-types';
 import { insertInlineElement } from '@/components/editor/transforms';
 import { useDebounce } from '@/hooks/use-debounce';
+
+// Load API reference using require to avoid Convex's deep type instantiation issue (TS2589)
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const api: any = require('../../../convex/_generated/api').api;
 
 import { Avatar, AvatarFallback, AvatarImage } from './avatar';
 import { EditorStatic } from './editor-static';
@@ -126,43 +131,9 @@ export const mockMentionDocuments = [
 
 type UserItem = {
   id: string;
-  email: string;
   name: string;
-  image: string;
+  avatarUrl?: string;
 };
-
-const mockUsers = [
-  {
-    id: '1',
-    email: 'john@example.com',
-    name: 'John Doe',
-    image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=John',
-  },
-  {
-    id: '2',
-    email: 'jane@example.com',
-    name: 'Jane Smith',
-    image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jane',
-  },
-  {
-    id: '3',
-    email: 'bob@example.com',
-    name: 'Bob Wilson',
-    image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bob',
-  },
-  {
-    id: '4',
-    email: 'alice@example.com',
-    name: 'Alice Brown',
-    image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alice',
-  },
-  {
-    id: '5',
-    email: 'charlie@example.com',
-    name: 'Charlie Davis',
-    image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Charlie',
-  },
-];
 
 export function MentionInputElement(props: PlateElementProps): React.ReactElement {
   const [placeholder, setPlaceholder] = useState(
@@ -237,7 +208,7 @@ export function MentionInputElement(props: PlateElementProps): React.ReactElemen
                 key: user.id,
                 children: [{ text: '' }],
                 type: MentionPlugin.key,
-                value: user.name ?? user.email!,
+                value: user.name,
               });
               editor.tf.move({ unit: 'offset' });
             }}
@@ -263,40 +234,68 @@ function PeopleComboboxGroup({
 }: PeopleComboboxGroupProps): React.ReactElement | null {
   const search = useDebounce(searchRaw, 100);
 
-  const allUsers = useMemo(
-    () =>
-      mockUsers.filter(
-        (user) =>
-          user.name?.toLowerCase().includes(search.toLowerCase()) ||
-          user.email?.toLowerCase().includes(search.toLowerCase())
-      ),
-    [search]
-  );
+  // Query users from Convex - always query to show suggestions immediately
+  // Empty query returns recent/suggested users
+  const usersData = useQuery(api.users.search, { query: search, limit: 10 });
+
+  // Show loading state while query is in progress
+  const isLoading = usersData === undefined;
+
+  // Transform Convex user data to match UserItem interface
+  const allUsers = useMemo(() => {
+    if (!usersData) return [];
+    return usersData.map((user: { _id: string; name: string; avatarUrl?: string }) => ({
+      id: user._id,
+      name: user.name,
+      avatarUrl: user.avatarUrl,
+    }));
+  }, [usersData]);
+
+  // Show loading indicator when searching
+  if (isLoading) {
+    return (
+      <InlineComboboxGroup>
+        <InlineComboboxGroupLabel>People</InlineComboboxGroupLabel>
+        <div className="flex items-center justify-center py-2">
+          <Loader2 className="size-4 animate-spin text-muted-foreground" />
+          <span className="ml-2 text-sm text-muted-foreground">Searching...</span>
+        </div>
+      </InlineComboboxGroup>
+    );
+  }
 
   if (allUsers.length === 0) {
-    return null;
+    // Show empty state when no users found
+    return (
+      <InlineComboboxGroup>
+        <InlineComboboxGroupLabel>People</InlineComboboxGroupLabel>
+        <div className="px-2 py-2 text-sm text-muted-foreground">
+          No users found
+        </div>
+      </InlineComboboxGroup>
+    );
   }
 
   return (
     <InlineComboboxGroup>
       <InlineComboboxGroupLabel>People</InlineComboboxGroupLabel>
 
-      {allUsers.map((user) => (
+      {allUsers.map((user: UserItem) => (
         <InlineComboboxItem
           key={user.id}
-          onClick={() => onUserSelect(user as UserItem)}
-          onFocus={() => onUserHover(user.name ?? user.email!)}
-          onMouseEnter={() => onUserHover(user.name ?? user.email!)}
-          value={user.name ?? user.email!}
+          onClick={() => onUserSelect(user)}
+          onFocus={() => onUserHover(user.name)}
+          onMouseEnter={() => onUserHover(user.name)}
+          value={user.name}
         >
           <Avatar className="mr-2.5 size-5">
-            <AvatarImage alt={user.name!} src={user.image!} />
+            {user.avatarUrl && <AvatarImage alt={user.name} src={user.avatarUrl} />}
             <AvatarFallback>
-              {user.name?.charAt(0).toUpperCase()}
+              {user.name.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
 
-          {user.name ?? user.email}
+          {user.name}
         </InlineComboboxItem>
       ))}
     </InlineComboboxGroup>
@@ -308,34 +307,70 @@ function DocumentComboboxGroup({
   onDocumentHover,
   onDocumentSelect,
 }: DocumentComboboxGroupProps): React.ReactElement | null {
-  const search = useDebounce(searchRaw, 500);
+  const search = useDebounce(searchRaw, 100);
 
-  const allDocuments = useMemo(
-    () =>
-      mockMentionDocuments.filter((doc) =>
-        doc.title.toLowerCase().includes(search.toLowerCase())
-      ),
-    [search]
-  );
+  // Query KB documents from Convex - always query to show suggestions immediately
+  // Empty query returns recent/suggested documents
+  const documentsData = useQuery(api.knowledge.documents.search, {
+    query: search,
+    limit: 10,
+  });
+
+  // Show loading state while query is in progress
+  const isLoading = documentsData === undefined;
+
+  // Transform Convex document data to match DocumentItem interface
+  const allDocuments = useMemo(() => {
+    if (!documentsData) return [];
+    return documentsData.map((doc: { _id: string; title: string; icon?: string; folderId: string }) => ({
+      id: doc._id,
+      title: doc.title,
+      icon: doc.icon,
+      // Minimal data needed for mention insertion
+      contentRich: [],
+      coverImage: '',
+    }));
+  }, [documentsData]);
+
+  // Show loading indicator when searching
+  if (isLoading) {
+    return (
+      <InlineComboboxGroup>
+        <InlineComboboxGroupLabel>Pages</InlineComboboxGroupLabel>
+        <div className="flex items-center justify-center py-2">
+          <Loader2 className="size-4 animate-spin text-muted-foreground" />
+          <span className="ml-2 text-sm text-muted-foreground">Searching...</span>
+        </div>
+      </InlineComboboxGroup>
+    );
+  }
 
   if (allDocuments.length === 0) {
-    return null;
+    // Show empty state when no documents found
+    return (
+      <InlineComboboxGroup>
+        <InlineComboboxGroupLabel>Pages</InlineComboboxGroupLabel>
+        <div className="px-2 py-2 text-sm text-muted-foreground">
+          No documents found
+        </div>
+      </InlineComboboxGroup>
+    );
   }
 
   return (
     <InlineComboboxGroup>
-      <InlineComboboxGroupLabel>Link to page</InlineComboboxGroupLabel>
+      <InlineComboboxGroupLabel>Pages</InlineComboboxGroupLabel>
 
-      {allDocuments.map((document) => (
+      {allDocuments.map((document: DocumentItem) => (
         <InlineComboboxItem
           key={document.id}
-          onClick={() => onDocumentSelect(document as DocumentItem)}
+          onClick={() => onDocumentSelect(document)}
           onFocus={() => onDocumentHover(document.title ?? '')}
           onMouseEnter={() => onDocumentHover(document.title ?? '')}
           value={document.title || 'Untitled Document'}
         >
           <span className="mr-2 size-5">
-            {document.icon ?? <FileTextIcon />}
+            {document.icon ?? <FileTextIcon className="size-5" />}
           </span>
           {document.title ?? 'Untitled Document'}
         </InlineComboboxItem>
@@ -345,14 +380,9 @@ function DocumentComboboxGroup({
 }
 
 const openDocument = (id: string): void => {
-  const host = window.location.host;
-  const baseUrl =
-    // TODO: Remove this for demo only
-    host === 'pro.platejs.org'
-      ? 'https://potion.platejs.org'
-      : window.location.origin;
-
-  window.open(`${baseUrl}/${id}`, '_self');
+  // Navigate to KB document page
+  // The id is the Convex document ID (e.g., "j572k3...")
+  window.open(`/knowledge/doc/${id}`, '_self');
 };
 
 function DocumentMentionElement(

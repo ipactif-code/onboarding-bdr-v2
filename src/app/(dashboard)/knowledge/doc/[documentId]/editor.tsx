@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, useCallback, useMemo, memo } from "react";
+import { useState, useCallback, useMemo, useRef, memo } from "react";
 import { type Value } from "platejs";
 import { Plate, usePlateEditor } from "platejs/react";
 import { useQuery } from "convex/react";
@@ -28,8 +28,10 @@ import {
   type SaveStatus,
 } from "@/hooks/knowledge/use-editor-save";
 import { EditorKit } from "@/components/editor/editor-kit";
+import { useDiscussionPluginSync } from "@/components/editor/plugins/discussion-kit";
 import { Editor, EditorContainer } from "@/components/plate-ui/editor";
 import { PresenceAvatars } from "@/components/knowledge/collaboration";
+import { DiscussionProvider } from "@/components/knowledge/discussions";
 import { EditorErrorBoundary } from "@/components/knowledge/editor-error-boundary";
 import {
   SaveStatusIndicator,
@@ -102,6 +104,10 @@ const CollaborativeEditorContent = memo(function CollaborativeEditorContent({
     onConnectionChange,
   });
 
+  // Sync discussion context to Plate.js plugin
+  // Pass isEditorReady so comment marks wait for Yjs content to sync
+  useDiscussionPluginSync(editor, isEditorReady);
+
   // Use the extracted editor save hook for offline fallback
   const { save: debouncedSave } = useEditorSave({
     documentId,
@@ -118,10 +124,13 @@ const CollaborativeEditorContent = memo(function CollaborativeEditorContent({
     <Plate
       editor={editor}
       onChange={({ value }) => {
-        // When disconnected, fall back to local save
-        if (!isConnected) {
-          debouncedSave(value);
+        // DUAL-WRITE: Always save to Convex for persistence and search indexing.
+        // Yjs handles real-time sync, while Convex handles durable storage.
+        if (process.env.NODE_ENV === "development") {
+          // eslint-disable-next-line no-console
+          console.log("[Editor] onChange fired, calling debouncedSave");
         }
+        debouncedSave(value);
       }}
     >
       {/* h-full ensures the container fills parent, overflow-auto allows scrolling */}
@@ -151,6 +160,9 @@ function StandaloneEditorContent({
     plugins: EditorKit,
     value: initialValue,
   });
+
+  // Sync discussion context to Plate.js plugin
+  useDiscussionPluginSync(editor);
 
   // Use the extracted editor save hook
   const { save: debouncedSave } = useEditorSave({
@@ -198,6 +210,14 @@ export function DocumentEditorClient({
   const [connectionStatus, setConnectionStatus] =
     useState<ConnectionStatus>("connecting");
 
+  // ============================================================================
+  // Yjs-First Architecture: Mode decision refs
+  // Mode is decided ONCE at mount and NEVER changes during component lifecycle.
+  // This prevents WebSocket disconnections when Convex content updates.
+  // ============================================================================
+  const modeDecidedRef = useRef(false);
+  const useCollaborativeModeRef = useRef<boolean | null>(null);
+
   // Create stable callback handlers to prevent child component re-renders.
   const handleSaveStatusChange = useCallback((status: SaveStatus) => {
     setSaveStatus(status);
@@ -231,52 +251,48 @@ export function DocumentEditorClient({
     documentId,
   });
 
-  // Debug logging for development
-  if (process.env.NODE_ENV === "development") {
-    // eslint-disable-next-line no-console
-    console.log("[Editor] Document:", initialDocument._id);
-    // eslint-disable-next-line no-console
-    console.log("[Editor] Content type:", typeof contentData?.content);
-    // eslint-disable-next-line no-console
-    console.log("[Editor] Collab config state (from hook):", {
-      configStatus: collabState.status,
-      canJoin: collabState.canJoin,
-      hasConfig: !!collabState.config,
-      isNotConfigured,
-      error: collabState.error,
-    });
-    // eslint-disable-next-line no-console
-    console.log("[Editor] Connection status (UI):", connectionStatus);
+  // ============================================================================
+  // Yjs-First Architecture: ONE-TIME mode decision
+  // This runs ONCE when we have enough data to make the decision.
+  // After the decision is made, mode NEVER changes regardless of Convex updates.
+  // NOTE: We wait for config loading to complete before making the decision.
+  // Config loading is complete when:
+  // - collabState.config !== null (config loaded successfully), OR
+  // - isNotConfigured === true (no config available - graceful fallback), OR
+  // - collabState.status === "error" (error occurred)
+  // ============================================================================
+  const isConfigLoadingComplete =
+    collabState.config !== null ||
+    isNotConfigured ||
+    collabState.status === "error";
+
+  if (
+    !modeDecidedRef.current &&
+    contentData !== undefined &&
+    isConfigLoadingComplete
+  ) {
+    modeDecidedRef.current = true;
+
+    // Decide: use collaborative if config is available
+    useCollaborativeModeRef.current =
+      !isNotConfigured &&
+      !!collabState.config &&
+      collabState.canJoin;
+
+    if (process.env.NODE_ENV === "development") {
+      // eslint-disable-next-line no-console
+      console.log(
+        "[Editor] Mode decided ONCE:",
+        useCollaborativeModeRef.current ? "collaborative" : "standalone",
+        {
+          isNotConfigured,
+          hasConfig: !!collabState.config,
+          canJoin: collabState.canJoin,
+          configStatus: collabState.status,
+        }
+      );
+    }
   }
-
-  // Determine if document has existing JSON content
-  const hasExistingJsonContent = useMemo(() => {
-    if (!contentData?.content || !Array.isArray(contentData.content)) {
-      return false;
-    }
-    const firstElement = contentData.content[0];
-    const hasJsonFormat =
-      firstElement &&
-      typeof firstElement === "object" &&
-      "type" in firstElement &&
-      "children" in firstElement;
-
-    const hasNonEmptyContent =
-      contentData.content.length > 1 ||
-      (firstElement?.children?.[0]?.text &&
-        firstElement.children[0].text.length > 0);
-
-    if (hasJsonFormat && hasNonEmptyContent) {
-      if (process.env.NODE_ENV === "development") {
-        // eslint-disable-next-line no-console
-        console.log(
-          "[Editor] Existing JSON content detected - will use standalone mode"
-        );
-      }
-      return true;
-    }
-    return false;
-  }, [contentData?.content]);
 
   // Determine initial value for editor
   const initialValue: Value = useMemo(() => {
@@ -308,20 +324,11 @@ export function DocumentEditorClient({
     return <ErrorState error={collabState.error} onRetry={retryConnection} />;
   }
 
-  // Determine if we should use collaborative or standalone editor
-  const shouldUseStandalone =
-    isNotConfigured || hasExistingJsonContent || !stableConfig;
-
-  const useCollaborativeEditor =
-    !shouldUseStandalone && stableConfig && collabState.canJoin;
-
-  // Debug: Development logging for standalone mode selection
-  if (shouldUseStandalone && !isNotConfigured && hasExistingJsonContent) {
-    if (process.env.NODE_ENV === "development") {
-      // eslint-disable-next-line no-console
-      console.log("[Editor] Using standalone mode for existing JSON document");
-    }
-  }
+  // ============================================================================
+  // Use the REF-based mode decision (immutable after first decision)
+  // This prevents mode switching when Convex content updates
+  // ============================================================================
+  const useCollaborativeEditor = useCollaborativeModeRef.current === true;
 
   // Use the actual connection status from the editor when connected
   const displayStatus = useCollaborativeEditor
@@ -391,26 +398,28 @@ export function DocumentEditorClient({
 
       {/* Editor - min-h-0 is critical for flex children with overflow to work properly */}
       <div className="flex-1 min-h-0 overflow-hidden">
-        <EditorErrorBoundary backUrl="/knowledge">
-          {useCollaborativeEditor && stableConfig ? (
-            <CollaborativeEditorContent
-              key={`collab-${documentId}`}
-              documentId={documentId}
-              config={stableConfig}
-              cursorName={userName}
-              getToken={getToken}
-              onSaveStatusChange={handleSaveStatusChange}
-              onConnectionChange={handleConnectionChange}
-            />
-          ) : (
-            <StandaloneEditorContent
-              key={`standalone-${documentId}`}
-              documentId={documentId}
-              initialValue={initialValue}
-              onSaveStatusChange={handleSaveStatusChange}
-            />
-          )}
-        </EditorErrorBoundary>
+        <DiscussionProvider documentId={documentId}>
+          <EditorErrorBoundary backUrl="/knowledge">
+            {useCollaborativeEditor && stableConfig ? (
+              <CollaborativeEditorContent
+                key={`collab-${documentId}`}
+                documentId={documentId}
+                config={stableConfig}
+                cursorName={userName}
+                getToken={getToken}
+                onSaveStatusChange={handleSaveStatusChange}
+                onConnectionChange={handleConnectionChange}
+              />
+            ) : (
+              <StandaloneEditorContent
+                key={`standalone-${documentId}`}
+                documentId={documentId}
+                initialValue={initialValue}
+                onSaveStatusChange={handleSaveStatusChange}
+              />
+            )}
+          </EditorErrorBoundary>
+        </DiscussionProvider>
       </div>
     </div>
   );

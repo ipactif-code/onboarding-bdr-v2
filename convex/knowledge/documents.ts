@@ -1,10 +1,16 @@
-import { query, mutation } from "../_generated/server";
+import { query, mutation, internalQuery } from "../_generated/server";
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 import { Id, Doc } from "../_generated/dataModel";
 import { requireKBAuth, checkPermission } from "../lib/kbAuth";
 import { batchFilterAccessibleDocuments } from "./permissionHelpers";
 import { checkRateLimit } from "../lib/rateLimit";
+
+// Type workaround: Use dynamic import pattern to avoid TS2589 deep type instantiation
+// The internalApi variable is typed as 'any' which breaks the deep type chain
+// This is necessary because Convex's internal API generates very deep types
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports
+const internalApi: any = require("../_generated/api").internal;
 
 // ============================================================================
 // CONSTANTS
@@ -606,6 +612,14 @@ export const updateContent = mutation({
       },
       timestamp: now,
     });
+
+    // Schedule embedding generation for semantic search
+    // The action will handle missing OPENAI_API_KEY gracefully
+    await ctx.scheduler.runAfter(
+      0,
+      internalApi.actions.embeddings.generateDocumentEmbeddings,
+      { documentId: args.documentId }
+    );
 
     return null;
   },
@@ -1311,5 +1325,170 @@ export const reorder = mutation({
     });
 
     return null;
+  },
+});
+
+// ============================================================================
+// SEARCH QUERY (for @mentions)
+// ============================================================================
+
+/**
+ * Search KB documents by title for @mentions in the editor.
+ * Returns documents the user has read access to.
+ *
+ * When query is empty, returns user's recent documents (from kbUserRecents)
+ * or falls back to most recently updated documents for immediate suggestions.
+ *
+ * @param query - Search string (empty string returns recent/suggested docs)
+ * @param limit - Maximum results to return (default: 10)
+ * @returns Array of documents with basic metadata
+ */
+export const search = query({
+  args: {
+    query: v.string(),
+    limit: v.optional(v.number()),
+  },
+  returns: v.array(
+    v.object({
+      _id: v.id("kbDocuments"),
+      title: v.string(),
+      icon: v.optional(v.string()),
+      folderId: v.id("kbFolders"),
+    })
+  ),
+  handler: async (ctx, args) => {
+    const { userId } = await requireKBAuth(ctx);
+
+    const limit = args.limit ?? 10;
+
+    // If query is empty or very short, return recent documents
+    if (!args.query || args.query.length < 1) {
+      // Get user's recent documents first
+      const recents = await ctx.db
+        .query("kbUserRecents")
+        .withIndex("by_user_time", (q) => q.eq("userId", userId))
+        .order("desc")
+        .take(limit * 2);
+
+      if (recents.length > 0) {
+        // Batch fetch recent documents
+        const recentDocs = await Promise.all(
+          recents.map((r) => ctx.db.get(r.documentId))
+        );
+
+        // Filter to non-archived documents with access
+        const validDocs = recentDocs.filter(
+          (doc): doc is NonNullable<typeof doc> =>
+            doc !== null && doc.status !== "archived"
+        );
+
+        const docIds = validDocs.map((doc) => doc._id);
+        const accessibleIds = await batchFilterAccessibleDocuments(
+          ctx,
+          userId,
+          docIds,
+          "read"
+        );
+
+        const accessibleDocs = validDocs
+          .filter((doc) => accessibleIds.has(doc._id))
+          .slice(0, limit);
+
+        return accessibleDocs.map((doc) => ({
+          _id: doc._id,
+          title: doc.title,
+          icon: doc.icon,
+          folderId: doc.folderId,
+        }));
+      }
+
+      // Fallback: return most recently updated documents
+      const allDocuments = await ctx.db
+        .query("kbDocuments")
+        .filter((q) => q.neq(q.field("status"), "archived"))
+        .order("desc")
+        .take(limit * 3);
+
+      const docIds = allDocuments.map((doc) => doc._id);
+      const accessibleIds = await batchFilterAccessibleDocuments(
+        ctx,
+        userId,
+        docIds,
+        "read"
+      );
+
+      const accessibleDocs = allDocuments
+        .filter((doc) => accessibleIds.has(doc._id))
+        .slice(0, limit);
+
+      return accessibleDocs.map((doc) => ({
+        _id: doc._id,
+        title: doc.title,
+        icon: doc.icon,
+        folderId: doc.folderId,
+      }));
+    }
+
+    const searchLower = args.query.toLowerCase();
+
+    // Get all non-archived documents
+    // Note: In production with large datasets, consider using a search index
+    const allDocuments = await ctx.db
+      .query("kbDocuments")
+      .filter((q) => q.neq(q.field("status"), "archived"))
+      .collect();
+
+    // Filter by title match (case-insensitive)
+    const matchingDocs = allDocuments.filter((doc) =>
+      doc.title.toLowerCase().includes(searchLower)
+    );
+
+    // Batch check permissions for matching documents
+    const docIds = matchingDocs.map((doc) => doc._id);
+    const accessibleIds = await batchFilterAccessibleDocuments(
+      ctx,
+      userId,
+      docIds,
+      "read"
+    );
+
+    // Return only accessible documents, limited to requested count
+    const accessibleDocs = matchingDocs
+      .filter((doc) => accessibleIds.has(doc._id))
+      .slice(0, limit);
+
+    return accessibleDocs.map((doc) => ({
+      _id: doc._id,
+      title: doc.title,
+      icon: doc.icon,
+      folderId: doc.folderId,
+    }));
+  },
+});
+
+// ============================================================================
+// INTERNAL QUERIES (for embedding backfill)
+// ============================================================================
+
+/**
+ * List all document IDs for embedding backfill.
+ * Internal use only - no auth check needed.
+ *
+ * @returns Array of document IDs and titles for non-archived documents
+ */
+export const listAllForEmbedding = internalQuery({
+  args: {},
+  returns: v.array(
+    v.object({
+      _id: v.id("kbDocuments"),
+      title: v.string(),
+    })
+  ),
+  handler: async (ctx) => {
+    const docs = await ctx.db
+      .query("kbDocuments")
+      .filter((q) => q.neq(q.field("status"), "archived"))
+      .collect();
+    return docs.map((d) => ({ _id: d._id, title: d.title }));
   },
 });

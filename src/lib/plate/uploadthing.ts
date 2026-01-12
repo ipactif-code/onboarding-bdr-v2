@@ -3,10 +3,6 @@ import type { FileRouter } from 'uploadthing/next';
 import { createUploadthing } from 'uploadthing/next';
 import { UploadThingError } from 'uploadthing/server';
 
-// Potion-only
-// import { getRequestAuth } from '@/server/auth/getRequestAuth';
-// import { prisma } from '@/server/db';
-
 const f = createUploadthing();
 
 export const ourFileRouter = {
@@ -14,28 +10,13 @@ export const ourFileRouter = {
   editorUploader: f(['image', 'text', 'blob', 'pdf', 'video', 'audio'])
     // Set permissions and file types for this FileRoute
     .middleware(({ req }) => {
-      // Mock: get the auth user
+      // TODO: Implement proper authentication with Clerk
       const user = (req ? null : { id: '1' }) as { id: string } | null;
-      // const { user } = await getRequestAuth(req);
 
-      // If you throw, the user will not be able to upload
       if (!user) throw new UploadThingError('Unauthorized');
 
-      // Mock: fetch from db
+      // TODO: Implement upload limits from database
       const uploaded = { files: [{ size: 100 }], uploadLimit: 0 };
-      // const uploaded = await prisma.user.findUnique({
-      //   select: {
-      //     files: {
-      //       select: {
-      //         size: true,
-      //       },
-      //     },
-      //     uploadLimit: true,
-      //   },
-      //   where: {
-      //     id: user.id,
-      //   },
-      // });
 
       if (!uploaded) throw new UploadThingError('Unauthorized');
 

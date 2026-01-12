@@ -117,7 +117,6 @@ export function BlockSuggestionCard({
     >
       <div className="flex flex-col p-4">
         <div className="relative flex items-center">
-          {/* Replace to your own backend or refer to potion */}
           {userInfo && (
             <Avatar className="size-6">
               <AvatarImage alt={userInfo.name} src={userInfo.avatarUrl} />

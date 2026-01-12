@@ -313,7 +313,6 @@ export function Comment(props: {
 
   const { tf } = useEditorPlugin(CommentPlugin);
 
-  // Replace to your own backend or refer to potion
   const isMyComment = currentUserId === comment.userId;
 
   const initialValue = comment.contentRich;
@@ -402,7 +401,6 @@ export function Comment(props: {
           </Avatar>
         )}
         <h4 className="mx-2 font-semibold text-sm leading-none">
-          {/* Replace to your own backend or refer to potion */}
           {userInfo?.name}
         </h4>
 
@@ -1028,7 +1026,6 @@ export function CommentCreateForm({
   return (
     <div className={cn('flex w-full', className)}>
       <div className="mt-1 mr-1 shrink-0">
-        {/* Replace to your own backend or refer to potion */}
         <Avatar className="size-5">
           <AvatarImage alt={userInfo?.name} src={userInfo?.avatarUrl} />
           <AvatarFallback>{userInfo?.name?.[0]}</AvatarFallback>

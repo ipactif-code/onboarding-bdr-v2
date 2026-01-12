@@ -1,15 +1,11 @@
 /**
  * Knowledge Base Library
  *
- * This module will export configuration and utilities for the Knowledge Base
- * collaborative editor feature once the Potion editor is installed.
+ * This module exports configuration and utilities for the Knowledge Base
+ * collaborative editor feature.
  *
  * @module lib/knowledge
- *
- * TODO: Re-export Potion editor configuration once installed
  */
-
-// Placeholder exports - will be replaced with Potion configuration
 
 /**
  * Default empty editor value.

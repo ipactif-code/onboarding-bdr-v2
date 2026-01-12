@@ -64,7 +64,7 @@ export interface MessageInputProps {
  * This is a basic textarea-based message input used while the rich text
  * editor is being upgraded. It supports plain text messages only.
  *
- * TODO: Replace with Potion-based rich text input once installed
+ * TODO: Enhance with rich text formatting capabilities
  */
 export function MessageInput({
   onSend,

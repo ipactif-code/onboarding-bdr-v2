@@ -17,7 +17,7 @@ export interface RichTextRendererProps {
  * This component extracts and displays plain text from Slate/Plate JSON content
  * while the rich text editor is being upgraded.
  *
- * TODO: Replace with Potion-based content renderer once installed
+ * TODO: Enhance with proper rich text formatting support
  */
 export function RichTextRenderer({
   content,

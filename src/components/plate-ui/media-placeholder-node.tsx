@@ -170,30 +170,13 @@ function MediaPlaceholderPopover({ children }: { children: React.ReactNode }): R
   } = usePlaceholderPopoverState();
   const [open, setOpen] = useState(false);
 
-  // Potion-only
-  // const documentId = useDocumentId();
-  // const createFile = trpc.file.createFile.useMutation();
   const currentMedia = MEDIA_CONFIG[mediaType];
-
-  // const mediaConfig = api.placeholder.getMediaConfig(mediaType as MediaKeys);
   const multiple = getOption('multiple') ?? true;
 
   const { isUploading, progress, uploadedFile, uploadFile, uploadingFile } =
     useUploadFile({
       onUploadComplete() {
-        // Potion-only
-        // try {
-        //   createFile.mutate({
-        //     id: file.key,
-        //     appUrl: file.appUrl,
-        //     documentId: documentId,
-        //     size: file.size,
-        //     type: file.type,
-        //     url: file.url,
-        //   });
-        // } catch (error) {
-        //   console.error(error, 'error');
-        // }
+        // TODO: Implement file tracking in database if needed
       },
     });
 
